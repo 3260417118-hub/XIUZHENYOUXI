@@ -23,6 +23,21 @@ public class GameManager : MonoBehaviour
         {
             InitNewGame();
         }
+
+        EnsureSaveManager();
+    }
+
+    /// <summary>
+    /// 确保 Demo 场景里存在 SaveManager。
+    /// 这样旧场景不用手动拖组件，进入 Play 后也能自动出现保存 / 读取 / 新游戏按钮。
+    /// </summary>
+    private void EnsureSaveManager()
+    {
+        SaveManager saveManager = GetComponent<SaveManager>();
+        if (saveManager == null)
+        {
+            gameObject.AddComponent<SaveManager>();
+        }
     }
 
     /// <summary>
