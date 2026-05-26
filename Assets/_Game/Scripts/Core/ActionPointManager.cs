@@ -12,17 +12,12 @@ public class ActionPointManager : MonoBehaviour
     [SerializeField] private LocationActionManager locationActionManager;
     [SerializeField] private Button endDayButton;
 
-    public void SetReferences(
-        GameManager game,
-        LocationUIManager locationUI,
-        LocationActionManager actionManager,
-        Button endDay)
+    public void SetReferences(GameManager game, LocationUIManager locationUI, LocationActionManager actionManager, Button endDay)
     {
         gameManager = game;
         locationUIManager = locationUI;
         locationActionManager = actionManager;
         endDayButton = endDay;
-
         BindEndDayButton();
     }
 
@@ -60,6 +55,19 @@ public class ActionPointManager : MonoBehaviour
             return false;
         }
 
+        BlockingEncounterManager blockingEncounterManager = BlockingEncounterManager.Instance != null
+            ? BlockingEncounterManager.Instance
+            : GetComponent<BlockingEncounterManager>();
+        if (blockingEncounterManager != null && blockingEncounterManager.HasActiveBlockingEncounter())
+        {
+            if (locationUIManager != null)
+            {
+                locationUIManager.ShowMessage(blockingEncounterManager.GetBlockMoveMessageOrDefault());
+            }
+
+            return false;
+        }
+
         PlayerState playerState = gameManager.GetPlayerState();
         if (!ActionPointRules.TrySpend(playerState, cost))
         {
@@ -77,11 +85,28 @@ public class ActionPointManager : MonoBehaviour
 
     /// <summary>
     /// 结束今日：天数 +1，行动点恢复到最大值。
+    /// 如果有阻塞式剧情事件未解决，不能跳过当天。
     /// </summary>
     public void EndDay()
     {
         if (gameManager == null)
         {
+            return;
+        }
+
+        BlockingEncounterManager blockingEncounterManager = BlockingEncounterManager.Instance != null
+            ? BlockingEncounterManager.Instance
+            : GetComponent<BlockingEncounterManager>();
+        if (OpeningStoryManager.IsOpeningActive || BattleManager.IsBattleOpen || (blockingEncounterManager != null && blockingEncounterManager.HasActiveBlockingEncounter()))
+        {
+            if (locationUIManager != null)
+            {
+                string message = blockingEncounterManager != null && blockingEncounterManager.HasActiveBlockingEncounter()
+                    ? blockingEncounterManager.GetBlockMoveMessageOrDefault()
+                    : "请先处理当前事件。";
+                locationUIManager.ShowMessage(message);
+            }
+
             return;
         }
 
@@ -96,6 +121,11 @@ public class ActionPointManager : MonoBehaviour
         if (locationUIManager != null)
         {
             locationUIManager.ShowMessage("新的一天开始了，行动点已恢复。");
+        }
+
+        if (blockingEncounterManager != null)
+        {
+            blockingEncounterManager.CheckTodayEncounter();
         }
     }
 
