@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 负责刷新 Demo 场景里的地点和状态文字。
+/// 负责刷新 Demo 场景里的地点、状态文字和提示文字。
 /// 地点行为、人物按钮由 LocationActionManager 负责。
 /// </summary>
 public class LocationUIManager : MonoBehaviour
@@ -89,7 +89,15 @@ public class LocationUIManager : MonoBehaviour
     {
         if (messageText != null)
         {
-            messageText.text = "提示：\n" + message;
+            messageText.text = "提示：" + message;
+        }
+    }
+
+    public void ShowDialogue(string speaker, string text)
+    {
+        if (messageText != null)
+        {
+            messageText.text = "【" + speaker + "】" + text;
         }
     }
 }
