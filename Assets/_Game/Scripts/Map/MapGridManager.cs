@@ -176,7 +176,9 @@ public class MapGridManager : MonoBehaviour
         // 按 y 从上到下、x 从左到右排序，让按钮看起来更像地图。
         visibleCells.Sort(CompareCellsForDisplay);
 
-        MapBounds bounds = CalculateBounds(allCells);
+        // 只按当前可见格子计算显示边界。
+        // 如果按全地图计算，扩充大地图后村口附近格子会被整体挤到 MapPanel 下方。
+        MapBounds bounds = CalculateBounds(visibleCells);
 
         CreateConnectionLines(visibleCells, bounds);
 
