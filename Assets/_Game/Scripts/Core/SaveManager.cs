@@ -36,12 +36,7 @@ public class SaveManager : MonoBehaviour
         get { return Path.Combine(Application.persistentDataPath, "xianxia_save.json"); }
     }
 
-    public void SetReferences(
-        GameManager game,
-        MapGridManager mapGrid,
-        LocationUIManager locationUI,
-        LocationActionManager actionManager,
-        DialogueManager dialogue)
+    public void SetReferences(GameManager game, MapGridManager mapGrid, LocationUIManager locationUI, LocationActionManager actionManager, DialogueManager dialogue)
     {
         gameManager = game;
         mapGridManager = mapGrid;
@@ -49,7 +44,6 @@ public class SaveManager : MonoBehaviour
         locationActionManager = actionManager;
         dialogueManager = dialogue;
         eventManager = GetComponent<EventManager>();
-
         EnsureSaveButtons();
         BindButtons();
     }
@@ -63,35 +57,12 @@ public class SaveManager : MonoBehaviour
 
     private void FindMissingReferences()
     {
-        if (gameManager == null)
-        {
-            gameManager = GetComponent<GameManager>();
-        }
-
-        if (mapGridManager == null)
-        {
-            mapGridManager = GetComponent<MapGridManager>();
-        }
-
-        if (locationUIManager == null)
-        {
-            locationUIManager = GetComponent<LocationUIManager>();
-        }
-
-        if (locationActionManager == null)
-        {
-            locationActionManager = GetComponent<LocationActionManager>();
-        }
-
-        if (dialogueManager == null)
-        {
-            dialogueManager = GetComponent<DialogueManager>();
-        }
-
-        if (eventManager == null)
-        {
-            eventManager = GetComponent<EventManager>();
-        }
+        if (gameManager == null) gameManager = GetComponent<GameManager>();
+        if (mapGridManager == null) mapGridManager = GetComponent<MapGridManager>();
+        if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
+        if (locationActionManager == null) locationActionManager = GetComponent<LocationActionManager>();
+        if (dialogueManager == null) dialogueManager = GetComponent<DialogueManager>();
+        if (eventManager == null) eventManager = GetComponent<EventManager>();
     }
 
     private void BindButtons()
@@ -115,9 +86,6 @@ public class SaveManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 保存当前 PlayerState 到本地 JSON。
-    /// </summary>
     public void SaveGame()
     {
         if (gameManager == null)
@@ -129,11 +97,7 @@ public class SaveManager : MonoBehaviour
         try
         {
             PlayerState playerState = gameManager.GetPlayerState();
-            if (playerState != null)
-            {
-                playerState.EnsureLists();
-            }
-
+            if (playerState != null) playerState.EnsureLists();
             string json = JsonUtility.ToJson(playerState, true);
             File.WriteAllText(SaveFilePath, json);
             ShowMessage("保存成功：" + SaveFilePath);
@@ -150,10 +114,6 @@ public class SaveManager : MonoBehaviour
         return File.Exists(SaveFilePath);
     }
 
-    /// <summary>
-    /// 从本地 JSON 读取 PlayerState。
-    /// 读取后刷新地图、状态栏、地点描述、地点行为按钮和 NPC 按钮。
-    /// </summary>
     public void LoadGame()
     {
         if (!HasSave())
@@ -172,7 +132,6 @@ public class SaveManager : MonoBehaviour
         {
             string json = File.ReadAllText(SaveFilePath);
             PlayerState loadedState = JsonUtility.FromJson<PlayerState>(json);
-
             if (loadedState == null || string.IsNullOrEmpty(loadedState.currentCellId))
             {
                 ShowMessage("存档数据无效。");
@@ -182,6 +141,12 @@ public class SaveManager : MonoBehaviour
             loadedState.EnsureLists();
             CopyPlayerState(loadedState, gameManager.GetPlayerState());
             RefreshAfterStateChanged("读取存档成功。");
+
+            OpeningStoryManager openingStory = GetComponent<OpeningStoryManager>();
+            if (openingStory != null) openingStory.CheckOpeningAfterLoad();
+
+            BlockingEncounterManager blockingEncounterManager = GetComponent<BlockingEncounterManager>();
+            if (blockingEncounterManager != null) blockingEncounterManager.RestoreActiveEncounterUI();
         }
         catch (Exception exception)
         {
@@ -190,11 +155,6 @@ public class SaveManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 开始新游戏。
-    /// 只重置当前游戏状态，不删除已有存档。
-    /// 如果想覆盖旧存档，可以新游戏后再点“保存游戏”。
-    /// </summary>
     public void NewGame()
     {
         if (gameManager == null)
@@ -205,15 +165,14 @@ public class SaveManager : MonoBehaviour
 
         gameManager.InitNewGame();
         RefreshAfterStateChanged("新游戏开始。旧存档不会自动删除。 ");
+
+        OpeningStoryManager openingStory = GetComponent<OpeningStoryManager>();
+        if (openingStory != null) openingStory.PlayOpeningIfNeeded();
     }
 
     private void CopyPlayerState(PlayerState source, PlayerState target)
     {
-        if (source == null || target == null)
-        {
-            return;
-        }
-
+        if (source == null || target == null) return;
         source.EnsureLists();
         target.EnsureLists();
 
@@ -226,28 +185,33 @@ public class SaveManager : MonoBehaviour
         target.cultivation = source.cultivation;
         target.realm = string.IsNullOrEmpty(source.realm) ? "凡人" : source.realm;
         target.spiritStones = source.spiritStones;
+        target.hasSeenOpening = source.hasSeenOpening;
+        target.activeBlockingEncounterId = source.activeBlockingEncounterId;
+        target.hp = source.hp <= 0 ? 100 : source.hp;
+        target.maxHp = source.maxHp <= 0 ? 100 : source.maxHp;
+        target.attack = source.attack <= 0 ? 15 : source.attack;
+        target.defense = source.defense <= 0 ? 3 : source.defense;
         target.flags = new List<string>(source.flags);
         target.visitedCellIds = new List<string>(source.visitedCellIds);
+        target.dayEventsTriggered = new List<string>(source.dayEventsTriggered);
+        target.EnsureLists();
     }
 
     private void RefreshAfterStateChanged(string message)
     {
-        // 读取或新游戏时，先关闭可能正在显示的对话/事件选项。
         FindMissingReferences();
 
-        if (dialogueManager != null)
-        {
-            dialogueManager.CloseDialogueSilently();
-        }
+        if (dialogueManager != null) dialogueManager.CloseDialogueSilently();
+        if (eventManager != null) eventManager.CloseEventSilently();
 
-        if (eventManager != null)
-        {
-            eventManager.CloseEventSilently();
-        }
+        DayEventManager dayEventManager = GetComponent<DayEventManager>();
+        if (dayEventManager != null) dayEventManager.CloseDayEventSilently();
+
+        BattleManager battleManager = GetComponent<BattleManager>();
+        if (battleManager != null) battleManager.CloseBattleSilently();
 
         if (mapGridManager != null)
         {
-            // 地图扩充后，旧存档可能保存着旧坐标，这里按 currentCellId 同步到新坐标。
             mapGridManager.SyncPlayerPositionToCurrentCell();
             mapGridManager.RefreshMap();
         }
@@ -261,83 +225,40 @@ public class SaveManager : MonoBehaviour
             locationUIManager.ShowMessage(message);
         }
 
-        if (locationActionManager != null)
-        {
-            locationActionManager.RefreshCurrentLocation();
-        }
+        if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
     }
 
     private void ShowMessage(string message)
     {
-        if (locationUIManager != null)
-        {
-            locationUIManager.ShowMessage(message);
-        }
-        else
-        {
-            Debug.Log(message);
-        }
+        if (locationUIManager != null) locationUIManager.ShowMessage(message);
+        else Debug.Log(message);
     }
 
     private void EnsureSaveButtons()
     {
-        if (saveGameButton == null)
-        {
-            saveGameButton = FindButton("SaveGameButton");
-        }
-
-        if (loadGameButton == null)
-        {
-            loadGameButton = FindButton("LoadGameButton");
-        }
-
-        if (newGameButton == null)
-        {
-            newGameButton = FindButton("NewGameButton");
-        }
+        if (saveGameButton == null) saveGameButton = FindButton("SaveGameButton");
+        if (loadGameButton == null) loadGameButton = FindButton("LoadGameButton");
+        if (newGameButton == null) newGameButton = FindButton("NewGameButton");
 
         Transform parent = null;
-
         Button endDayButton = FindButton("EndDayButton");
-        if (endDayButton != null)
-        {
-            parent = endDayButton.transform.parent;
-        }
+        if (endDayButton != null) parent = endDayButton.transform.parent;
         else
         {
             Canvas canvas = FindObjectOfType<Canvas>();
-            if (canvas != null)
-            {
-                parent = canvas.transform;
-            }
+            if (canvas != null) parent = canvas.transform;
         }
 
-        if (parent == null)
-        {
-            return;
-        }
+        if (parent == null) return;
 
-        if (newGameButton == null)
-        {
-            newGameButton = CreateSaveButton(parent, "NewGameButton", "新游戏");
-        }
-
-        if (loadGameButton == null)
-        {
-            loadGameButton = CreateSaveButton(parent, "LoadGameButton", "读取游戏");
-        }
-
-        if (saveGameButton == null)
-        {
-            saveGameButton = CreateSaveButton(parent, "SaveGameButton", "保存游戏");
-        }
-
+        if (newGameButton == null) newGameButton = CreateSaveButton(parent, "NewGameButton", "新游戏");
+        if (loadGameButton == null) loadGameButton = CreateSaveButton(parent, "LoadGameButton", "读取游戏");
+        if (saveGameButton == null) saveGameButton = CreateSaveButton(parent, "SaveGameButton", "保存游戏");
         LayoutSaveButtonsBottomRight();
     }
 
     private void LayoutSaveButtonsBottomRight()
     {
-        // 固定放在右下角，从右到左排列：保存游戏、读取游戏、新游戏。
         MoveButtonToBottomRight(saveGameButton, 0);
         MoveButtonToBottomRight(loadGameButton, 1);
         MoveButtonToBottomRight(newGameButton, 2);
@@ -345,65 +266,38 @@ public class SaveManager : MonoBehaviour
 
     private void MoveButtonToBottomRight(Button button, int indexFromRight)
     {
-        if (button == null)
-        {
-            return;
-        }
-
+        if (button == null) return;
         RectTransform rect = button.GetComponent<RectTransform>();
-        if (rect == null)
-        {
-            return;
-        }
-
+        if (rect == null) return;
         rect.anchorMin = new Vector2(1f, 0f);
         rect.anchorMax = new Vector2(1f, 0f);
         rect.pivot = new Vector2(1f, 0f);
         rect.sizeDelta = new Vector2(SaveButtonWidth, SaveButtonHeight);
-
         float x = -(SaveButtonsRightMargin + indexFromRight * (SaveButtonWidth + SaveButtonGap));
-        float y = SaveButtonsBottomMargin;
-        rect.anchoredPosition = new Vector2(x, y);
+        rect.anchoredPosition = new Vector2(x, SaveButtonsBottomMargin);
     }
 
     private Button FindButton(string objectName)
     {
         GameObject target = GameObject.Find(objectName);
-        if (target == null)
-        {
-            return null;
-        }
-
-        return target.GetComponent<Button>();
+        return target == null ? null : target.GetComponent<Button>();
     }
 
     private Button CreateSaveButton(Transform parent, string objectName, string text)
     {
         GameObject buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(parent, false);
-
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
         rect.anchorMin = new Vector2(1f, 0f);
         rect.anchorMax = new Vector2(1f, 0f);
         rect.pivot = new Vector2(1f, 0f);
         rect.sizeDelta = new Vector2(SaveButtonWidth, SaveButtonHeight);
-        rect.anchoredPosition = Vector2.zero;
-
         Image image = buttonObject.GetComponent<Image>();
         image.color = new Color(0.30f, 0.34f, 0.38f, 1f);
-
         Button button = buttonObject.GetComponent<Button>();
         button.targetGraphic = image;
-
-        ColorBlock colors = button.colors;
-        colors.normalColor = image.color;
-        colors.highlightedColor = new Color(0.40f, 0.46f, 0.50f, 1f);
-        colors.pressedColor = new Color(0.22f, 0.25f, 0.28f, 1f);
-        button.colors = colors;
-
         Text label = CreateButtonText(buttonObject.transform, text);
         StretchToParent(label.rectTransform);
-
         return button;
     }
 
@@ -411,7 +305,6 @@ public class SaveManager : MonoBehaviour
     {
         GameObject textObject = new GameObject("Text", typeof(RectTransform), typeof(Text));
         textObject.transform.SetParent(parent, false);
-
         Text label = textObject.GetComponent<Text>();
         label.text = text;
         label.font = GetDefaultFont();
@@ -420,23 +313,14 @@ public class SaveManager : MonoBehaviour
         label.color = Color.white;
         label.horizontalOverflow = HorizontalWrapMode.Wrap;
         label.verticalOverflow = VerticalWrapMode.Truncate;
-
         return label;
     }
 
     private Font GetDefaultFont()
     {
-        if (cachedFont != null)
-        {
-            return cachedFont;
-        }
-
+        if (cachedFont != null) return cachedFont;
         cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 16);
-        if (cachedFont != null)
-        {
-            return cachedFont;
-        }
-
+        if (cachedFont != null) return cachedFont;
         cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         return cachedFont;
     }
