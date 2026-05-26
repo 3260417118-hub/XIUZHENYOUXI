@@ -250,6 +250,15 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 存档读取或新游戏时使用：只关闭对话 UI，不显示“对话已结束”。
+    /// </summary>
+    public void CloseDialogueSilently()
+    {
+        isDialogueOpen = false;
+        ClearDialogueOnly();
+    }
+
     public void ClearDialogueOnly()
     {
         foreach (GameObject dialogueObject in createdDialogueObjects)
