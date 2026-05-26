@@ -1,0 +1,67 @@
+{
+  "dialogues": [
+    {
+      "id": "shop_owner_start",
+      "speaker": "老板",
+      "text": "客官，要买些丹药，还是打听消息？",
+      "options": [
+        {
+          "text": "购买丹药",
+          "action": "message",
+          "target": "",
+          "message": "商店系统暂未开放。"
+        },
+        {
+          "text": "打听修仙界",
+          "action": "dialogue",
+          "target": "shop_owner_qingyun_info",
+          "message": ""
+        },
+        {
+          "text": "离开",
+          "action": "close",
+          "target": "",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "id": "shop_owner_qingyun_info",
+      "speaker": "老板",
+      "text": "青云宗就在东边山上，外门弟子常下山采买。若你有灵根，也许能去山门碰碰运气。",
+      "options": [
+        {
+          "text": "返回",
+          "action": "dialogue",
+          "target": "shop_owner_start",
+          "message": ""
+        },
+        {
+          "text": "离开",
+          "action": "close",
+          "target": "",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "id": "shop_assistant_start",
+      "speaker": "小二",
+      "text": "最近黑风林不太平，听说有妖兽伤人。",
+      "options": [
+        {
+          "text": "追问详情",
+          "action": "message",
+          "target": "",
+          "message": "小二压低声音：听说受伤的是几个采药人，他们都说林子里有黑影一闪而过。"
+        },
+        {
+          "text": "离开",
+          "action": "close",
+          "target": "",
+          "message": ""
+        }
+      ]
+    }
+  ]
+}
