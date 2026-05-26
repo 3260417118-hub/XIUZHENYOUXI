@@ -22,7 +22,11 @@ public class SaveManager : MonoBehaviour
     [SerializeField] private Button newGameButton;
 
     private const float SaveButtonWidth = 100f;
-    private const float SaveButtonGap = 22f;
+    private const float SaveButtonHeight = 44f;
+    private const float SaveButtonGap = 12f;
+    private const float SaveButtonsRightMargin = 24f;
+    private const float SaveButtonsBottomMargin = 210f;
+
     private Font cachedFont;
 
     private string SaveFilePath
@@ -263,20 +267,12 @@ public class SaveManager : MonoBehaviour
             newGameButton = FindButton("NewGameButton");
         }
 
-        if (saveGameButton != null && loadGameButton != null && newGameButton != null)
-        {
-            MoveSaveButtonsAwayFromEndDayButton();
-            return;
-        }
+        Transform parent = null;
 
         Button endDayButton = FindButton("EndDayButton");
-        Transform parent = null;
-        RectTransform endDayRect = null;
-
         if (endDayButton != null)
         {
             parent = endDayButton.transform.parent;
-            endDayRect = endDayButton.GetComponent<RectTransform>();
         }
         else
         {
@@ -292,56 +288,53 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        // 从右往左排列：结束今日 <- 保存游戏 <- 读取游戏 <- 新游戏。
-        // 之前间距太小，保存游戏会贴到结束今日上，所以这里用更大的按钮间距。
         if (newGameButton == null)
         {
-            newGameButton = CreateTopButton(parent, "NewGameButton", "新游戏", endDayRect, GetButtonOffsetFromEndDay(3));
+            newGameButton = CreateSaveButton(parent, "NewGameButton", "新游戏");
         }
 
         if (loadGameButton == null)
         {
-            loadGameButton = CreateTopButton(parent, "LoadGameButton", "读取游戏", endDayRect, GetButtonOffsetFromEndDay(2));
+            loadGameButton = CreateSaveButton(parent, "LoadGameButton", "读取游戏");
         }
 
         if (saveGameButton == null)
         {
-            saveGameButton = CreateTopButton(parent, "SaveGameButton", "保存游戏", endDayRect, GetButtonOffsetFromEndDay(1));
-        }
-    }
-
-    private void MoveSaveButtonsAwayFromEndDayButton()
-    {
-        Button endDayButton = FindButton("EndDayButton");
-        if (endDayButton == null)
-        {
-            return;
+            saveGameButton = CreateSaveButton(parent, "SaveGameButton", "保存游戏");
         }
 
-        RectTransform endDayRect = endDayButton.GetComponent<RectTransform>();
-        MoveTopButton(newGameButton, endDayRect, GetButtonOffsetFromEndDay(3));
-        MoveTopButton(loadGameButton, endDayRect, GetButtonOffsetFromEndDay(2));
-        MoveTopButton(saveGameButton, endDayRect, GetButtonOffsetFromEndDay(1));
+        LayoutSaveButtonsBottomRight();
     }
 
-    private float GetButtonOffsetFromEndDay(int indexFromEndDay)
+    private void LayoutSaveButtonsBottomRight()
     {
-        return -(SaveButtonWidth + SaveButtonGap) * indexFromEndDay;
+        // 固定放在右下角，从右到左排列：保存游戏、读取游戏、新游戏。
+        MoveButtonToBottomRight(saveGameButton, 0);
+        MoveButtonToBottomRight(loadGameButton, 1);
+        MoveButtonToBottomRight(newGameButton, 2);
     }
 
-    private void MoveTopButton(Button button, RectTransform referenceRect, float offsetX)
+    private void MoveButtonToBottomRight(Button button, int indexFromRight)
     {
-        if (button == null || referenceRect == null)
+        if (button == null)
         {
             return;
         }
 
         RectTransform rect = button.GetComponent<RectTransform>();
-        rect.anchorMin = referenceRect.anchorMin;
-        rect.anchorMax = referenceRect.anchorMax;
-        rect.pivot = referenceRect.pivot;
-        rect.sizeDelta = new Vector2(SaveButtonWidth, referenceRect.sizeDelta.y <= 0f ? 44f : referenceRect.sizeDelta.y);
-        rect.anchoredPosition = referenceRect.anchoredPosition + new Vector2(offsetX, 0f);
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchorMin = new Vector2(1f, 0f);
+        rect.anchorMax = new Vector2(1f, 0f);
+        rect.pivot = new Vector2(1f, 0f);
+        rect.sizeDelta = new Vector2(SaveButtonWidth, SaveButtonHeight);
+
+        float x = -(SaveButtonsRightMargin + indexFromRight * (SaveButtonWidth + SaveButtonGap));
+        float y = SaveButtonsBottomMargin;
+        rect.anchoredPosition = new Vector2(x, y);
     }
 
     private Button FindButton(string objectName)
@@ -355,28 +348,17 @@ public class SaveManager : MonoBehaviour
         return target.GetComponent<Button>();
     }
 
-    private Button CreateTopButton(Transform parent, string objectName, string text, RectTransform referenceRect, float offsetX)
+    private Button CreateSaveButton(Transform parent, string objectName, string text)
     {
         GameObject buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(parent, false);
 
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
-        if (referenceRect != null)
-        {
-            rect.anchorMin = referenceRect.anchorMin;
-            rect.anchorMax = referenceRect.anchorMax;
-            rect.pivot = referenceRect.pivot;
-            rect.sizeDelta = new Vector2(SaveButtonWidth, referenceRect.sizeDelta.y <= 0f ? 44f : referenceRect.sizeDelta.y);
-            rect.anchoredPosition = referenceRect.anchoredPosition + new Vector2(offsetX, 0f);
-        }
-        else
-        {
-            rect.anchorMin = new Vector2(1f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(1f, 1f);
-            rect.sizeDelta = new Vector2(SaveButtonWidth, 44f);
-            rect.anchoredPosition = new Vector2(-20f + offsetX, -20f);
-        }
+        rect.anchorMin = new Vector2(1f, 0f);
+        rect.anchorMax = new Vector2(1f, 0f);
+        rect.pivot = new Vector2(1f, 0f);
+        rect.sizeDelta = new Vector2(SaveButtonWidth, SaveButtonHeight);
+        rect.anchoredPosition = Vector2.zero;
 
         Image image = buttonObject.GetComponent<Image>();
         image.color = new Color(0.30f, 0.34f, 0.38f, 1f);
