@@ -1,0 +1,28 @@
+{
+  "battles": [
+    {
+      "id": "battle_day7_thugs",
+      "title": "村口斗殴",
+      "enemyName": "小混混",
+      "enemyHp": 35,
+      "enemyAttack": 8,
+      "enemyDefense": 1,
+      "winMessage": "你喘着粗气站在原地，小混混捂着伤口狼狈逃走。村民们看向你的眼神多了几分惊讶。",
+      "loseMessage": "你被小混混打倒在地，胸口隐隐作痛。对方冷笑几声后扬长而去。",
+      "winFlags": ["defeated_day7_thugs"],
+      "loseFlags": ["lost_to_day7_thugs"]
+    },
+    {
+      "id": "battle_day9_bully_helpers",
+      "title": "恶霸帮手",
+      "enemyName": "恶霸帮手",
+      "enemyHp": 50,
+      "enemyAttack": 10,
+      "enemyDefense": 2,
+      "winMessage": "你拼尽全力击退了恶霸的帮手。恶霸脸色阴沉地盯着你，似乎记住了你的样子。",
+      "loseMessage": "你被恶霸帮手打倒，眼前一阵发黑。等你再醒来时，周围只剩下凌乱脚印。",
+      "winFlags": ["defeated_bully_helpers_day9"],
+      "loseFlags": ["lost_to_bully_helpers_day9"]
+    }
+  ]
+}

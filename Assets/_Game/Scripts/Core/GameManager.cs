@@ -28,19 +28,28 @@ public class GameManager : MonoBehaviour
             playerState.EnsureLists();
         }
 
-        EnsureSaveManager();
+        EnsureRuntimeManagers();
     }
 
     /// <summary>
-    /// 确保 Demo 场景里存在 SaveManager。
-    /// 这样旧场景不用手动拖组件，进入 Play 后也能自动出现保存 / 读取 / 新游戏按钮。
+    /// 确保 Demo 场景里存在必要管理器。
+    /// 这样旧场景不用手动拖组件，进入 Play 后也能自动创建新系统。
     /// </summary>
-    private void EnsureSaveManager()
+    private void EnsureRuntimeManagers()
     {
-        SaveManager saveManager = GetComponent<SaveManager>();
-        if (saveManager == null)
+        EnsureComponent<SaveManager>();
+        EnsureComponent<OpeningStoryManager>();
+        EnsureComponent<DayEventManager>();
+        EnsureComponent<BattleManager>();
+        EnsureComponent<TutorialManager>();
+        EnsureComponent<SaveButtonOverrideManager>();
+    }
+
+    private void EnsureComponent<T>() where T : Component
+    {
+        if (GetComponent<T>() == null)
         {
-            gameObject.AddComponent<SaveManager>();
+            gameObject.AddComponent<T>();
         }
     }
 
@@ -60,6 +69,11 @@ public class GameManager : MonoBehaviour
         playerState.cultivation = 0;
         playerState.realm = "凡人";
         playerState.spiritStones = 0;
+        playerState.hasSeenOpening = false;
+        playerState.maxHp = 100;
+        playerState.hp = 100;
+        playerState.attack = 15;
+        playerState.defense = 3;
         playerState.EnsureLists();
     }
 
