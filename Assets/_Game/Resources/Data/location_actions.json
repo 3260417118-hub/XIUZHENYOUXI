@@ -39,6 +39,30 @@
       "costActionPoint": 1,
       "cultivationGain": 0,
       "message": "阁楼里堆满旧箱与竹简，窗边的蒲团似乎常有人打坐。"
+    },
+    {
+      "id": "search_mountain",
+      "name": "搜索后山",
+      "description": "在后山草木间寻找异常痕迹。",
+      "costActionPoint": 1,
+      "cultivationGain": 0,
+      "message": "你在后山搜索许久，只发现几处野兽足迹。"
+    },
+    {
+      "id": "search_forest",
+      "name": "搜索黑风林",
+      "description": "在黑风林边缘寻找线索。",
+      "costActionPoint": 1,
+      "cultivationGain": 0,
+      "message": "黑风林中阴风阵阵，你不敢深入，只在边缘发现几根折断的枯枝。"
+    },
+    {
+      "id": "work_misc",
+      "name": "杂役劳作",
+      "description": "在杂役院完成今日杂务。",
+      "costActionPoint": 1,
+      "cultivationGain": 0,
+      "message": "你完成了一些杂役活计，虽然疲惫，却对宗门规矩多了几分了解。"
     }
   ]
 }
