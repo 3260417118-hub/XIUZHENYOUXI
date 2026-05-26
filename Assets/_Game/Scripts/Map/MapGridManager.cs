@@ -28,8 +28,8 @@ public class MapGridManager : MonoBehaviour
 
     /// <summary>
     /// 当前地图视窗中心对应的世界坐标。
-    /// 初始为 (0,0)，所以村口会出现在地图面板正中间。
-    /// 当前可见格子快溢出边界时，会自动平移这个中心。
+    /// 默认优先使用 (0,0)，所以村口会出现在地图面板正中间。
+    /// 只有当前可见格子会溢出边界时，才临时偏移这个中心。
     /// </summary>
     private int viewportCenterX;
     private int viewportCenterY;
@@ -199,7 +199,7 @@ public class MapGridManager : MonoBehaviour
             }
         }
 
-        // 先根据当前可见格子修正视窗中心，确保不会溢出 MapPanel。
+        // 优先让 (0,0) 居中；如果可见格子会溢出，再临时偏移视窗中心。
         UpdateViewportCenterForVisibleCells(visibleCells);
 
         // 按 y 从上到下、x 从左到右排序，让按钮看起来更像地图。
@@ -300,7 +300,8 @@ public class MapGridManager : MonoBehaviour
 
     /// <summary>
     /// 让可见格子始终留在地图面板内。
-    /// 初始时 (0,0) 居中；如果当前可见范围会溢出，就把视窗中心平移到刚好能容纳的位置。
+    /// 每次刷新都先尝试把视窗中心恢复到 (0,0)。
+    /// 如果当前可见范围放不下，才把中心夹到能容纳当前可见格子的位置。
     /// </summary>
     private void UpdateViewportCenterForVisibleCells(List<MapCellData> visibleCells)
     {
@@ -318,22 +319,24 @@ public class MapGridManager : MonoBehaviour
             cellStep.y,
             mapPanel.rect.height * 0.5f - cellSize.y * 0.5f - edgePadding.y);
 
+        // 关键修复：不要沿用上一次移动后的 viewportCenter。
+        // 否则走远再回到村口时，(0,0) 会停留在偏移后的位置。
         viewportCenterX = ClampViewportCenter(
-            viewportCenterX,
+            0,
             bounds.minX,
             bounds.maxX,
             maxOffsetX,
             cellStep.x);
 
         viewportCenterY = ClampViewportCenter(
-            viewportCenterY,
+            0,
             bounds.minY,
             bounds.maxY,
             maxOffsetY,
             cellStep.y);
     }
 
-    private int ClampViewportCenter(int currentCenter, int minCell, int maxCell, float maxOffset, float step)
+    private int ClampViewportCenter(int desiredCenter, int minCell, int maxCell, float maxOffset, float step)
     {
         float cellsThatFitEachSide = maxOffset / Mathf.Max(1f, step);
         int lowerLimit = Mathf.CeilToInt(maxCell - cellsThatFitEachSide);
@@ -345,7 +348,7 @@ public class MapGridManager : MonoBehaviour
             return Mathf.RoundToInt((minCell + maxCell) * 0.5f);
         }
 
-        return Mathf.Clamp(currentCenter, lowerLimit, upperLimit);
+        return Mathf.Clamp(desiredCenter, lowerLimit, upperLimit);
     }
 
     private Vector2 GetCellCenterPosition(MapCellData cell)
