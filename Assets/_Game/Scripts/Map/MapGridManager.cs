@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 负责加载地图 JSON，并在 MapPanel 里按 x,y 坐标生成格子按钮。
-/// 第一版只显示当前位置周围 2 格范围内的格子。
+/// 第一版显示当前位置周围 3 格范围内的格子。
 /// </summary>
 public class MapGridManager : MonoBehaviour
 {
@@ -15,16 +15,19 @@ public class MapGridManager : MonoBehaviour
     [SerializeField] private RectTransform mapPanel;
 
     [SerializeField] private string mapDataResourcePath = "Data/map_cells";
-    [SerializeField] private int visibleRange = 2;
-    [SerializeField] private Vector2 cellSize = new Vector2(86f, 58f);
-    [SerializeField] private Vector2 cellStep = new Vector2(100f, 80f);
-    [SerializeField] private Vector2 mapPadding = new Vector2(20f, 20f);
+    [SerializeField] private int visibleRange = 3;
+    [SerializeField] private Vector2 cellSize = new Vector2(76f, 48f);
+    [SerializeField] private Vector2 cellStep = new Vector2(88f, 60f);
+    [SerializeField] private Vector2 mapPadding = new Vector2(18f, 18f);
     [SerializeField] private float connectionLineThickness = 4f;
 
     private readonly Dictionary<string, MapCellData> cellById = new Dictionary<string, MapCellData>();
     private readonly List<MapCellData> allCells = new List<MapCellData>();
     private readonly List<GameObject> createdMapObjects = new List<GameObject>();
     private Font cachedFont;
+
+    private bool hasDisplayBounds;
+    private MapBounds displayBounds;
 
     public void SetReferences(
         GameManager game,
@@ -45,10 +48,12 @@ public class MapGridManager : MonoBehaviour
         cellSize = newCellSize;
         cellStep = newCellStep;
         mapPadding = newMapPadding;
+        hasDisplayBounds = false;
     }
 
     private void Start()
     {
+        ApplyChapterOneMapLayoutDefaults();
         LoadMapCells();
         EnsurePlayerStartsOnValidCell();
         RefreshMap();
@@ -66,12 +71,29 @@ public class MapGridManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 第一章地图变大后，需要更大的显示范围和更紧凑的格子间距。
+    /// 这里在运行时兜底设置，避免旧场景序列化值仍然停留在 visibleRange = 2。
+    /// </summary>
+    private void ApplyChapterOneMapLayoutDefaults()
+    {
+        visibleRange = Mathf.Max(visibleRange, 3);
+
+        if (cellStep.x > 90f || cellStep.y > 64f)
+        {
+            cellSize = new Vector2(76f, 48f);
+            cellStep = new Vector2(88f, 60f);
+            mapPadding = new Vector2(18f, 18f);
+        }
+    }
+
+    /// <summary>
     /// 从 Resources/Data/map_cells.json 读取地图数据。
     /// </summary>
     public void LoadMapCells()
     {
         cellById.Clear();
         allCells.Clear();
+        hasDisplayBounds = false;
 
         TextAsset jsonAsset = Resources.Load<TextAsset>(mapDataResourcePath);
         if (jsonAsset == null)
@@ -153,6 +175,7 @@ public class MapGridManager : MonoBehaviour
     /// </summary>
     public void RefreshMap()
     {
+        ApplyChapterOneMapLayoutDefaults();
         ClearCreatedButtons();
 
         if (mapPanel == null || gameManager == null)
@@ -176,9 +199,7 @@ public class MapGridManager : MonoBehaviour
         // 按 y 从上到下、x 从左到右排序，让按钮看起来更像地图。
         visibleCells.Sort(CompareCellsForDisplay);
 
-        // 只按当前可见格子计算显示边界。
-        // 如果按全地图计算，扩充大地图后村口附近格子会被整体挤到 MapPanel 下方。
-        MapBounds bounds = CalculateBounds(visibleCells);
+        MapBounds bounds = UpdateStableDisplayBounds(visibleCells);
 
         CreateConnectionLines(visibleCells, bounds);
 
@@ -249,24 +270,105 @@ public class MapGridManager : MonoBehaviour
         return left.x.CompareTo(right.x);
     }
 
-    private MapBounds CalculateBounds(List<MapCellData> visibleCells)
+    private MapBounds CalculateBounds(List<MapCellData> cells)
     {
         MapBounds bounds = new MapBounds();
-        if (visibleCells.Count == 0)
+        if (cells.Count == 0)
         {
             return bounds;
         }
 
-        bounds.minX = visibleCells[0].x;
-        bounds.maxY = visibleCells[0].y;
+        bounds.minX = cells[0].x;
+        bounds.maxX = cells[0].x;
+        bounds.minY = cells[0].y;
+        bounds.maxY = cells[0].y;
 
-        foreach (MapCellData cell in visibleCells)
+        foreach (MapCellData cell in cells)
         {
             bounds.minX = Mathf.Min(bounds.minX, cell.x);
+            bounds.maxX = Mathf.Max(bounds.maxX, cell.x);
+            bounds.minY = Mathf.Min(bounds.minY, cell.y);
             bounds.maxY = Mathf.Max(bounds.maxY, cell.y);
         }
 
         return bounds;
+    }
+
+    /// <summary>
+    /// 稳定地图视窗。
+    /// 以前每次移动都按当前可见格子重算 minX / maxY，所以界面会跳。
+    /// 现在只有当可见格子快超出当前视窗时，才平移视窗。
+    /// </summary>
+    private MapBounds UpdateStableDisplayBounds(List<MapCellData> visibleCells)
+    {
+        MapBounds visibleBounds = CalculateBounds(visibleCells);
+
+        if (visibleCells.Count == 0)
+        {
+            return displayBounds;
+        }
+
+        int maxColumns = GetMaxDisplayColumns();
+        int maxRows = GetMaxDisplayRows();
+
+        if (!hasDisplayBounds)
+        {
+            displayBounds.minX = visibleBounds.minX;
+            displayBounds.maxX = displayBounds.minX + maxColumns - 1;
+            displayBounds.maxY = visibleBounds.maxY;
+            displayBounds.minY = displayBounds.maxY - maxRows + 1;
+            hasDisplayBounds = true;
+        }
+
+        if (visibleBounds.minX < displayBounds.minX)
+        {
+            displayBounds.minX = visibleBounds.minX;
+        }
+
+        if (visibleBounds.maxX > displayBounds.minX + maxColumns - 1)
+        {
+            displayBounds.minX = visibleBounds.maxX - maxColumns + 1;
+        }
+
+        displayBounds.maxX = displayBounds.minX + maxColumns - 1;
+
+        if (visibleBounds.maxY > displayBounds.maxY)
+        {
+            displayBounds.maxY = visibleBounds.maxY;
+        }
+
+        if (visibleBounds.minY < displayBounds.maxY - maxRows + 1)
+        {
+            displayBounds.maxY = visibleBounds.minY + maxRows - 1;
+        }
+
+        displayBounds.minY = displayBounds.maxY - maxRows + 1;
+
+        return displayBounds;
+    }
+
+    private int GetMaxDisplayColumns()
+    {
+        if (mapPanel == null || mapPanel.rect.width <= 0f)
+        {
+            return visibleRange * 2 + 1;
+        }
+
+        float usableWidth = Mathf.Max(1f, mapPanel.rect.width - mapPadding.x * 2f);
+        int columns = Mathf.FloorToInt(usableWidth / Mathf.Max(1f, cellStep.x)) + 1;
+        return Mathf.Max(visibleRange * 2 + 1, columns);
+    }
+
+    private int GetMaxDisplayRows()
+    {
+        if (mapPanel == null || mapPanel.rect.height <= 0f)
+        {
+            return visibleRange * 2 + 1;
+        }
+
+        float usableHeight = Mathf.Max(1f, mapPanel.rect.height - mapPadding.y * 2f);
+        int rows = Mathf.FloorToInt(usableHeight / Mathf.Max(1f, cellStep.y)) + 1;
+        return Mathf.Max(visibleRange * 2 + 1, rows);
     }
 
     private void CreateCellButton(MapCellData cell, PlayerState playerState, MapBounds bounds)
@@ -358,7 +460,7 @@ public class MapGridManager : MonoBehaviour
 
         Text text = textObject.GetComponent<Text>();
         text.font = GetDefaultFont();
-        text.fontSize = 18;
+        text.fontSize = 16;
         text.color = Color.white;
         text.alignment = TextAnchor.MiddleCenter;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -403,7 +505,8 @@ public class MapGridManager : MonoBehaviour
     {
         if (cellStep.x < cellSize.x || cellStep.y < cellSize.y)
         {
-            cellStep = new Vector2(100f, 80f);
+            cellSize = new Vector2(76f, 48f);
+            cellStep = new Vector2(88f, 60f);
         }
 
         // MapPanel 之前可能挂过 GridLayoutGroup。
@@ -418,6 +521,8 @@ public class MapGridManager : MonoBehaviour
     private struct MapBounds
     {
         public int minX;
+        public int maxX;
+        public int minY;
         public int maxY;
     }
 
