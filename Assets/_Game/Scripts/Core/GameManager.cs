@@ -42,6 +42,7 @@ public class GameManager : MonoBehaviour
         EnsureComponent<DayEventManager>();
         EnsureComponent<BattleManager>();
         EnsureComponent<TutorialManager>();
+        EnsureComponent<SaveButtonOverrideManager>();
     }
 
     private void EnsureComponent<T>() where T : Component
