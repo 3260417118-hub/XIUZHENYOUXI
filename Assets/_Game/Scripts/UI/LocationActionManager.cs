@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 负责根据当前地点生成行为按钮和 NPC 按钮。
-/// 地点行为会消耗行动点；NPC 对话不消耗行动点。
+/// 地点行为会消耗行动点；NPC 对话和阻塞事件 NPC 不消耗行动点。
 /// </summary>
 public class LocationActionManager : MonoBehaviour
 {
@@ -35,7 +35,6 @@ public class LocationActionManager : MonoBehaviour
         locationUIManager = locationUI;
         actionButtonContainer = actionContainer;
         npcButtonContainer = npcContainer;
-
         EnsureDialogueManager();
     }
 
@@ -120,6 +119,41 @@ public class LocationActionManager : MonoBehaviour
         ClearButtons();
     }
 
+    /// <summary>
+    /// 给阻塞式事件创建底部选项按钮。
+    /// 这些按钮复用“可执行”区域，但不消耗行动点。
+    /// </summary>
+    public void CreateEncounterOptionButtons(List<BlockingEncounterOptionData> options, System.Action<BlockingEncounterOptionData> onOptionClicked)
+    {
+        ClearCurrentButtons();
+
+        if (actionButtonContainer == null)
+        {
+            return;
+        }
+
+        CreateLabel(actionButtonContainer, "选项：");
+
+        if (options == null || options.Count == 0)
+        {
+            CreateLabel(actionButtonContainer, "无");
+            return;
+        }
+
+        foreach (BlockingEncounterOptionData option in options)
+        {
+            BlockingEncounterOptionData captured = option;
+            Button button = CreateButton(actionButtonContainer, option.text, 140f);
+            button.onClick.AddListener(delegate
+            {
+                if (onOptionClicked != null)
+                {
+                    onOptionClicked(captured);
+                }
+            });
+        }
+    }
+
     private void CreateActionButtons(MapCellData currentCell)
     {
         if (actionButtonContainer == null)
@@ -159,18 +193,35 @@ public class LocationActionManager : MonoBehaviour
 
         CreateLabel(npcButtonContainer, "人物：");
 
-        if (currentCell.npcIds == null || currentCell.npcIds.Length == 0)
+        bool hasAnyNpc = false;
+
+        if (currentCell.npcIds != null)
         {
-            CreateLabel(npcButtonContainer, "无");
-            return;
+            foreach (string npcId in currentCell.npcIds)
+            {
+                string npcName = GetNpcName(npcId);
+                Button button = CreateButton(npcButtonContainer, npcName, 120f);
+                string capturedNpcId = npcId;
+                button.onClick.AddListener(delegate { StartNpcDialogue(capturedNpcId); });
+                hasAnyNpc = true;
+            }
         }
 
-        foreach (string npcId in currentCell.npcIds)
+        BlockingEncounterManager blockingEncounterManager = GetComponent<BlockingEncounterManager>();
+        if (blockingEncounterManager != null && blockingEncounterManager.HasActiveBlockingEncounter())
         {
-            string npcName = GetNpcName(npcId);
-            Button button = CreateButton(npcButtonContainer, npcName, 120f);
-            string capturedNpcId = npcId;
-            button.onClick.AddListener(delegate { StartNpcDialogue(capturedNpcId); });
+            string encounterNpcName = blockingEncounterManager.GetActiveEncounterNpcName();
+            if (!string.IsNullOrEmpty(encounterNpcName))
+            {
+                Button button = CreateButton(npcButtonContainer, encounterNpcName, 120f);
+                button.onClick.AddListener(blockingEncounterManager.StartActiveEncounterDialogue);
+                hasAnyNpc = true;
+            }
+        }
+
+        if (!hasAnyNpc)
+        {
+            CreateLabel(npcButtonContainer, "无");
         }
     }
 
@@ -193,6 +244,16 @@ public class LocationActionManager : MonoBehaviour
 
     private void ExecuteAction(LocationActionData actionData)
     {
+        if (OpeningStoryManager.IsOpeningActive || BattleManager.IsBattleOpen)
+        {
+            if (locationUIManager != null)
+            {
+                locationUIManager.ShowMessage("请先处理当前事件。");
+            }
+
+            return;
+        }
+
         if (actionData == null || gameManager == null || actionPointManager == null)
         {
             return;
@@ -241,6 +302,7 @@ public class LocationActionManager : MonoBehaviour
         colors.pressedColor = hasEnough
             ? new Color(0.22f, 0.25f, 0.28f, 1f)
             : new Color(0.16f, 0.16f, 0.18f, 1f);
+        colors.disabledColor = new Color(0.18f, 0.19f, 0.21f, 1f);
         button.colors = colors;
 
         Image image = button.targetGraphic as Image;
