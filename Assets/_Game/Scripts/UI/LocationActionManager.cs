@@ -3,8 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 负责根据当前地点生成行为按钮和人物占位按钮。
-/// 这里只做最简单的 Demo 占位，不做完整 NPC 对话、商店或背包。
+/// 负责根据当前地点生成行为按钮和 NPC 按钮。
+/// 地点行为会消耗行动点；NPC 对话不消耗行动点。
 /// </summary>
 public class LocationActionManager : MonoBehaviour
 {
@@ -12,6 +12,7 @@ public class LocationActionManager : MonoBehaviour
     [SerializeField] private MapGridManager mapGridManager;
     [SerializeField] private ActionPointManager actionPointManager;
     [SerializeField] private LocationUIManager locationUIManager;
+    [SerializeField] private DialogueManager dialogueManager;
     [SerializeField] private RectTransform actionButtonContainer;
     [SerializeField] private RectTransform npcButtonContainer;
     [SerializeField] private string actionDataResourcePath = "Data/location_actions";
@@ -34,12 +35,30 @@ public class LocationActionManager : MonoBehaviour
         locationUIManager = locationUI;
         actionButtonContainer = actionContainer;
         npcButtonContainer = npcContainer;
+
+        EnsureDialogueManager();
     }
 
     private void Start()
     {
         LoadActions();
+        EnsureDialogueManager();
         RefreshCurrentLocation();
+    }
+
+    private void EnsureDialogueManager()
+    {
+        if (dialogueManager == null)
+        {
+            dialogueManager = GetComponent<DialogueManager>();
+        }
+
+        if (dialogueManager == null)
+        {
+            dialogueManager = gameObject.AddComponent<DialogueManager>();
+        }
+
+        dialogueManager.SetReferences(locationUIManager, this, actionButtonContainer, npcButtonContainer);
     }
 
     public void LoadActions()
@@ -73,7 +92,13 @@ public class LocationActionManager : MonoBehaviour
 
     public void RefreshCurrentLocation()
     {
-        ClearButtons();
+        ClearCurrentButtons();
+        EnsureDialogueManager();
+
+        if (dialogueManager != null && dialogueManager.IsDialogueOpen)
+        {
+            return;
+        }
 
         if (mapGridManager == null)
         {
@@ -88,6 +113,11 @@ public class LocationActionManager : MonoBehaviour
 
         CreateActionButtons(currentCell);
         CreateNpcButtons(currentCell);
+    }
+
+    public void ClearCurrentButtons()
+    {
+        ClearButtons();
     }
 
     private void CreateActionButtons(MapCellData currentCell)
@@ -113,7 +143,7 @@ public class LocationActionManager : MonoBehaviour
                 continue;
             }
 
-            Button button = CreateButton(actionButtonContainer, actionData.name);
+            Button button = CreateButton(actionButtonContainer, actionData.name, 120f);
             LocationActionData capturedAction = actionData;
             button.onClick.AddListener(delegate { ExecuteAction(capturedAction); });
             RefreshActionButtonInteractable(button, actionData);
@@ -138,10 +168,27 @@ public class LocationActionManager : MonoBehaviour
         foreach (string npcId in currentCell.npcIds)
         {
             string npcName = GetNpcName(npcId);
-            Button button = CreateButton(npcButtonContainer, npcName);
+            Button button = CreateButton(npcButtonContainer, npcName, 120f);
             string capturedNpcId = npcId;
-            button.onClick.AddListener(delegate { ShowNpcPlaceholderMessage(capturedNpcId); });
+            button.onClick.AddListener(delegate { StartNpcDialogue(capturedNpcId); });
         }
+    }
+
+    private void StartNpcDialogue(string npcId)
+    {
+        EnsureDialogueManager();
+
+        if (dialogueManager == null)
+        {
+            if (locationUIManager != null)
+            {
+                locationUIManager.ShowMessage("对话系统未初始化。");
+            }
+
+            return;
+        }
+
+        dialogueManager.StartDialogueByNpcId(npcId);
     }
 
     private void ExecuteAction(LocationActionData actionData)
@@ -205,49 +252,32 @@ public class LocationActionManager : MonoBehaviour
 
     private string GetNpcName(string npcId)
     {
-        if (npcId == "shop_owner")
-        {
-            return "老板";
-        }
+        EnsureDialogueManager();
 
-        if (npcId == "shop_assistant")
+        if (dialogueManager != null)
         {
-            return "店小二";
+            string npcName = dialogueManager.GetNpcName(npcId);
+            if (!string.IsNullOrEmpty(npcName))
+            {
+                return npcName;
+            }
         }
 
         return npcId;
     }
 
-    private void ShowNpcPlaceholderMessage(string npcId)
+    private Button CreateButton(RectTransform parent, string text, float preferredWidth)
     {
-        if (locationUIManager == null)
-        {
-            return;
-        }
-
-        if (npcId == "shop_owner")
-        {
-            locationUIManager.ShowMessage("老板笑眯眯地看着你：客官，要买点什么？商店系统暂未开放。");
-            return;
-        }
-
-        if (npcId == "shop_assistant")
-        {
-            locationUIManager.ShowMessage("店小二压低声音说道：最近山路东边不太平，客官可要小心。");
-            return;
-        }
-
-        locationUIManager.ShowMessage("你和" + GetNpcName(npcId) + "打了个招呼。");
-    }
-
-    private Button CreateButton(RectTransform parent, string text)
-    {
-        GameObject buttonObject = new GameObject(text + "Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        GameObject buttonObject = new GameObject(text + "Button", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
         buttonObject.transform.SetParent(parent, false);
         createdButtons.Add(buttonObject);
 
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(120f, 30f);
+        rect.sizeDelta = new Vector2(preferredWidth, 30f);
+
+        LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
+        layout.preferredWidth = preferredWidth;
+        layout.preferredHeight = 30f;
 
         Image image = buttonObject.GetComponent<Image>();
         image.color = new Color(0.30f, 0.34f, 0.38f, 1f);
