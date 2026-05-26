@@ -20,20 +20,18 @@ public class PlayerState
     public string realm;
     public int spiritStones;
 
-    /// <summary>
-    /// 已获得的剧情标记。
-    /// 例如：heard_mountain_bell、found_glowing_herb。
-    /// </summary>
+    public bool hasSeenOpening;
+    public int hp;
+    public int maxHp;
+    public int attack;
+    public int defense;
+
     public List<string> flags = new List<string>();
-
-    /// <summary>
-    /// 已触发过首次进入事件的地点 id。
-    /// 用来避免同一个地点事件反复触发。
-    /// </summary>
     public List<string> visitedCellIds = new List<string>();
+    public List<string> dayEventsTriggered = new List<string>();
 
     /// <summary>
-    /// 兼容旧存档：旧存档里没有 flags / visitedCellIds 时，读取后要补上空列表。
+    /// 兼容旧存档：旧存档里没有列表或战斗属性时，读取后要补默认值。
     /// </summary>
     public void EnsureLists()
     {
@@ -45,6 +43,31 @@ public class PlayerState
         if (visitedCellIds == null)
         {
             visitedCellIds = new List<string>();
+        }
+
+        if (dayEventsTriggered == null)
+        {
+            dayEventsTriggered = new List<string>();
+        }
+
+        if (maxHp <= 0)
+        {
+            maxHp = 100;
+        }
+
+        if (hp <= 0)
+        {
+            hp = maxHp;
+        }
+
+        if (attack <= 0)
+        {
+            attack = 15;
+        }
+
+        if (defense <= 0)
+        {
+            defense = 3;
         }
     }
 
@@ -106,6 +129,31 @@ public class PlayerState
         if (!visitedCellIds.Contains(cellId))
         {
             visitedCellIds.Add(cellId);
+        }
+    }
+
+    public bool HasTriggeredDayEvent(string eventId)
+    {
+        if (string.IsNullOrEmpty(eventId))
+        {
+            return false;
+        }
+
+        EnsureLists();
+        return dayEventsTriggered.Contains(eventId);
+    }
+
+    public void AddTriggeredDayEvent(string eventId)
+    {
+        if (string.IsNullOrEmpty(eventId))
+        {
+            return;
+        }
+
+        EnsureLists();
+        if (!dayEventsTriggered.Contains(eventId))
+        {
+            dayEventsTriggered.Add(eventId);
         }
     }
 }
