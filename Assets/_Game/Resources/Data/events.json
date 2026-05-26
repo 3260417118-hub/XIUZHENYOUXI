@@ -74,6 +74,31 @@
           "closeEvent": true
         }
       ]
+    },
+    {
+      "id": "event_ruined_temple_old_man",
+      "title": "破庙风声",
+      "text": "破庙案前灰尘很厚，庙后传来一阵低沉风声，像有人在远处叹息。",
+      "options": [
+        {
+          "text": "记下异常",
+          "message": "你记住了破庙中的怪异风声。",
+          "setFlags": ["noticed_ruined_temple_wind"],
+          "cultivationGain": 0,
+          "spiritStoneGain": 0,
+          "nextEventId": "",
+          "closeEvent": true
+        },
+        {
+          "text": "暂时离开",
+          "message": "你没有在破庙久留。",
+          "setFlags": [],
+          "cultivationGain": 0,
+          "spiritStoneGain": 0,
+          "nextEventId": "",
+          "closeEvent": true
+        }
+      ]
     }
   ]
 }
