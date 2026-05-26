@@ -23,6 +23,10 @@ public class GameManager : MonoBehaviour
         {
             InitNewGame();
         }
+        else
+        {
+            playerState.EnsureLists();
+        }
 
         EnsureSaveManager();
     }
@@ -56,10 +60,16 @@ public class GameManager : MonoBehaviour
         playerState.cultivation = 0;
         playerState.realm = "凡人";
         playerState.spiritStones = 0;
+        playerState.EnsureLists();
     }
 
     public PlayerState GetPlayerState()
     {
+        if (playerState != null)
+        {
+            playerState.EnsureLists();
+        }
+
         return playerState;
     }
 }
