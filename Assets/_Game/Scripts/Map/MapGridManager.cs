@@ -19,6 +19,7 @@ public class MapGridManager : MonoBehaviour
     [SerializeField] private Vector2 cellSize = new Vector2(92f, 58f);
     [SerializeField] private Vector2 cellStep = new Vector2(108f, 70f);
     [SerializeField] private float connectionLineThickness = 4f;
+    [SerializeField] private Vector2 edgePadding = new Vector2(18f, 18f);
 
     private readonly Dictionary<string, MapCellData> cellById = new Dictionary<string, MapCellData>();
     private readonly List<MapCellData> allCells = new List<MapCellData>();
@@ -28,7 +29,7 @@ public class MapGridManager : MonoBehaviour
     /// <summary>
     /// 当前地图视窗中心对应的世界坐标。
     /// 初始为 (0,0)，所以村口会出现在地图面板正中间。
-    /// 玩家走远后才会平移视窗，避免远处地点跑出屏幕。
+    /// 当前可见格子快溢出边界时，会自动平移这个中心。
     /// </summary>
     private int viewportCenterX;
     private int viewportCenterY;
@@ -51,6 +52,7 @@ public class MapGridManager : MonoBehaviour
     {
         cellSize = newCellSize;
         cellStep = newCellStep;
+        edgePadding = newMapPadding;
         viewportCenterX = 0;
         viewportCenterY = 0;
     }
@@ -83,6 +85,7 @@ public class MapGridManager : MonoBehaviour
         visibleRange = Mathf.Max(visibleRange, 3);
         cellSize = new Vector2(92f, 58f);
         cellStep = new Vector2(108f, 70f);
+        edgePadding = new Vector2(18f, 18f);
     }
 
     /// <summary>
@@ -186,7 +189,6 @@ public class MapGridManager : MonoBehaviour
         PrepareMapPanelForManualLayout();
 
         PlayerState playerState = gameManager.GetPlayerState();
-        UpdateViewportCenterIfNeeded(playerState);
 
         List<MapCellData> visibleCells = new List<MapCellData>();
         foreach (MapCellData cell in allCells)
@@ -196,6 +198,9 @@ public class MapGridManager : MonoBehaviour
                 visibleCells.Add(cell);
             }
         }
+
+        // 先根据当前可见格子修正视窗中心，确保不会溢出 MapPanel。
+        UpdateViewportCenterForVisibleCells(visibleCells);
 
         // 按 y 从上到下、x 从左到右排序，让按钮看起来更像地图。
         visibleCells.Sort(CompareCellsForDisplay);
@@ -269,41 +274,78 @@ public class MapGridManager : MonoBehaviour
         return left.x.CompareTo(right.x);
     }
 
-    /// <summary>
-    /// 初始时 viewportCenter 是 (0,0)，所以村口在面板中心。
-    /// 当玩家走得太远时，才缓慢平移视窗，避免远处地点跑出屏幕。
-    /// </summary>
-    private void UpdateViewportCenterIfNeeded(PlayerState playerState)
+    private MapBounds CalculateBounds(List<MapCellData> cells)
     {
-        if (playerState == null || mapPanel == null)
+        MapBounds bounds = new MapBounds();
+        if (cells == null || cells.Count == 0)
+        {
+            return bounds;
+        }
+
+        bounds.minX = cells[0].x;
+        bounds.maxX = cells[0].x;
+        bounds.minY = cells[0].y;
+        bounds.maxY = cells[0].y;
+
+        foreach (MapCellData cell in cells)
+        {
+            bounds.minX = Mathf.Min(bounds.minX, cell.x);
+            bounds.maxX = Mathf.Max(bounds.maxX, cell.x);
+            bounds.minY = Mathf.Min(bounds.minY, cell.y);
+            bounds.maxY = Mathf.Max(bounds.maxY, cell.y);
+        }
+
+        return bounds;
+    }
+
+    /// <summary>
+    /// 让可见格子始终留在地图面板内。
+    /// 初始时 (0,0) 居中；如果当前可见范围会溢出，就把视窗中心平移到刚好能容纳的位置。
+    /// </summary>
+    private void UpdateViewportCenterForVisibleCells(List<MapCellData> visibleCells)
+    {
+        if (visibleCells == null || visibleCells.Count == 0 || mapPanel == null)
         {
             return;
         }
 
-        float halfWidth = mapPanel.rect.width * 0.5f;
-        float halfHeight = mapPanel.rect.height * 0.5f;
-        float safeX = Mathf.Max(cellStep.x * 2f, halfWidth - cellStep.x * 2f);
-        float safeY = Mathf.Max(cellStep.y * 2f, halfHeight - cellStep.y * 2f);
+        MapBounds bounds = CalculateBounds(visibleCells);
 
-        while ((playerState.currentX - viewportCenterX) * cellStep.x > safeX)
+        float maxOffsetX = Mathf.Max(
+            cellStep.x,
+            mapPanel.rect.width * 0.5f - cellSize.x * 0.5f - edgePadding.x);
+        float maxOffsetY = Mathf.Max(
+            cellStep.y,
+            mapPanel.rect.height * 0.5f - cellSize.y * 0.5f - edgePadding.y);
+
+        viewportCenterX = ClampViewportCenter(
+            viewportCenterX,
+            bounds.minX,
+            bounds.maxX,
+            maxOffsetX,
+            cellStep.x);
+
+        viewportCenterY = ClampViewportCenter(
+            viewportCenterY,
+            bounds.minY,
+            bounds.maxY,
+            maxOffsetY,
+            cellStep.y);
+    }
+
+    private int ClampViewportCenter(int currentCenter, int minCell, int maxCell, float maxOffset, float step)
+    {
+        float cellsThatFitEachSide = maxOffset / Mathf.Max(1f, step);
+        int lowerLimit = Mathf.CeilToInt(maxCell - cellsThatFitEachSide);
+        int upperLimit = Mathf.FloorToInt(minCell + cellsThatFitEachSide);
+
+        if (lowerLimit > upperLimit)
         {
-            viewportCenterX++;
+            // 当前面板确实放不下全部可见格时，退而求其次放到可见范围中点。
+            return Mathf.RoundToInt((minCell + maxCell) * 0.5f);
         }
 
-        while ((playerState.currentX - viewportCenterX) * cellStep.x < -safeX)
-        {
-            viewportCenterX--;
-        }
-
-        while ((playerState.currentY - viewportCenterY) * cellStep.y > safeY)
-        {
-            viewportCenterY++;
-        }
-
-        while ((playerState.currentY - viewportCenterY) * cellStep.y < -safeY)
-        {
-            viewportCenterY--;
-        }
+        return Mathf.Clamp(currentCenter, lowerLimit, upperLimit);
     }
 
     private Vector2 GetCellCenterPosition(MapCellData cell)
@@ -452,6 +494,14 @@ public class MapGridManager : MonoBehaviour
         {
             layoutGroup.enabled = false;
         }
+    }
+
+    private struct MapBounds
+    {
+        public int minX;
+        public int maxX;
+        public int minY;
+        public int maxY;
     }
 
     private void CreateConnectionLines(List<MapCellData> visibleCells)
