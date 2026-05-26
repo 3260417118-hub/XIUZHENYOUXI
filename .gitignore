@@ -17,6 +17,7 @@
 
 .vscode/
 .idea/
+.vs/
 
 .DS_Store
 Thumbs.db
