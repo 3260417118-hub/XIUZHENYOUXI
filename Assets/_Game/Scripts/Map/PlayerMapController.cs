@@ -10,6 +10,7 @@ public class PlayerMapController : MonoBehaviour
     [SerializeField] private MapGridManager mapGridManager;
     [SerializeField] private LocationUIManager locationUIManager;
     [SerializeField] private LocationActionManager locationActionManager;
+    [SerializeField] private EventManager eventManager;
 
     public void SetReferences(
         GameManager game,
@@ -21,6 +22,25 @@ public class PlayerMapController : MonoBehaviour
         mapGridManager = mapGrid;
         locationUIManager = locationUI;
         locationActionManager = actionManager;
+        EnsureEventManager();
+    }
+
+    private void Start()
+    {
+        EnsureEventManager();
+    }
+
+    private void EnsureEventManager()
+    {
+        if (eventManager == null)
+        {
+            eventManager = GetComponent<EventManager>();
+        }
+
+        if (eventManager == null)
+        {
+            eventManager = gameObject.AddComponent<EventManager>();
+        }
     }
 
     /// <summary>
@@ -74,6 +94,7 @@ public class PlayerMapController : MonoBehaviour
         }
 
         PlayerState playerState = gameManager.GetPlayerState();
+        playerState.EnsureLists();
         playerState.currentCellId = targetCell.id;
         playerState.currentX = targetCell.x;
         playerState.currentY = targetCell.y;
@@ -92,6 +113,12 @@ public class PlayerMapController : MonoBehaviour
         if (locationActionManager != null)
         {
             locationActionManager.RefreshCurrentLocation();
+        }
+
+        EnsureEventManager();
+        if (eventManager != null)
+        {
+            eventManager.TryShowFirstEnterEvent(targetCell);
         }
 
         return true;
