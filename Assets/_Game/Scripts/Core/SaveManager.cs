@@ -21,6 +21,8 @@ public class SaveManager : MonoBehaviour
     [SerializeField] private Button loadGameButton;
     [SerializeField] private Button newGameButton;
 
+    private const float SaveButtonWidth = 100f;
+    private const float SaveButtonGap = 22f;
     private Font cachedFont;
 
     private string SaveFilePath
@@ -263,6 +265,7 @@ public class SaveManager : MonoBehaviour
 
         if (saveGameButton != null && loadGameButton != null && newGameButton != null)
         {
+            MoveSaveButtonsAwayFromEndDayButton();
             return;
         }
 
@@ -289,20 +292,56 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
+        // 从右往左排列：结束今日 <- 保存游戏 <- 读取游戏 <- 新游戏。
+        // 之前间距太小，保存游戏会贴到结束今日上，所以这里用更大的按钮间距。
         if (newGameButton == null)
         {
-            newGameButton = CreateTopButton(parent, "NewGameButton", "新游戏", endDayRect, -330f);
+            newGameButton = CreateTopButton(parent, "NewGameButton", "新游戏", endDayRect, GetButtonOffsetFromEndDay(3));
         }
 
         if (loadGameButton == null)
         {
-            loadGameButton = CreateTopButton(parent, "LoadGameButton", "读取游戏", endDayRect, -220f);
+            loadGameButton = CreateTopButton(parent, "LoadGameButton", "读取游戏", endDayRect, GetButtonOffsetFromEndDay(2));
         }
 
         if (saveGameButton == null)
         {
-            saveGameButton = CreateTopButton(parent, "SaveGameButton", "保存游戏", endDayRect, -110f);
+            saveGameButton = CreateTopButton(parent, "SaveGameButton", "保存游戏", endDayRect, GetButtonOffsetFromEndDay(1));
         }
+    }
+
+    private void MoveSaveButtonsAwayFromEndDayButton()
+    {
+        Button endDayButton = FindButton("EndDayButton");
+        if (endDayButton == null)
+        {
+            return;
+        }
+
+        RectTransform endDayRect = endDayButton.GetComponent<RectTransform>();
+        MoveTopButton(newGameButton, endDayRect, GetButtonOffsetFromEndDay(3));
+        MoveTopButton(loadGameButton, endDayRect, GetButtonOffsetFromEndDay(2));
+        MoveTopButton(saveGameButton, endDayRect, GetButtonOffsetFromEndDay(1));
+    }
+
+    private float GetButtonOffsetFromEndDay(int indexFromEndDay)
+    {
+        return -(SaveButtonWidth + SaveButtonGap) * indexFromEndDay;
+    }
+
+    private void MoveTopButton(Button button, RectTransform referenceRect, float offsetX)
+    {
+        if (button == null || referenceRect == null)
+        {
+            return;
+        }
+
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.anchorMin = referenceRect.anchorMin;
+        rect.anchorMax = referenceRect.anchorMax;
+        rect.pivot = referenceRect.pivot;
+        rect.sizeDelta = new Vector2(SaveButtonWidth, referenceRect.sizeDelta.y <= 0f ? 44f : referenceRect.sizeDelta.y);
+        rect.anchoredPosition = referenceRect.anchoredPosition + new Vector2(offsetX, 0f);
     }
 
     private Button FindButton(string objectName)
@@ -327,7 +366,7 @@ public class SaveManager : MonoBehaviour
             rect.anchorMin = referenceRect.anchorMin;
             rect.anchorMax = referenceRect.anchorMax;
             rect.pivot = referenceRect.pivot;
-            rect.sizeDelta = new Vector2(100f, referenceRect.sizeDelta.y <= 0f ? 44f : referenceRect.sizeDelta.y);
+            rect.sizeDelta = new Vector2(SaveButtonWidth, referenceRect.sizeDelta.y <= 0f ? 44f : referenceRect.sizeDelta.y);
             rect.anchoredPosition = referenceRect.anchoredPosition + new Vector2(offsetX, 0f);
         }
         else
@@ -335,7 +374,7 @@ public class SaveManager : MonoBehaviour
             rect.anchorMin = new Vector2(1f, 1f);
             rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = new Vector2(1f, 1f);
-            rect.sizeDelta = new Vector2(100f, 44f);
+            rect.sizeDelta = new Vector2(SaveButtonWidth, 44f);
             rect.anchoredPosition = new Vector2(-20f + offsetX, -20f);
         }
 
