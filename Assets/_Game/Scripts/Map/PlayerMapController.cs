@@ -9,12 +9,18 @@ public class PlayerMapController : MonoBehaviour
     [SerializeField] private GameManager gameManager;
     [SerializeField] private MapGridManager mapGridManager;
     [SerializeField] private LocationUIManager locationUIManager;
+    [SerializeField] private LocationActionManager locationActionManager;
 
-    public void SetReferences(GameManager game, MapGridManager mapGrid, LocationUIManager locationUI)
+    public void SetReferences(
+        GameManager game,
+        MapGridManager mapGrid,
+        LocationUIManager locationUI,
+        LocationActionManager actionManager)
     {
         gameManager = game;
         mapGridManager = mapGrid;
         locationUIManager = locationUI;
+        locationActionManager = actionManager;
     }
 
     /// <summary>
@@ -44,10 +50,8 @@ public class PlayerMapController : MonoBehaviour
         }
 
         PlayerState playerState = gameManager.GetPlayerState();
-        int dx = Mathf.Abs(targetCell.x - playerState.currentX);
-        int dy = Mathf.Abs(targetCell.y - playerState.currentY);
 
-        if (dx + dy != 1)
+        if (!MapRuleUtility.IsOrthogonalNeighbor(playerState.currentX, playerState.currentY, targetCell.x, targetCell.y))
         {
             message = "只能移动到上下左右相邻的格子。";
             return false;
@@ -83,6 +87,11 @@ public class PlayerMapController : MonoBehaviour
         {
             locationUIManager.RefreshLocation(targetCell, playerState);
             locationUIManager.ShowMessage("你来到了：" + targetCell.name);
+        }
+
+        if (locationActionManager != null)
+        {
+            locationActionManager.RefreshCurrentLocation();
         }
 
         return true;

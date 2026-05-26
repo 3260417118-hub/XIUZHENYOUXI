@@ -487,8 +487,8 @@ RectTransform:
   m_Children:
   - {fileID: 1674942739}
   - {fileID: 43081906}
-  - {fileID: 1030269542}
   - {fileID: 829383200}
+  - {fileID: 1030269542}
   - {fileID: 1686152382}
   m_Father: {fileID: 1530912915}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1080,7 +1080,6 @@ GameObject:
   - component: {fileID: 1361300535}
   - component: {fileID: 1361300538}
   - component: {fileID: 1361300537}
-  - component: {fileID: 1361300536}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: MapPanel
@@ -1108,30 +1107,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -48, y: -32}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1361300536
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1361300534}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Padding:
-    m_Left: 16
-    m_Right: 16
-    m_Top: 16
-    m_Bottom: 16
-  m_ChildAlignment: 0
-  m_StartCorner: 0
-  m_StartAxis: 0
-  m_CellSize: {x: 120, y: 80}
-  m_Spacing: {x: 8, y: 8}
-  m_Constraint: 1
-  m_ConstraintCount: 5
 --- !u!114 &1361300537
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1406,6 +1381,8 @@ GameObject:
   - component: {fileID: 1530455418}
   - component: {fileID: 1530455417}
   - component: {fileID: 1530455416}
+  - component: {fileID: 1530455421}
+  - component: {fileID: 1530455420}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: GameRoot
@@ -1444,6 +1421,7 @@ MonoBehaviour:
   gameManager: {fileID: 1530455419}
   mapGridManager: {fileID: 1530455418}
   locationUIManager: {fileID: 1530455417}
+  locationActionManager: {fileID: 1530455420}
 --- !u!114 &1530455417
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1478,9 +1456,14 @@ MonoBehaviour:
   gameManager: {fileID: 1530455419}
   playerMapController: {fileID: 1530455416}
   locationUIManager: {fileID: 1530455417}
+  locationActionManager: {fileID: 1530455420}
   mapPanel: {fileID: 1361300535}
   mapDataResourcePath: Data/map_cells
   visibleRange: 2
+  cellSize: {x: 86, y: 58}
+  cellStep: {x: 100, y: 80}
+  mapPadding: {x: 20, y: 20}
+  connectionLineThickness: 4
 --- !u!114 &1530455419
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1503,6 +1486,41 @@ MonoBehaviour:
     cultivation: 0
     realm: "\u51E1\u4EBA"
     spiritStones: 0
+--- !u!114 &1530455420
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530455414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18da9a8c30ff22942891577ab064b83c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameManager: {fileID: 1530455419}
+  mapGridManager: {fileID: 1530455418}
+  actionPointManager: {fileID: 1530455421}
+  locationUIManager: {fileID: 1530455417}
+  actionButtonContainer: {fileID: 829383200}
+  npcButtonContainer: {fileID: 1030269542}
+  actionDataResourcePath: Data/location_actions
+--- !u!114 &1530455421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530455414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57cb96504f2cef4418142c07afdc972d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameManager: {fileID: 1530455419}
+  locationUIManager: {fileID: 1530455417}
+  locationActionManager: {fileID: 1530455420}
+  endDayButton: {fileID: 1469909860}
 --- !u!1 &1530912911
 GameObject:
   m_ObjectHideFlags: 0

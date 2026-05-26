@@ -18,14 +18,24 @@
       "description": "青石山路沿着山势延伸，路旁有风吹过竹林的声音。",
       "walkable": true,
       "npcIds": [],
-      "actionIds": []
+      "actionIds": ["observe"]
+    },
+    {
+      "id": "mountain_path_east",
+      "name": "山路东段",
+      "x": 2,
+      "y": 0,
+      "description": "山路向东延伸，路面比西侧更陡，远处能看见商店的灯火。",
+      "walkable": true,
+      "npcIds": [],
+      "actionIds": ["observe"]
     },
     {
       "id": "shop",
       "name": "商店",
-      "x": 2,
+      "x": 3,
       "y": 0,
-      "description": "小镇商店里摆着药草、符纸和粗布包裹。老板和小二正在柜台后忙碌。",
+      "description": "这是一间老旧商铺，柜台后站着老板，旁边的店小二正在擦拭货架。",
       "walkable": true,
       "npcIds": ["shop_owner", "shop_assistant"],
       "actionIds": []
@@ -38,17 +48,17 @@
       "description": "阁楼安静避风，窗边有一张旧蒲团，适合静坐感应灵气。",
       "walkable": true,
       "npcIds": [],
-      "actionIds": []
+      "actionIds": ["read_books", "look_around_attic"]
     },
     {
       "id": "herb_field",
       "name": "药田",
       "x": 1,
       "y": -1,
-      "description": "药田里种着几畦低阶灵草，泥土带着淡淡草木香。",
+      "description": "药田中灵草稀疏，偶尔能见到几株带着微光的灵药。",
       "walkable": true,
       "npcIds": [],
-      "actionIds": []
+      "actionIds": ["cultivate", "gather_herbs", "observe"]
     },
     {
       "id": "sect_gate",

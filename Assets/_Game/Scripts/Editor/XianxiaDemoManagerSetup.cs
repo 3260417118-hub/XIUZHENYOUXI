@@ -31,9 +31,15 @@ public static class XianxiaDemoManagerSetup
         MapGridManager mapGridManager = GetOrAddComponent<MapGridManager>(gameRoot);
         LocationUIManager locationUIManager = GetOrAddComponent<LocationUIManager>(gameRoot);
         PlayerMapController playerMapController = GetOrAddComponent<PlayerMapController>(gameRoot);
+        ActionPointManager actionPointManager = GetOrAddComponent<ActionPointManager>(gameRoot);
+        LocationActionManager locationActionManager = GetOrAddComponent<LocationActionManager>(gameRoot);
 
         RectTransform mapPanel = FindRectTransform("MapPanel");
+        RectTransform actionButtonContainer = FindRectTransform("ActionButtonContainer");
+        RectTransform npcButtonContainer = FindRectTransform("NPCButtonContainer");
+        Button endDayButton = FindButton("EndDayButton");
         RemoveMapPanelLayoutGroups(mapPanel);
+        EnsureBottomPanelOrder();
 
         locationUIManager.SetReferences(
             FindText("DayText"),
@@ -44,14 +50,19 @@ public static class XianxiaDemoManagerSetup
             FindText("LocationDescriptionText"),
             FindText("MessageText"));
 
-        mapGridManager.SetReferences(gameManager, playerMapController, locationUIManager, mapPanel);
-        playerMapController.SetReferences(gameManager, mapGridManager, locationUIManager);
+        actionPointManager.SetReferences(gameManager, locationUIManager, locationActionManager, endDayButton);
+        locationActionManager.SetReferences(gameManager, mapGridManager, actionPointManager, locationUIManager, actionButtonContainer, npcButtonContainer);
+        mapGridManager.SetReferences(gameManager, playerMapController, locationUIManager, locationActionManager, mapPanel);
+        mapGridManager.SetLayoutSettings(new Vector2(86f, 58f), new Vector2(100f, 80f), new Vector2(20f, 20f));
+        playerMapController.SetReferences(gameManager, mapGridManager, locationUIManager, locationActionManager);
         gameManager.InitNewGame();
 
         EditorUtility.SetDirty(gameManager);
         EditorUtility.SetDirty(mapGridManager);
         EditorUtility.SetDirty(locationUIManager);
         EditorUtility.SetDirty(playerMapController);
+        EditorUtility.SetDirty(actionPointManager);
+        EditorUtility.SetDirty(locationActionManager);
         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
         AssetDatabase.Refresh();
@@ -60,7 +71,7 @@ public static class XianxiaDemoManagerSetup
 
         EditorUtility.DisplayDialog(
             "Demo 管理器设置完成",
-            "已在 GameRoot 上挂载并绑定：\nGameManager\nMapGridManager\nLocationUIManager\nPlayerMapController\n\n点击 Play 后会从 map_cells.json 生成地图按钮。",
+            "已在 GameRoot 上挂载并绑定：\nGameManager\nMapGridManager\nLocationUIManager\nPlayerMapController\nActionPointManager\nLocationActionManager\n\n点击 Play 后会生成地图、行为按钮和人物占位按钮。",
             "好的");
     }
 
@@ -122,6 +133,18 @@ public static class XianxiaDemoManagerSetup
         return target.GetComponent<RectTransform>();
     }
 
+    private static Button FindButton(string objectName)
+    {
+        GameObject target = GameObject.Find(objectName);
+        if (target == null)
+        {
+            Debug.LogWarning("找不到按钮对象：" + objectName);
+            return null;
+        }
+
+        return target.GetComponent<Button>();
+    }
+
     private static void RemoveMapPanelLayoutGroups(RectTransform mapPanel)
     {
         if (mapPanel == null)
@@ -137,6 +160,27 @@ public static class XianxiaDemoManagerSetup
         }
 
         EditorUtility.SetDirty(mapPanel);
+    }
+
+    private static void EnsureBottomPanelOrder()
+    {
+        SetSiblingIndex("LocationNameText", 0);
+        SetSiblingIndex("LocationDescriptionText", 1);
+        SetSiblingIndex("ActionButtonContainer", 2);
+        SetSiblingIndex("NPCButtonContainer", 3);
+        SetSiblingIndex("MessageText", 4);
+    }
+
+    private static void SetSiblingIndex(string objectName, int index)
+    {
+        GameObject target = GameObject.Find(objectName);
+        if (target == null)
+        {
+            return;
+        }
+
+        target.transform.SetSiblingIndex(index);
+        EditorUtility.SetDirty(target);
     }
 }
 #endif

@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 负责刷新 Demo 场景里的地点和状态文字。
-/// 这里只显示信息，不处理移动、对话、商店等玩法。
+/// 地点行为、人物按钮由 LocationActionManager 负责。
 /// </summary>
 public class LocationUIManager : MonoBehaviour
 {
@@ -45,7 +45,7 @@ public class LocationUIManager : MonoBehaviour
         {
             if (locationNameText != null)
             {
-                locationNameText.text = currentCell.name;
+                locationNameText.text = "【" + currentCell.name + "】";
             }
 
             if (locationDescriptionText != null)
@@ -89,7 +89,7 @@ public class LocationUIManager : MonoBehaviour
     {
         if (messageText != null)
         {
-            messageText.text = message;
+            messageText.text = "提示：\n" + message;
         }
     }
 }

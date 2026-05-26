@@ -11,29 +11,40 @@ public class MapGridManager : MonoBehaviour
     [SerializeField] private GameManager gameManager;
     [SerializeField] private PlayerMapController playerMapController;
     [SerializeField] private LocationUIManager locationUIManager;
+    [SerializeField] private LocationActionManager locationActionManager;
     [SerializeField] private RectTransform mapPanel;
 
     [SerializeField] private string mapDataResourcePath = "Data/map_cells";
     [SerializeField] private int visibleRange = 2;
-    [SerializeField] private Vector2 cellSize = new Vector2(120f, 80f);
-    [SerializeField] private Vector2 cellSpacing = new Vector2(8f, 8f);
-    [SerializeField] private Vector2 mapPadding = new Vector2(16f, 16f);
+    [SerializeField] private Vector2 cellSize = new Vector2(86f, 58f);
+    [SerializeField] private Vector2 cellStep = new Vector2(100f, 80f);
+    [SerializeField] private Vector2 mapPadding = new Vector2(20f, 20f);
+    [SerializeField] private float connectionLineThickness = 4f;
 
     private readonly Dictionary<string, MapCellData> cellById = new Dictionary<string, MapCellData>();
     private readonly List<MapCellData> allCells = new List<MapCellData>();
-    private readonly List<GameObject> createdButtons = new List<GameObject>();
+    private readonly List<GameObject> createdMapObjects = new List<GameObject>();
     private Font cachedFont;
 
     public void SetReferences(
         GameManager game,
         PlayerMapController mapController,
         LocationUIManager locationUI,
+        LocationActionManager actionManager,
         RectTransform panel)
     {
         gameManager = game;
         playerMapController = mapController;
         locationUIManager = locationUI;
+        locationActionManager = actionManager;
         mapPanel = panel;
+    }
+
+    public void SetLayoutSettings(Vector2 newCellSize, Vector2 newCellStep, Vector2 newMapPadding)
+    {
+        cellSize = newCellSize;
+        cellStep = newCellStep;
+        mapPadding = newMapPadding;
     }
 
     private void Start()
@@ -46,6 +57,11 @@ public class MapGridManager : MonoBehaviour
         {
             locationUIManager.RefreshLocation(GetCurrentCell(), gameManager.GetPlayerState());
             locationUIManager.ShowMessage("点击相邻格子开始移动。");
+        }
+
+        if (locationActionManager != null)
+        {
+            locationActionManager.RefreshCurrentLocation();
         }
     }
 
@@ -133,7 +149,9 @@ public class MapGridManager : MonoBehaviour
         // 按 y 从上到下、x 从左到右排序，让按钮看起来更像地图。
         visibleCells.Sort(CompareCellsForDisplay);
 
-        MapBounds bounds = CalculateBounds(visibleCells);
+        MapBounds bounds = CalculateBounds(allCells);
+
+        CreateConnectionLines(visibleCells, bounds);
 
         foreach (MapCellData cell in visibleCells)
         {
@@ -180,13 +198,12 @@ public class MapGridManager : MonoBehaviour
 
     private bool IsInVisibleRange(MapCellData cell, PlayerState playerState)
     {
-        int dx = Mathf.Abs(cell.x - playerState.currentX);
-        int dy = Mathf.Abs(cell.y - playerState.currentY);
-
-        // “周围 2 格范围”按坐标窗口理解：
-        // x 距离不超过 2，y 距离也不超过 2。
-        // 这样斜方向附近的地点也能显示，但移动仍然只允许上下左右一格。
-        return dx <= visibleRange && dy <= visibleRange;
+        return MapRuleUtility.IsInVisibleRange(
+            playerState.currentX,
+            playerState.currentY,
+            cell.x,
+            cell.y,
+            visibleRange);
     }
 
     private int CompareCellsForDisplay(MapCellData left, MapCellData right)
@@ -224,7 +241,7 @@ public class MapGridManager : MonoBehaviour
     {
         GameObject buttonObject = new GameObject(cell.id + "_Button", typeof(RectTransform), typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(mapPanel, false);
-        createdButtons.Add(buttonObject);
+        createdMapObjects.Add(buttonObject);
 
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
         PlaceCellButton(rect, cell, bounds);
@@ -263,16 +280,17 @@ public class MapGridManager : MonoBehaviour
 
     private void PlaceCellButton(RectTransform rect, MapCellData cell, MapBounds bounds)
     {
-        int column = cell.x - bounds.minX;
-        int row = bounds.maxY - cell.y;
-
         rect.anchorMin = new Vector2(0f, 1f);
         rect.anchorMax = new Vector2(0f, 1f);
         rect.pivot = new Vector2(0f, 1f);
         rect.sizeDelta = cellSize;
-        rect.anchoredPosition = new Vector2(
-            mapPadding.x + column * (cellSize.x + cellSpacing.x),
-            -mapPadding.y - row * (cellSize.y + cellSpacing.y));
+        rect.anchoredPosition = MapRuleUtility.GetCellAnchoredPosition(
+            cell.x,
+            cell.y,
+            bounds.minX,
+            bounds.maxY,
+            cellStep,
+            mapPadding);
     }
 
     private Color GetCellColor(MapCellData cell, bool isCurrentCell, bool canMove)
@@ -335,7 +353,7 @@ public class MapGridManager : MonoBehaviour
 
     private void ClearCreatedButtons()
     {
-        foreach (GameObject buttonObject in createdButtons)
+        foreach (GameObject buttonObject in createdMapObjects)
         {
             if (buttonObject == null)
             {
@@ -346,11 +364,16 @@ public class MapGridManager : MonoBehaviour
             Destroy(buttonObject);
         }
 
-        createdButtons.Clear();
+        createdMapObjects.Clear();
     }
 
     private void PrepareMapPanelForManualLayout()
     {
+        if (cellStep.x < cellSize.x || cellStep.y < cellSize.y)
+        {
+            cellStep = new Vector2(100f, 80f);
+        }
+
         // MapPanel 之前可能挂过 GridLayoutGroup。
         // 坐标地图不能交给 GridLayoutGroup 自动排版，否则会变成普通列表。
         LayoutGroup[] layoutGroups = mapPanel.GetComponents<LayoutGroup>();
@@ -364,5 +387,68 @@ public class MapGridManager : MonoBehaviour
     {
         public int minX;
         public int maxY;
+    }
+
+    private void CreateConnectionLines(List<MapCellData> visibleCells, MapBounds bounds)
+    {
+        for (int i = 0; i < visibleCells.Count; i++)
+        {
+            for (int j = i + 1; j < visibleCells.Count; j++)
+            {
+                MapCellData first = visibleCells[i];
+                MapCellData second = visibleCells[j];
+
+                if (MapRuleUtility.ShouldConnectCells(first, second))
+                {
+                    CreateConnectionLine(first, second, bounds);
+                }
+            }
+        }
+    }
+
+    private void CreateConnectionLine(MapCellData first, MapCellData second, MapBounds bounds)
+    {
+        GameObject lineObject = new GameObject(first.id + "_to_" + second.id + "_Line", typeof(RectTransform), typeof(Image));
+        lineObject.transform.SetParent(mapPanel, false);
+        lineObject.transform.SetAsFirstSibling();
+        createdMapObjects.Add(lineObject);
+
+        Image image = lineObject.GetComponent<Image>();
+        image.color = new Color(0.72f, 0.72f, 0.72f, 0.55f);
+        image.raycastTarget = false;
+
+        RectTransform rect = lineObject.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+
+        Vector2 firstCenter = GetCellCenterPosition(first, bounds);
+        Vector2 secondCenter = GetCellCenterPosition(second, bounds);
+        Vector2 middle = (firstCenter + secondCenter) * 0.5f;
+
+        rect.anchoredPosition = middle;
+
+        bool horizontal = first.y == second.y;
+        if (horizontal)
+        {
+            rect.sizeDelta = new Vector2(cellStep.x, connectionLineThickness);
+        }
+        else
+        {
+            rect.sizeDelta = new Vector2(connectionLineThickness, cellStep.y);
+        }
+    }
+
+    private Vector2 GetCellCenterPosition(MapCellData cell, MapBounds bounds)
+    {
+        Vector2 topLeft = MapRuleUtility.GetCellAnchoredPosition(
+            cell.x,
+            cell.y,
+            bounds.minX,
+            bounds.maxY,
+            cellStep,
+            mapPadding);
+
+        return topLeft + new Vector2(cellSize.x * 0.5f, -cellSize.y * 0.5f);
     }
 }

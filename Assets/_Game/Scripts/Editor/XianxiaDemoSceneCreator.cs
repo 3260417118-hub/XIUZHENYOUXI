@@ -192,8 +192,8 @@ public static class XianxiaDemoSceneCreator
 
         CreateText("LocationNameText", "青石小镇", bottomPanel, 26, TextAnchor.MiddleLeft, 34f, Color.white);
         CreateText("LocationDescriptionText", "这里显示当前格子的描述。", bottomPanel, 20, TextAnchor.UpperLeft, 64f, new Color(0.86f, 0.86f, 0.86f));
-        CreateButtonContainer("NPCButtonContainer", bottomPanel);
         CreateButtonContainer("ActionButtonContainer", bottomPanel);
+        CreateButtonContainer("NPCButtonContainer", bottomPanel);
         CreateText("MessageText", "消息提示会显示在这里。", bottomPanel, 18, TextAnchor.MiddleLeft, 34f, new Color(0.95f, 0.82f, 0.45f));
     }
 
