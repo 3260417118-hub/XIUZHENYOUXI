@@ -1,0 +1,79 @@
+{
+  "events": [
+    {
+      "id": "event_mountain_road_east_fog",
+      "title": "雾起山路",
+      "text": "你来到山路东段，山雾比想象中更浓。远处似乎有铃声传来。",
+      "options": [
+        {
+          "text": "仔细倾听",
+          "message": "你记住了那阵铃声。",
+          "setFlags": ["heard_mountain_bell"],
+          "cultivationGain": 0,
+          "spiritStoneGain": 0,
+          "nextEventId": "",
+          "closeEvent": true
+        },
+        {
+          "text": "不予理会",
+          "message": "你快步离开了这片雾气。",
+          "setFlags": [],
+          "cultivationGain": 0,
+          "spiritStoneGain": 0,
+          "nextEventId": "",
+          "closeEvent": true
+        }
+      ]
+    },
+    {
+      "id": "event_herb_field_glow",
+      "title": "药田微光",
+      "text": "药田角落有一株灵草微微发亮。",
+      "options": [
+        {
+          "text": "采下灵草",
+          "message": "背包系统暂未开放，你暂时记住了这株灵草。",
+          "setFlags": ["found_glowing_herb"],
+          "cultivationGain": 0,
+          "spiritStoneGain": 0,
+          "nextEventId": "",
+          "closeEvent": true
+        },
+        {
+          "text": "暂不触碰",
+          "message": "你决定先观察几日。",
+          "setFlags": [],
+          "cultivationGain": 0,
+          "spiritStoneGain": 0,
+          "nextEventId": "",
+          "closeEvent": true
+        }
+      ]
+    },
+    {
+      "id": "event_attic_old_slip",
+      "title": "阁楼旧简",
+      "text": "你在阁楼角落看到一卷积灰竹简。",
+      "options": [
+        {
+          "text": "翻开竹简",
+          "message": "你从竹简中悟出一点吐纳法门，修为提升。",
+          "setFlags": ["read_old_bamboo_slip"],
+          "cultivationGain": 5,
+          "spiritStoneGain": 0,
+          "nextEventId": "",
+          "closeEvent": true
+        },
+        {
+          "text": "放回原处",
+          "message": "你没有打扰这些旧物。",
+          "setFlags": [],
+          "cultivationGain": 0,
+          "spiritStoneGain": 0,
+          "nextEventId": "",
+          "closeEvent": true
+        }
+      ]
+    }
+  ]
+}
