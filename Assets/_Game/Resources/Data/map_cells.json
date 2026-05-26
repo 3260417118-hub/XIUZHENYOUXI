@@ -8,7 +8,8 @@
       "description": "村口立着一块旧木牌，远处山路蜿蜒向上。这里是你今日行程的起点。",
       "walkable": true,
       "npcIds": [],
-      "actionIds": []
+      "actionIds": [],
+      "firstEnterEventId": ""
     },
     {
       "id": "mountain_path",
@@ -18,7 +19,8 @@
       "description": "青石山路沿着山势延伸，路旁有风吹过竹林的声音。",
       "walkable": true,
       "npcIds": [],
-      "actionIds": ["observe"]
+      "actionIds": ["observe"],
+      "firstEnterEventId": ""
     },
     {
       "id": "mountain_path_east",
@@ -28,7 +30,8 @@
       "description": "山路向东延伸，路面比西侧更陡，远处能看见商店的灯火。",
       "walkable": true,
       "npcIds": [],
-      "actionIds": ["observe"]
+      "actionIds": ["observe"],
+      "firstEnterEventId": "event_mountain_road_east_fog"
     },
     {
       "id": "shop",
@@ -38,7 +41,8 @@
       "description": "这是一间老旧商铺，柜台后站着老板，旁边的店小二正在擦拭货架。",
       "walkable": true,
       "npcIds": ["shop_owner", "shop_assistant"],
-      "actionIds": []
+      "actionIds": [],
+      "firstEnterEventId": ""
     },
     {
       "id": "attic",
@@ -48,7 +52,8 @@
       "description": "阁楼安静避风，窗边有一张旧蒲团，适合静坐感应灵气。",
       "walkable": true,
       "npcIds": [],
-      "actionIds": ["read_books", "look_around_attic"]
+      "actionIds": ["read_books", "look_around_attic"],
+      "firstEnterEventId": "event_attic_old_slip"
     },
     {
       "id": "herb_field",
@@ -58,7 +63,8 @@
       "description": "药田中灵草稀疏，偶尔能见到几株带着微光的灵药。",
       "walkable": true,
       "npcIds": [],
-      "actionIds": ["cultivate", "gather_herbs", "observe"]
+      "actionIds": ["cultivate", "gather_herbs", "observe"],
+      "firstEnterEventId": "event_herb_field_glow"
     },
     {
       "id": "sect_gate",
@@ -68,7 +74,8 @@
       "description": "高大的山门立在云雾之间，石阶尽头隐约能看见宗门牌匾。",
       "walkable": true,
       "npcIds": [],
-      "actionIds": []
+      "actionIds": [],
+      "firstEnterEventId": ""
     }
   ]
 }
