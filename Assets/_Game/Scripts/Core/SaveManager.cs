@@ -247,6 +247,8 @@ public class SaveManager : MonoBehaviour
 
         if (mapGridManager != null)
         {
+            // 地图扩充后，旧存档可能保存着旧坐标，这里按 currentCellId 同步到新坐标。
+            mapGridManager.SyncPlayerPositionToCurrentCell();
             mapGridManager.RefreshMap();
         }
 
