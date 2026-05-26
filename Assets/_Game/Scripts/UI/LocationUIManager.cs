@@ -100,4 +100,12 @@ public class LocationUIManager : MonoBehaviour
             messageText.text = "【" + speaker + "】" + text;
         }
     }
+
+    public void ShowEvent(string title, string text)
+    {
+        if (messageText != null)
+        {
+            messageText.text = "【" + title + "】" + text;
+        }
+    }
 }
