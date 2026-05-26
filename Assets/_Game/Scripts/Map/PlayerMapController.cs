@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// 负责判断和执行玩家在格子地图上的移动。
 /// 第一版只允许上下左右移动一格，移动不消耗行动点。
-/// 事件或对话打开时，禁止移动，避免 UI 混在一起。
+/// 事件、对话、开场、日期事件或战斗打开时，禁止移动。
 /// </summary>
 public class PlayerMapController : MonoBehaviour
 {
@@ -14,11 +14,7 @@ public class PlayerMapController : MonoBehaviour
     [SerializeField] private EventManager eventManager;
     [SerializeField] private DialogueManager dialogueManager;
 
-    public void SetReferences(
-        GameManager game,
-        MapGridManager mapGrid,
-        LocationUIManager locationUI,
-        LocationActionManager actionManager)
+    public void SetReferences(GameManager game, MapGridManager mapGrid, LocationUIManager locationUI, LocationActionManager actionManager)
     {
         gameManager = game;
         mapGridManager = mapGrid;
@@ -34,30 +30,33 @@ public class PlayerMapController : MonoBehaviour
 
     private void EnsureManagers()
     {
-        if (eventManager == null)
-        {
-            eventManager = GetComponent<EventManager>();
-        }
-
-        if (eventManager == null)
-        {
-            eventManager = gameObject.AddComponent<EventManager>();
-        }
-
-        if (dialogueManager == null)
-        {
-            dialogueManager = GetComponent<DialogueManager>();
-        }
+        if (eventManager == null) eventManager = GetComponent<EventManager>();
+        if (eventManager == null) eventManager = gameObject.AddComponent<EventManager>();
+        if (dialogueManager == null) dialogueManager = GetComponent<DialogueManager>();
     }
 
-    /// <summary>
-    /// 事件或对话打开时，不允许玩家点击地图移动。
-    /// 这样玩家必须先处理完当前事件/对话，底部按钮不会和地点按钮混在一起。
-    /// </summary>
     private bool IsInteractionBlockingMovement(out string message)
     {
         EnsureManagers();
         message = "";
+
+        if (OpeningStoryManager.IsOpeningActive)
+        {
+            message = "请先看完开场剧情。";
+            return true;
+        }
+
+        if (DayEventManager.IsDayEventOpen)
+        {
+            message = "请先处理当前剧情事件。";
+            return true;
+        }
+
+        if (BattleManager.IsBattleOpen)
+        {
+            message = "请先结束当前战斗。";
+            return true;
+        }
 
         if (eventManager != null && eventManager.IsEventOpen)
         {
@@ -74,10 +73,6 @@ public class PlayerMapController : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// 判断目标格子是否可以移动过去。
-    /// 只允许上下左右相邻格子，不能斜着走，不能一次走多格。
-    /// </summary>
     public bool CanMoveTo(MapCellData targetCell, out string message)
     {
         message = "";
@@ -88,10 +83,7 @@ public class PlayerMapController : MonoBehaviour
             return false;
         }
 
-        if (IsInteractionBlockingMovement(out message))
-        {
-            return false;
-        }
+        if (IsInteractionBlockingMovement(out message)) return false;
 
         if (targetCell == null)
         {
@@ -106,7 +98,6 @@ public class PlayerMapController : MonoBehaviour
         }
 
         PlayerState playerState = gameManager.GetPlayerState();
-
         if (!MapRuleUtility.IsOrthogonalNeighbor(playerState.currentX, playerState.currentY, targetCell.x, targetCell.y))
         {
             message = "只能移动到上下左右相邻的格子。";
@@ -121,11 +112,7 @@ public class PlayerMapController : MonoBehaviour
         string message;
         if (!CanMoveTo(targetCell, out message))
         {
-            if (locationUIManager != null && !string.IsNullOrEmpty(message))
-            {
-                locationUIManager.ShowMessage(message);
-            }
-
+            if (locationUIManager != null && !string.IsNullOrEmpty(message)) locationUIManager.ShowMessage(message);
             return false;
         }
 
@@ -135,10 +122,7 @@ public class PlayerMapController : MonoBehaviour
         playerState.currentX = targetCell.x;
         playerState.currentY = targetCell.y;
 
-        if (mapGridManager != null)
-        {
-            mapGridManager.RefreshMap();
-        }
+        if (mapGridManager != null) mapGridManager.RefreshMap();
 
         if (locationUIManager != null)
         {
@@ -146,17 +130,10 @@ public class PlayerMapController : MonoBehaviour
             locationUIManager.ShowMessage("你来到了：" + targetCell.name);
         }
 
-        if (locationActionManager != null)
-        {
-            locationActionManager.RefreshCurrentLocation();
-        }
+        if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
 
         EnsureManagers();
-        if (eventManager != null)
-        {
-            eventManager.TryShowFirstEnterEvent(targetCell);
-        }
-
+        if (eventManager != null) eventManager.TryShowFirstEnterEvent(targetCell);
         return true;
     }
 }
