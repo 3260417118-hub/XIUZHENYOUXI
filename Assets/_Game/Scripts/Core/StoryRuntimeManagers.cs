@@ -309,6 +309,8 @@ public class BlockingEncounterManager : MonoBehaviour
     private GameManager gameManager;
     private LocationUIManager locationUIManager;
     private LocationActionManager locationActionManager;
+    private EventManager eventManager;
+    private DialogueManager dialogueManager;
     private bool boundEndDay;
 
     private void Awake()
@@ -321,6 +323,8 @@ public class BlockingEncounterManager : MonoBehaviour
         gameManager = GetComponent<GameManager>();
         locationUIManager = GetComponent<LocationUIManager>();
         locationActionManager = GetComponent<LocationActionManager>();
+        eventManager = GetComponent<EventManager>();
+        dialogueManager = GetComponent<DialogueManager>();
         LoadEncounters();
         StartCoroutine(BindAndCheckNextFrame());
     }
@@ -369,10 +373,24 @@ public class BlockingEncounterManager : MonoBehaviour
         if (gameManager == null) gameManager = GetComponent<GameManager>();
         if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
         if (locationActionManager == null) locationActionManager = GetComponent<LocationActionManager>();
+        if (eventManager == null) eventManager = GetComponent<EventManager>();
+        if (dialogueManager == null) dialogueManager = GetComponent<DialogueManager>();
 
         if (OpeningStoryManager.IsOpeningActive || BattleManager.IsBattleOpen || HasActiveBlockingEncounter())
         {
             if (locationUIManager != null) locationUIManager.ShowMessage(GetBlockMoveMessageOrDefault());
+            return;
+        }
+
+        if (eventManager != null && eventManager.IsEventOpen)
+        {
+            if (locationUIManager != null) locationUIManager.ShowMessage("请先处理当前事件。");
+            return;
+        }
+
+        if (dialogueManager != null && dialogueManager.IsDialogueOpen)
+        {
+            if (locationUIManager != null) locationUIManager.ShowMessage("请先结束当前对话。");
             return;
         }
 
@@ -475,13 +493,19 @@ public class BlockingEncounterManager : MonoBehaviour
         if (playerState == null) return;
 
         ApplyFlags(option.setFlags);
-        if (!string.IsNullOrEmpty(option.message) && locationUIManager != null)
+        string optionMessage = option.message;
+        if (!string.IsNullOrEmpty(optionMessage) && locationUIManager != null)
         {
-            locationUIManager.ShowMessage(option.message);
+            locationUIManager.ShowMessage(optionMessage);
         }
 
         if (!string.IsNullOrEmpty(option.startBattleId))
         {
+            if (locationActionManager != null)
+            {
+                locationActionManager.ClearCurrentButtons();
+            }
+
             BattleManager battleManager = GetComponent<BattleManager>();
             if (battleManager != null)
             {
@@ -489,14 +513,14 @@ public class BlockingEncounterManager : MonoBehaviour
             }
             else if (option.resolveEncounter)
             {
-                ResolveActiveEncounter();
+                ResolveActiveEncounter(optionMessage);
             }
             return;
         }
 
         if (option.resolveEncounter)
         {
-            ResolveActiveEncounter();
+            ResolveActiveEncounter(optionMessage);
         }
         else if (option.closeOnly)
         {
@@ -516,10 +540,15 @@ public class BlockingEncounterManager : MonoBehaviour
 
     private void ResolveActiveEncounterAfterBattle()
     {
-        ResolveActiveEncounter();
+        ResolveActiveEncounter("");
     }
 
     public void ResolveActiveEncounter()
+    {
+        ResolveActiveEncounter("");
+    }
+
+    public void ResolveActiveEncounter(string finalMessage)
     {
         BlockingEncounterData encounter = GetActiveEncounter();
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
@@ -532,8 +561,12 @@ public class BlockingEncounterManager : MonoBehaviour
         }
 
         playerState.activeBlockingEncounterId = "";
-        if (locationUIManager != null) locationUIManager.ShowMessage("事件已经解决，你可以继续行动。 ");
         RefreshLocationButtons();
+
+        if (!string.IsNullOrEmpty(finalMessage) && locationUIManager != null)
+        {
+            locationUIManager.ShowMessage(finalMessage);
+        }
     }
 
     public void RestoreActiveEncounterUI()
@@ -574,6 +607,7 @@ public class BattleManager : MonoBehaviour
     private BattleData currentBattle;
     private int enemyHp;
     private Action battleFinishedCallback;
+    private string lastBattleResultMessage = "";
 
     private void Start()
     {
@@ -616,6 +650,7 @@ public class BattleManager : MonoBehaviour
         currentBattle = battle;
         enemyHp = battle.enemyHp;
         battleFinishedCallback = onFinished;
+        lastBattleResultMessage = "";
         EnsurePanel();
         IsBattleOpen = true;
         panelObject.SetActive(true);
@@ -637,6 +672,7 @@ public class BattleManager : MonoBehaviour
         if (enemyHp <= 0)
         {
             ApplyFlags(currentBattle.winFlags);
+            lastBattleResultMessage = currentBattle.winMessage;
             log += "\n" + currentBattle.winMessage;
             RefreshBattleText(log);
             SetFinishButton();
@@ -651,6 +687,7 @@ public class BattleManager : MonoBehaviour
         if (playerState.hp <= 0)
         {
             ApplyFlags(currentBattle.loseFlags);
+            lastBattleResultMessage = currentBattle.loseMessage;
             log += "\n" + currentBattle.loseMessage;
             playerState.hp = Mathf.Max(1, playerState.maxHp / 2);
             SetFinishButton();
@@ -685,10 +722,14 @@ public class BattleManager : MonoBehaviour
     private void CloseBattle()
     {
         Action callback = battleFinishedCallback;
+        string resultMessage = lastBattleResultMessage;
         CloseBattleSilently();
         if (callback != null) callback.Invoke();
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
-        if (locationUIManager != null) locationUIManager.ShowMessage("战斗结束，你重新回到自由探索。 ");
+        if (!string.IsNullOrEmpty(resultMessage) && locationUIManager != null)
+        {
+            locationUIManager.ShowMessage(resultMessage);
+        }
     }
 
     public void CloseBattleSilently()
@@ -697,6 +738,7 @@ public class BattleManager : MonoBehaviour
         if (panelObject != null) panelObject.SetActive(false);
         currentBattle = null;
         battleFinishedCallback = null;
+        lastBattleResultMessage = "";
     }
 
     private void EnsurePanel()

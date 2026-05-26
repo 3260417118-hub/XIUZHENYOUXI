@@ -68,6 +68,17 @@ public class ActionPointManager : MonoBehaviour
             return false;
         }
 
+        EventManager eventManager = GetComponent<EventManager>();
+        if (eventManager != null && eventManager.IsEventOpen)
+        {
+            if (locationUIManager != null)
+            {
+                locationUIManager.ShowMessage("请先处理当前事件。");
+            }
+
+            return false;
+        }
+
         PlayerState playerState = gameManager.GetPlayerState();
         if (!ActionPointRules.TrySpend(playerState, cost))
         {
@@ -85,7 +96,7 @@ public class ActionPointManager : MonoBehaviour
 
     /// <summary>
     /// 结束今日：天数 +1，行动点恢复到最大值。
-    /// 如果有阻塞式剧情事件未解决，不能跳过当天。
+    /// 如果有首次进入事件、对话、阻塞式剧情或战斗未处理，不能跳过当天。
     /// </summary>
     public void EndDay()
     {
@@ -97,6 +108,9 @@ public class ActionPointManager : MonoBehaviour
         BlockingEncounterManager blockingEncounterManager = BlockingEncounterManager.Instance != null
             ? BlockingEncounterManager.Instance
             : GetComponent<BlockingEncounterManager>();
+        EventManager eventManager = GetComponent<EventManager>();
+        DialogueManager dialogueManager = GetComponent<DialogueManager>();
+
         if (OpeningStoryManager.IsOpeningActive || BattleManager.IsBattleOpen || (blockingEncounterManager != null && blockingEncounterManager.HasActiveBlockingEncounter()))
         {
             if (locationUIManager != null)
@@ -105,6 +119,26 @@ public class ActionPointManager : MonoBehaviour
                     ? blockingEncounterManager.GetBlockMoveMessageOrDefault()
                     : "请先处理当前事件。";
                 locationUIManager.ShowMessage(message);
+            }
+
+            return;
+        }
+
+        if (eventManager != null && eventManager.IsEventOpen)
+        {
+            if (locationUIManager != null)
+            {
+                locationUIManager.ShowMessage("请先处理当前事件。");
+            }
+
+            return;
+        }
+
+        if (dialogueManager != null && dialogueManager.IsDialogueOpen)
+        {
+            if (locationUIManager != null)
+            {
+                locationUIManager.ShowMessage("请先结束当前对话。");
             }
 
             return;
