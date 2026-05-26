@@ -1,0 +1,64 @@
+{
+  "cells": [
+    {
+      "id": "village_gate",
+      "name": "村口",
+      "x": 0,
+      "y": 0,
+      "description": "村口立着一块旧木牌，远处山路蜿蜒向上。这里是你今日行程的起点。",
+      "walkable": true,
+      "npcIds": [],
+      "actionIds": []
+    },
+    {
+      "id": "mountain_path",
+      "name": "山路",
+      "x": 1,
+      "y": 0,
+      "description": "青石山路沿着山势延伸，路旁有风吹过竹林的声音。",
+      "walkable": true,
+      "npcIds": [],
+      "actionIds": []
+    },
+    {
+      "id": "shop",
+      "name": "商店",
+      "x": 2,
+      "y": 0,
+      "description": "小镇商店里摆着药草、符纸和粗布包裹。老板和小二正在柜台后忙碌。",
+      "walkable": true,
+      "npcIds": ["shop_owner", "shop_assistant"],
+      "actionIds": []
+    },
+    {
+      "id": "attic",
+      "name": "阁楼",
+      "x": 1,
+      "y": 1,
+      "description": "阁楼安静避风，窗边有一张旧蒲团，适合静坐感应灵气。",
+      "walkable": true,
+      "npcIds": [],
+      "actionIds": []
+    },
+    {
+      "id": "herb_field",
+      "name": "药田",
+      "x": 1,
+      "y": -1,
+      "description": "药田里种着几畦低阶灵草，泥土带着淡淡草木香。",
+      "walkable": true,
+      "npcIds": [],
+      "actionIds": []
+    },
+    {
+      "id": "sect_gate",
+      "name": "宗门山门",
+      "x": 2,
+      "y": 1,
+      "description": "高大的山门立在云雾之间，石阶尽头隐约能看见宗门牌匾。",
+      "walkable": true,
+      "npcIds": [],
+      "actionIds": []
+    }
+  ]
+}

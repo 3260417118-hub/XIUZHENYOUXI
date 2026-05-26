@@ -1,0 +1,95 @@
+using UnityEngine;
+using UnityEngine.UI;
+
+/// <summary>
+/// 负责刷新 Demo 场景里的地点和状态文字。
+/// 这里只显示信息，不处理移动、对话、商店等玩法。
+/// </summary>
+public class LocationUIManager : MonoBehaviour
+{
+    [Header("顶部状态栏")]
+    [SerializeField] private Text dayText;
+    [SerializeField] private Text actionPointText;
+    [SerializeField] private Text realmText;
+    [SerializeField] private Text cultivationText;
+
+    [Header("下方地点信息")]
+    [SerializeField] private Text locationNameText;
+    [SerializeField] private Text locationDescriptionText;
+    [SerializeField] private Text messageText;
+
+    public void SetReferences(
+        Text day,
+        Text actionPoint,
+        Text realm,
+        Text cultivation,
+        Text locationName,
+        Text locationDescription,
+        Text message)
+    {
+        dayText = day;
+        actionPointText = actionPoint;
+        realmText = realm;
+        cultivationText = cultivation;
+        locationNameText = locationName;
+        locationDescriptionText = locationDescription;
+        messageText = message;
+    }
+
+    /// <summary>
+    /// 刷新当前地点名称、描述，以及顶部状态栏。
+    /// </summary>
+    public void RefreshLocation(MapCellData currentCell, PlayerState playerState)
+    {
+        if (currentCell != null)
+        {
+            if (locationNameText != null)
+            {
+                locationNameText.text = currentCell.name;
+            }
+
+            if (locationDescriptionText != null)
+            {
+                locationDescriptionText.text = currentCell.description;
+            }
+        }
+
+        RefreshPlayerStatus(playerState);
+    }
+
+    public void RefreshPlayerStatus(PlayerState playerState)
+    {
+        if (playerState == null)
+        {
+            return;
+        }
+
+        if (dayText != null)
+        {
+            dayText.text = "第 " + playerState.day + " 天";
+        }
+
+        if (actionPointText != null)
+        {
+            actionPointText.text = "行动点：" + playerState.actionPoints + "/" + playerState.maxActionPoints;
+        }
+
+        if (realmText != null)
+        {
+            realmText.text = "境界：" + playerState.realm;
+        }
+
+        if (cultivationText != null)
+        {
+            cultivationText.text = "修为：" + playerState.cultivation;
+        }
+    }
+
+    public void ShowMessage(string message)
+    {
+        if (messageText != null)
+        {
+            messageText.text = message;
+        }
+    }
+}

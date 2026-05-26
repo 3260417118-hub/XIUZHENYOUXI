@@ -1,0 +1,50 @@
+using UnityEngine;
+
+/// <summary>
+/// 游戏总管理器。
+/// 第一版只负责创建和保存当前玩家状态，其他系统通过它读取 PlayerState。
+/// </summary>
+public class GameManager : MonoBehaviour
+{
+    public static GameManager Instance { get; private set; }
+
+    [SerializeField] private PlayerState playerState = new PlayerState();
+
+    public PlayerState PlayerState
+    {
+        get { return playerState; }
+    }
+
+    private void Awake()
+    {
+        Instance = this;
+
+        if (playerState == null || string.IsNullOrEmpty(playerState.currentCellId))
+        {
+            InitNewGame();
+        }
+    }
+
+    /// <summary>
+    /// 初始化一个新游戏。
+    /// 起点是 map_cells.json 里的“村口”。
+    /// </summary>
+    public void InitNewGame()
+    {
+        playerState = new PlayerState();
+        playerState.currentCellId = "village_gate";
+        playerState.currentX = 0;
+        playerState.currentY = 0;
+        playerState.day = 1;
+        playerState.maxActionPoints = 3;
+        playerState.actionPoints = 3;
+        playerState.cultivation = 0;
+        playerState.realm = "凡人";
+        playerState.spiritStones = 0;
+    }
+
+    public PlayerState GetPlayerState()
+    {
+        return playerState;
+    }
+}

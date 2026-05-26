@@ -49,7 +49,7 @@ public static class XianxiaDemoSceneCreator
 
         EditorUtility.DisplayDialog(
             "Demo 场景创建完成",
-            "已创建并保存 Demo 场景：\n" + DemoScenePath + "\n\n可以把 GameManager、MapGridManager、LocationUIManager、ActionPointManager 挂到 GameRoot 上。",
+            "已创建并保存 Demo 场景：\n" + DemoScenePath + "\n\n接着点击 Tools/Xianxia/Setup Demo Managers，可以自动挂载并绑定地图移动系统脚本。",
             "好的");
     }
 
@@ -164,13 +164,7 @@ public static class XianxiaDemoSceneCreator
         mapPanel.offsetMin = new Vector2(24f, 16f);
         mapPanel.offsetMax = new Vector2(-24f, -16f);
 
-        // 先放一个 GridLayoutGroup，后续地图管理器可以直接往这里生成格子按钮。
-        GridLayoutGroup grid = mapPanel.gameObject.AddComponent<GridLayoutGroup>();
-        grid.padding = new RectOffset(16, 16, 16, 16);
-        grid.spacing = new Vector2(8f, 8f);
-        grid.cellSize = new Vector2(120f, 80f);
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 5;
+        // 地图格子由 MapGridManager 按 x,y 坐标摆放，这里不加 GridLayoutGroup。
     }
 
     private static void CreateBottomPanel(Transform parent)
