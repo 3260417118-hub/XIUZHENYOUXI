@@ -122,6 +122,33 @@ public class MapGridManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 根据 currentCellId 把玩家坐标同步到地图数据。
+    /// 这样地图坐标调整后，旧存档也不会因为保存了旧 x/y 而错位。
+    /// </summary>
+    public void SyncPlayerPositionToCurrentCell()
+    {
+        if (gameManager == null)
+        {
+            return;
+        }
+
+        PlayerState playerState = gameManager.GetPlayerState();
+        if (playerState == null)
+        {
+            return;
+        }
+
+        MapCellData currentCell = GetCellById(playerState.currentCellId);
+        if (currentCell == null)
+        {
+            return;
+        }
+
+        playerState.currentX = currentCell.x;
+        playerState.currentY = currentCell.y;
+    }
+
+    /// <summary>
     /// 刷新地图按钮：当前位置高亮，相邻可走格子可点击，其他格子不可点击。
     /// </summary>
     public void RefreshMap()
@@ -167,8 +194,11 @@ public class MapGridManager : MonoBehaviour
         }
 
         PlayerState playerState = gameManager.GetPlayerState();
-        if (GetCellById(playerState.currentCellId) != null)
+        MapCellData currentCell = GetCellById(playerState.currentCellId);
+        if (currentCell != null)
         {
+            playerState.currentX = currentCell.x;
+            playerState.currentY = currentCell.y;
             return;
         }
 
