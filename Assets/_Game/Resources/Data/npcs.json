@@ -1,0 +1,16 @@
+{
+  "npcs": [
+    {
+      "id": "shop_owner",
+      "name": "老板",
+      "description": "商店老板，总是笑眯眯地招呼客人。",
+      "dialogueId": "shop_owner_start"
+    },
+    {
+      "id": "shop_assistant",
+      "name": "小二",
+      "description": "商店小二，消息灵通，常听路过客人闲聊。",
+      "dialogueId": "shop_assistant_start"
+    }
+  ]
+}
