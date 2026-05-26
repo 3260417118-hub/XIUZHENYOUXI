@@ -39,6 +39,7 @@ public class GameManager : MonoBehaviour
     {
         EnsureComponent<SaveManager>();
         EnsureComponent<OpeningStoryManager>();
+        EnsureComponent<BlockingEncounterManager>();
         EnsureComponent<DayEventManager>();
         EnsureComponent<BattleManager>();
         EnsureComponent<TutorialManager>();
@@ -70,6 +71,7 @@ public class GameManager : MonoBehaviour
         playerState.realm = "凡人";
         playerState.spiritStones = 0;
         playerState.hasSeenOpening = false;
+        playerState.activeBlockingEncounterId = "";
         playerState.maxHp = 100;
         playerState.hp = 100;
         playerState.attack = 15;

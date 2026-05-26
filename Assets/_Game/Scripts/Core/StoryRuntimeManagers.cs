@@ -7,35 +7,6 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [Serializable]
-public class DayEventOptionData
-{
-    public string text;
-    public string message;
-    public string[] setFlags;
-    public string startBattleId;
-    public bool closeEvent;
-}
-
-[Serializable]
-public class DayEventData
-{
-    public string id;
-    public int triggerDay;
-    public string title;
-    public string text;
-    public List<DayEventOptionData> options = new List<DayEventOptionData>();
-    public string battleId;
-    public string[] setFlags;
-    public string messageAfterClose;
-}
-
-[Serializable]
-public class DayEventDataList
-{
-    public List<DayEventData> events = new List<DayEventData>();
-}
-
-[Serializable]
 public class BattleData
 {
     public string id;
@@ -56,27 +27,72 @@ public class BattleDataList
     public List<BattleData> battles = new List<BattleData>();
 }
 
+[Serializable]
+public class BlockingEncounterOptionData
+{
+    public string text;
+    public string message;
+    public string[] setFlags;
+    public string startBattleId;
+    public bool resolveEncounter;
+    public bool closeOnly;
+}
+
+[Serializable]
+public class BlockingEncounterData
+{
+    public string id;
+    public int triggerDay;
+    public string npcName;
+    public string title;
+    public string text;
+    public string blockMoveMessage;
+    public List<BlockingEncounterOptionData> options = new List<BlockingEncounterOptionData>();
+    public string[] resolvedFlags;
+    public bool spawnAtPlayerCurrentCell;
+}
+
+[Serializable]
+public class BlockingEncounterDataList
+{
+    public List<BlockingEncounterData> encounters = new List<BlockingEncounterData>();
+}
+
+/// <summary>
+/// 开场剧情管理器。
+/// 新游戏第一次进入时，用全黑背景逐句淡入开场文字。
+/// </summary>
 public class OpeningStoryManager : MonoBehaviour
 {
     public static bool IsOpeningActive { get; private set; }
 
+    [SerializeField] private float lineFadeSeconds = 0.7f;
+    [SerializeField] private float lineIntervalSeconds = 1.0f;
+
     private readonly string[] storyTexts = new string[]
     {
         "十年前，林家一夜血雨。",
-        "林昊的父亲林远山，不知从何处得到一卷残破古卷。那卷轴上的文字无人能识，却引来了灭门之祸。",
-        "那一夜，刀光、火光、血光，照亮了整个林家宅院。父亲拼死护着林昊、母亲和妹妹逃出重围。",
-        "可逃亡途中，众人又遭遇伏击。混乱中，林昊与母亲失散，只记得自己死死拉着妹妹的手。",
-        "再醒来时，他躺在村口草地上。头痛欲裂，记忆支离破碎。",
-        "他只记得一件事——他还有一个妹妹。",
-        "村口草木凌乱，远处山路雾气沉沉。林昊缓缓起身，开始寻找妹妹的下落。"
+        "林昊的父亲林远山，不知从何处得到一卷残破古卷。",
+        "那卷轴上的文字无人能识，却引来了灭门之祸。",
+        "那一夜，刀光、火光、血光，照亮了整个林家宅院。",
+        "父亲拼死护着林昊、母亲和妹妹逃出重围。",
+        "可逃亡途中，众人又遭遇伏击。",
+        "混乱中，林昊与母亲失散，只记得自己死死拉着妹妹的手。",
+        "再醒来时，他躺在村口草地上。",
+        "头痛欲裂，记忆支离破碎。",
+        "他只记得一件事——",
+        "他还有一个妹妹。",
+        "村口草木凌乱，远处山路雾气沉沉。",
+        "林昊缓缓起身，开始寻找妹妹的下落。"
     };
 
     private GameManager gameManager;
     private LocationUIManager locationUIManager;
     private GameObject panelObject;
-    private Text storyText;
-    private Button continueButton;
-    private int storyIndex;
+    private RectTransform lineContainer;
+    private Button enterButton;
+    private Coroutine playCoroutine;
+    private Font cachedFont;
 
     private void Start()
     {
@@ -93,23 +109,23 @@ public class OpeningStoryManager : MonoBehaviour
 
     public void CheckOpeningAfterLoad()
     {
+        if (gameManager == null) gameManager = GetComponent<GameManager>();
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState != null && playerState.hasSeenOpening)
         {
             HidePanel();
+            return;
         }
-        else
-        {
-            PlayOpeningIfNeeded();
-        }
+
+        PlayOpeningIfNeeded();
     }
 
     public void PlayOpeningIfNeeded()
     {
         if (gameManager == null) gameManager = GetComponent<GameManager>();
         if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
-
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
+
         if (playerState == null || playerState.hasSeenOpening)
         {
             HidePanel();
@@ -117,29 +133,56 @@ public class OpeningStoryManager : MonoBehaviour
         }
 
         EnsurePanel();
-        storyIndex = 0;
         IsOpeningActive = true;
         panelObject.SetActive(true);
-        ShowCurrentText();
+        panelObject.transform.SetAsLastSibling();
+        enterButton.gameObject.SetActive(false);
+        ClearLines();
+
+        if (playCoroutine != null) StopCoroutine(playCoroutine);
+        playCoroutine = StartCoroutine(PlayOpeningLines());
     }
 
-    private void ShowCurrentText()
+    private IEnumerator PlayOpeningLines()
     {
-        if (storyText == null || continueButton == null) return;
-        storyText.text = storyTexts[storyIndex];
-        Text buttonText = continueButton.GetComponentInChildren<Text>();
-        if (buttonText != null) buttonText.text = storyIndex >= storyTexts.Length - 1 ? "进入游戏" : "继续";
-    }
-
-    private void OnContinueClicked()
-    {
-        if (storyIndex < storyTexts.Length - 1)
+        for (int i = 0; i < storyTexts.Length; i++)
         {
-            storyIndex++;
-            ShowCurrentText();
-            return;
+            Text lineText = CreateLineText(storyTexts[i]);
+            float timer = 0f;
+            while (timer < lineFadeSeconds)
+            {
+                timer += Time.deltaTime;
+                float alpha = Mathf.Clamp01(timer / Mathf.Max(0.01f, lineFadeSeconds));
+                lineText.color = new Color(1f, 1f, 1f, alpha);
+                yield return null;
+            }
+
+            lineText.color = Color.white;
+            yield return new WaitForSeconds(lineIntervalSeconds);
         }
 
+        enterButton.gameObject.SetActive(true);
+    }
+
+    private Text CreateLineText(string content)
+    {
+        GameObject lineObject = new GameObject("OpeningLine", typeof(RectTransform), typeof(Text), typeof(LayoutElement));
+        lineObject.transform.SetParent(lineContainer, false);
+        Text text = lineObject.GetComponent<Text>();
+        text.text = content;
+        text.font = GetDefaultFont();
+        text.fontSize = 22;
+        text.color = new Color(1f, 1f, 1f, 0f);
+        text.alignment = TextAnchor.MiddleCenter;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Overflow;
+        LayoutElement layout = lineObject.GetComponent<LayoutElement>();
+        layout.preferredHeight = 34f;
+        return text;
+    }
+
+    private void OnEnterGameClicked()
+    {
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState != null)
         {
@@ -158,6 +201,12 @@ public class OpeningStoryManager : MonoBehaviour
     private void HidePanel()
     {
         IsOpeningActive = false;
+        if (playCoroutine != null)
+        {
+            StopCoroutine(playCoroutine);
+            playCoroutine = null;
+        }
+
         if (panelObject != null) panelObject.SetActive(false);
     }
 
@@ -167,37 +216,45 @@ public class OpeningStoryManager : MonoBehaviour
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        Font font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 22);
         panelObject = new GameObject("OpeningPanel", typeof(RectTransform), typeof(Image));
         panelObject.transform.SetParent(canvas.transform, false);
-        RectTransform panelRect = panelObject.GetComponent<RectTransform>();
-        Stretch(panelRect);
+        Stretch(panelObject.GetComponent<RectTransform>());
         Image panelImage = panelObject.GetComponent<Image>();
-        panelImage.color = new Color(0.02f, 0.02f, 0.03f, 0.96f);
+        panelImage.color = Color.black;
         panelImage.raycastTarget = true;
 
-        GameObject textObject = new GameObject("OpeningText", typeof(RectTransform), typeof(Text));
-        textObject.transform.SetParent(panelObject.transform, false);
-        RectTransform textRect = textObject.GetComponent<RectTransform>();
-        textRect.anchorMin = new Vector2(0.18f, 0.38f);
-        textRect.anchorMax = new Vector2(0.82f, 0.72f);
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
-        storyText = textObject.GetComponent<Text>();
-        storyText.font = font;
-        storyText.fontSize = 28;
-        storyText.color = Color.white;
-        storyText.alignment = TextAnchor.MiddleCenter;
-        storyText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        storyText.verticalOverflow = VerticalWrapMode.Overflow;
+        GameObject containerObject = new GameObject("OpeningLineContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
+        containerObject.transform.SetParent(panelObject.transform, false);
+        lineContainer = containerObject.GetComponent<RectTransform>();
+        lineContainer.anchorMin = new Vector2(0.14f, 0.20f);
+        lineContainer.anchorMax = new Vector2(0.86f, 0.80f);
+        lineContainer.offsetMin = Vector2.zero;
+        lineContainer.offsetMax = Vector2.zero;
+        VerticalLayoutGroup layout = containerObject.GetComponent<VerticalLayoutGroup>();
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.spacing = 4f;
+        layout.childControlHeight = true;
+        layout.childControlWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.childForceExpandWidth = true;
 
-        continueButton = CreateButton(panelObject.transform, "ContinueOpeningButton", "继续", new Vector2(180f, 52f));
-        RectTransform buttonRect = continueButton.GetComponent<RectTransform>();
-        buttonRect.anchorMin = new Vector2(0.5f, 0.25f);
-        buttonRect.anchorMax = new Vector2(0.5f, 0.25f);
+        enterButton = CreateButton(panelObject.transform, "EnterGameButton", "进入游戏", new Vector2(180f, 54f));
+        RectTransform buttonRect = enterButton.GetComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0.5f, 0.10f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.10f);
         buttonRect.pivot = new Vector2(0.5f, 0.5f);
         buttonRect.anchoredPosition = Vector2.zero;
-        continueButton.onClick.AddListener(OnContinueClicked);
+        enterButton.onClick.AddListener(OnEnterGameClicked);
+        enterButton.gameObject.SetActive(false);
+    }
+
+    private void ClearLines()
+    {
+        if (lineContainer == null) return;
+        for (int i = lineContainer.childCount - 1; i >= 0; i--)
+        {
+            Destroy(lineContainer.GetChild(i).gameObject);
+        }
     }
 
     private Button CreateButton(Transform parent, string objectName, string text, Vector2 size)
@@ -207,20 +264,28 @@ public class OpeningStoryManager : MonoBehaviour
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
         rect.sizeDelta = size;
         Image image = buttonObject.GetComponent<Image>();
-        image.color = new Color(0.18f, 0.22f, 0.28f, 1f);
+        image.color = new Color(0.15f, 0.15f, 0.18f, 1f);
         Button button = buttonObject.GetComponent<Button>();
         button.targetGraphic = image;
         GameObject textObject = new GameObject("Text", typeof(RectTransform), typeof(Text));
         textObject.transform.SetParent(buttonObject.transform, false);
-        RectTransform textRect = textObject.GetComponent<RectTransform>();
-        Stretch(textRect);
+        Stretch(textObject.GetComponent<RectTransform>());
         Text label = textObject.GetComponent<Text>();
-        label.font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 20);
+        label.font = GetDefaultFont();
         label.fontSize = 22;
         label.color = Color.white;
         label.alignment = TextAnchor.MiddleCenter;
         label.text = text;
         return button;
+    }
+
+    private Font GetDefaultFont()
+    {
+        if (cachedFont != null) return cachedFont;
+        cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 20);
+        if (cachedFont != null) return cachedFont;
+        cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        return cachedFont;
     }
 
     private void Stretch(RectTransform rect)
@@ -232,44 +297,58 @@ public class OpeningStoryManager : MonoBehaviour
     }
 }
 
-public class DayEventManager : MonoBehaviour
+/// <summary>
+/// 阻塞式关键日期事件：到指定日期后，在玩家当前格生成临时 NPC。
+/// 事件未解决前不能移动，点击 NPC 后在底部区域显示剧情和选项。
+/// </summary>
+public class BlockingEncounterManager : MonoBehaviour
 {
-    public static bool IsDayEventOpen { get; private set; }
+    public static BlockingEncounterManager Instance { get; private set; }
 
-    private readonly Dictionary<string, DayEventData> eventById = new Dictionary<string, DayEventData>();
+    private readonly Dictionary<string, BlockingEncounterData> encounterById = new Dictionary<string, BlockingEncounterData>();
     private GameManager gameManager;
     private LocationUIManager locationUIManager;
     private LocationActionManager locationActionManager;
-    private GameObject panelObject;
-    private Text titleText;
-    private Text bodyText;
-    private RectTransform optionContainer;
-    private DayEventData currentEvent;
     private bool boundEndDay;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
         gameManager = GetComponent<GameManager>();
         locationUIManager = GetComponent<LocationUIManager>();
         locationActionManager = GetComponent<LocationActionManager>();
-        LoadDayEvents();
-        StartCoroutine(BindEndDayNextFrame());
-        StartCoroutine(CheckDayAfterOpening());
+        LoadEncounters();
+        StartCoroutine(BindAndCheckNextFrame());
     }
 
-    private IEnumerator BindEndDayNextFrame()
+    private IEnumerator BindAndCheckNextFrame()
     {
         yield return null;
         BindEndDayButton();
-    }
-
-    private IEnumerator CheckDayAfterOpening()
-    {
-        yield return null;
-        yield return null;
+        RestoreActiveEncounterUI();
         if (!OpeningStoryManager.IsOpeningActive)
         {
-            CheckTodayEvent();
+            CheckTodayEncounter();
+        }
+    }
+
+    private void LoadEncounters()
+    {
+        encounterById.Clear();
+        TextAsset jsonAsset = Resources.Load<TextAsset>("Data/blocking_encounters");
+        if (jsonAsset == null) return;
+        BlockingEncounterDataList dataList = JsonUtility.FromJson<BlockingEncounterDataList>(jsonAsset.text);
+        if (dataList == null || dataList.encounters == null) return;
+        foreach (BlockingEncounterData encounter in dataList.encounters)
+        {
+            if (encounter != null && !string.IsNullOrEmpty(encounter.id))
+            {
+                encounterById[encounter.id] = encounter;
+            }
         }
     }
 
@@ -281,32 +360,19 @@ public class DayEventManager : MonoBehaviour
         Button button = endDayObject.GetComponent<Button>();
         if (button == null) return;
         button.onClick.RemoveAllListeners();
-        button.onClick.AddListener(EndDayAndCheckEvent);
+        button.onClick.AddListener(EndDayAndCheckEncounter);
         boundEndDay = true;
     }
 
-    private void LoadDayEvents()
-    {
-        eventById.Clear();
-        TextAsset jsonAsset = Resources.Load<TextAsset>("Data/day_events");
-        if (jsonAsset == null) return;
-        DayEventDataList dataList = JsonUtility.FromJson<DayEventDataList>(jsonAsset.text);
-        if (dataList == null || dataList.events == null) return;
-        foreach (DayEventData eventData in dataList.events)
-        {
-            if (eventData != null && !string.IsNullOrEmpty(eventData.id)) eventById[eventData.id] = eventData;
-        }
-    }
-
-    public void EndDayAndCheckEvent()
+    public void EndDayAndCheckEncounter()
     {
         if (gameManager == null) gameManager = GetComponent<GameManager>();
         if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
         if (locationActionManager == null) locationActionManager = GetComponent<LocationActionManager>();
 
-        if (OpeningStoryManager.IsOpeningActive || BattleManager.IsBattleOpen || IsDayEventOpen)
+        if (OpeningStoryManager.IsOpeningActive || BattleManager.IsBattleOpen || HasActiveBlockingEncounter())
         {
-            if (locationUIManager != null) locationUIManager.ShowMessage("请先处理当前事件。");
+            if (locationUIManager != null) locationUIManager.ShowMessage(GetBlockMoveMessageOrDefault());
             return;
         }
 
@@ -320,159 +386,177 @@ public class DayEventManager : MonoBehaviour
             locationUIManager.ShowMessage("新的一天开始了，行动点已恢复。");
         }
 
-        if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
-        CheckTodayEvent();
+        CheckTodayEncounter();
+        RefreshLocationButtons();
     }
 
-    public void CheckTodayEvent()
+    public void CheckTodayEncounter()
     {
+        if (gameManager == null) gameManager = GetComponent<GameManager>();
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null || OpeningStoryManager.IsOpeningActive) return;
         playerState.EnsureLists();
 
-        foreach (DayEventData eventData in eventById.Values)
+        if (!string.IsNullOrEmpty(playerState.activeBlockingEncounterId))
         {
-            if (eventData.triggerDay == playerState.day && !playerState.HasTriggeredDayEvent(eventData.id))
+            RestoreActiveEncounterUI();
+            return;
+        }
+
+        foreach (BlockingEncounterData encounter in encounterById.Values)
+        {
+            if (encounter.triggerDay == playerState.day && !playerState.HasTriggeredDayEvent(encounter.id))
             {
-                playerState.AddTriggeredDayEvent(eventData.id);
-                ApplyFlags(eventData.setFlags);
-                ShowDayEvent(eventData);
+                playerState.activeBlockingEncounterId = encounter.id;
+                RestoreActiveEncounterUI();
+                if (locationUIManager != null) locationUIManager.ShowMessage(encounter.npcName + "出现在你面前。");
                 return;
             }
         }
     }
 
-    private void ShowDayEvent(DayEventData eventData)
+    public bool HasActiveBlockingEncounter()
     {
-        currentEvent = eventData;
-        EnsurePanel();
-        IsDayEventOpen = true;
-        panelObject.SetActive(true);
-        titleText.text = eventData.title;
-        bodyText.text = eventData.text;
-        ClearOptions();
-        if (eventData.options == null || eventData.options.Count == 0)
+        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
+        return playerState != null && !string.IsNullOrEmpty(playerState.activeBlockingEncounterId);
+    }
+
+    public string GetBlockMoveMessageOrDefault()
+    {
+        BlockingEncounterData encounter = GetActiveEncounter();
+        if (encounter != null && !string.IsNullOrEmpty(encounter.blockMoveMessage))
         {
-            AddOptionButton("离开", CloseDayEvent);
+            return encounter.blockMoveMessage;
+        }
+
+        return "有人拦住了你。";
+    }
+
+    public BlockingEncounterData GetActiveEncounter()
+    {
+        if (gameManager == null) gameManager = GetComponent<GameManager>();
+        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
+        if (playerState == null || string.IsNullOrEmpty(playerState.activeBlockingEncounterId)) return null;
+        BlockingEncounterData encounter;
+        encounterById.TryGetValue(playerState.activeBlockingEncounterId, out encounter);
+        return encounter;
+    }
+
+    public string GetActiveEncounterNpcName()
+    {
+        BlockingEncounterData encounter = GetActiveEncounter();
+        return encounter != null ? encounter.npcName : "";
+    }
+
+    public void StartActiveEncounterDialogue()
+    {
+        BlockingEncounterData encounter = GetActiveEncounter();
+        if (encounter == null || locationUIManager == null) return;
+        locationUIManager.ShowEvent(encounter.title, "\n" + encounter.text);
+        RefreshLocationButtonsWithEncounterOptions(encounter);
+    }
+
+    private void RefreshLocationButtonsWithEncounterOptions(BlockingEncounterData encounter)
+    {
+        LocationActionManager manager = locationActionManager != null ? locationActionManager : GetComponent<LocationActionManager>();
+        if (manager == null)
+        {
             return;
         }
 
-        foreach (DayEventOptionData option in eventData.options)
-        {
-            DayEventOptionData captured = option;
-            AddOptionButton(option.text, delegate { ExecuteOption(captured); });
-        }
+        manager.ClearCurrentButtons();
+        manager.CreateEncounterOptionButtons(encounter.options, ExecuteOption);
     }
 
-    private void ExecuteOption(DayEventOptionData option)
+    private void ExecuteOption(BlockingEncounterOptionData option)
     {
+        if (option == null) return;
+        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
+        if (playerState == null) return;
+
         ApplyFlags(option.setFlags);
-        if (!string.IsNullOrEmpty(option.message) && locationUIManager != null) locationUIManager.ShowMessage(option.message);
+        if (!string.IsNullOrEmpty(option.message) && locationUIManager != null)
+        {
+            locationUIManager.ShowMessage(option.message);
+        }
 
         if (!string.IsNullOrEmpty(option.startBattleId))
         {
-            CloseDayEventSilently();
             BattleManager battleManager = GetComponent<BattleManager>();
-            if (battleManager != null) battleManager.StartBattle(option.startBattleId);
+            if (battleManager != null)
+            {
+                battleManager.StartBattle(option.startBattleId, ResolveActiveEncounterAfterBattle);
+            }
+            else if (option.resolveEncounter)
+            {
+                ResolveActiveEncounter();
+            }
             return;
         }
 
-        if (option.closeEvent) CloseDayEvent();
+        if (option.resolveEncounter)
+        {
+            ResolveActiveEncounter();
+        }
+        else if (option.closeOnly)
+        {
+            RefreshLocationButtons();
+        }
     }
 
     private void ApplyFlags(string[] flags)
     {
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null || flags == null) return;
-        foreach (string flag in flags) playerState.AddFlag(flag);
+        foreach (string flag in flags)
+        {
+            playerState.AddFlag(flag);
+        }
     }
 
-    private void CloseDayEvent()
+    private void ResolveActiveEncounterAfterBattle()
     {
-        string message = currentEvent != null ? currentEvent.messageAfterClose : "";
-        CloseDayEventSilently();
-        if (!string.IsNullOrEmpty(message) && locationUIManager != null) locationUIManager.ShowMessage(message);
+        ResolveActiveEncounter();
+    }
+
+    public void ResolveActiveEncounter()
+    {
+        BlockingEncounterData encounter = GetActiveEncounter();
+        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
+        if (playerState == null) return;
+
+        if (encounter != null)
+        {
+            ApplyFlags(encounter.resolvedFlags);
+            playerState.AddTriggeredDayEvent(encounter.id);
+        }
+
+        playerState.activeBlockingEncounterId = "";
+        if (locationUIManager != null) locationUIManager.ShowMessage("事件已经解决，你可以继续行动。 ");
+        RefreshLocationButtons();
+    }
+
+    public void RestoreActiveEncounterUI()
+    {
+        RefreshLocationButtons();
+    }
+
+    private void RefreshLocationButtons()
+    {
+        if (locationActionManager == null) locationActionManager = GetComponent<LocationActionManager>();
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
     }
+}
 
-    public void CloseDayEventSilently()
-    {
-        IsDayEventOpen = false;
-        if (panelObject != null) panelObject.SetActive(false);
-        currentEvent = null;
-    }
-
-    private void EnsurePanel()
-    {
-        if (panelObject != null) return;
-        Canvas canvas = FindObjectOfType<Canvas>();
-        if (canvas == null) return;
-        Font font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 20);
-        panelObject = new GameObject("DayEventPanel", typeof(RectTransform), typeof(Image));
-        panelObject.transform.SetParent(canvas.transform, false);
-        RectTransform panelRect = panelObject.GetComponent<RectTransform>();
-        panelRect.anchorMin = Vector2.zero;
-        panelRect.anchorMax = Vector2.one;
-        panelRect.offsetMin = Vector2.zero;
-        panelRect.offsetMax = Vector2.zero;
-        Image panelImage = panelObject.GetComponent<Image>();
-        panelImage.color = new Color(0.02f, 0.02f, 0.03f, 0.88f);
-        panelImage.raycastTarget = true;
-
-        titleText = CreateText(panelObject.transform, "Title", font, 28, TextAnchor.MiddleCenter, new Vector2(0.15f, 0.72f), new Vector2(0.85f, 0.82f));
-        bodyText = CreateText(panelObject.transform, "Body", font, 22, TextAnchor.MiddleCenter, new Vector2(0.18f, 0.42f), new Vector2(0.82f, 0.70f));
-        GameObject optionObject = new GameObject("Options", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-        optionObject.transform.SetParent(panelObject.transform, false);
-        optionContainer = optionObject.GetComponent<RectTransform>();
-        optionContainer.anchorMin = new Vector2(0.20f, 0.25f);
-        optionContainer.anchorMax = new Vector2(0.80f, 0.35f);
-        optionContainer.offsetMin = Vector2.zero;
-        optionContainer.offsetMax = Vector2.zero;
-        HorizontalLayoutGroup layout = optionObject.GetComponent<HorizontalLayoutGroup>();
-        layout.spacing = 12f;
-        layout.childAlignment = TextAnchor.MiddleCenter;
-    }
-
-    private Text CreateText(Transform parent, string name, Font font, int size, TextAnchor align, Vector2 min, Vector2 max)
-    {
-        GameObject obj = new GameObject(name, typeof(RectTransform), typeof(Text));
-        obj.transform.SetParent(parent, false);
-        RectTransform rect = obj.GetComponent<RectTransform>();
-        rect.anchorMin = min;
-        rect.anchorMax = max;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-        Text text = obj.GetComponent<Text>();
-        text.font = font;
-        text.fontSize = size;
-        text.alignment = align;
-        text.color = Color.white;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Overflow;
-        return text;
-    }
-
-    private void AddOptionButton(string text, UnityEngine.Events.UnityAction action)
-    {
-        GameObject buttonObject = new GameObject(text + "Button", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
-        buttonObject.transform.SetParent(optionContainer, false);
-        LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
-        layout.preferredWidth = 160f;
-        layout.preferredHeight = 42f;
-        Image image = buttonObject.GetComponent<Image>();
-        image.color = new Color(0.18f, 0.22f, 0.28f, 1f);
-        Button button = buttonObject.GetComponent<Button>();
-        button.targetGraphic = image;
-        button.onClick.AddListener(action);
-        Text label = CreateText(buttonObject.transform, "Text", titleText.font, 18, TextAnchor.MiddleCenter, Vector2.zero, Vector2.one);
-        label.text = text;
-    }
-
-    private void ClearOptions()
-    {
-        if (optionContainer == null) return;
-        for (int i = optionContainer.childCount - 1; i >= 0; i--) Destroy(optionContainer.GetChild(i).gameObject);
-    }
+/// <summary>
+/// 旧 DayEventManager 保留为兼容空壳，避免旧场景或旧引用报错。
+/// 新的第 7/9 天剧情由 BlockingEncounterManager 处理。
+/// </summary>
+public class DayEventManager : MonoBehaviour
+{
+    public static bool IsDayEventOpen { get { return false; } }
+    public void CheckTodayEvent() { }
+    public void CloseDayEventSilently() { }
 }
 
 public class BattleManager : MonoBehaviour
@@ -489,6 +573,7 @@ public class BattleManager : MonoBehaviour
     private Button attackButton;
     private BattleData currentBattle;
     private int enemyHp;
+    private Action battleFinishedCallback;
 
     private void Start()
     {
@@ -500,6 +585,7 @@ public class BattleManager : MonoBehaviour
 
     private void LoadBattles()
     {
+        battleById.Clear();
         TextAsset jsonAsset = Resources.Load<TextAsset>("Data/battles");
         if (jsonAsset == null) return;
         BattleDataList dataList = JsonUtility.FromJson<BattleDataList>(jsonAsset.text);
@@ -512,6 +598,13 @@ public class BattleManager : MonoBehaviour
 
     public void StartBattle(string battleId)
     {
+        StartBattle(battleId, null);
+    }
+
+    public void StartBattle(string battleId, Action onFinished)
+    {
+        if (gameManager == null) gameManager = GetComponent<GameManager>();
+        if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
         if (battleById.Count == 0) LoadBattles();
         BattleData battle;
         if (!battleById.TryGetValue(battleId, out battle))
@@ -522,9 +615,14 @@ public class BattleManager : MonoBehaviour
 
         currentBattle = battle;
         enemyHp = battle.enemyHp;
+        battleFinishedCallback = onFinished;
         EnsurePanel();
         IsBattleOpen = true;
         panelObject.SetActive(true);
+        panelObject.transform.SetAsLastSibling();
+        attackButton.onClick.RemoveAllListeners();
+        attackButton.onClick.AddListener(Attack);
+        attackButton.GetComponentInChildren<Text>().text = "攻击";
         RefreshBattleText("战斗开始！");
     }
 
@@ -541,9 +639,7 @@ public class BattleManager : MonoBehaviour
             ApplyFlags(currentBattle.winFlags);
             log += "\n" + currentBattle.winMessage;
             RefreshBattleText(log);
-            attackButton.GetComponentInChildren<Text>().text = "结束战斗";
-            attackButton.onClick.RemoveAllListeners();
-            attackButton.onClick.AddListener(CloseBattle);
+            SetFinishButton();
             return;
         }
 
@@ -557,13 +653,19 @@ public class BattleManager : MonoBehaviour
             ApplyFlags(currentBattle.loseFlags);
             log += "\n" + currentBattle.loseMessage;
             playerState.hp = Mathf.Max(1, playerState.maxHp / 2);
-            attackButton.GetComponentInChildren<Text>().text = "结束战斗";
-            attackButton.onClick.RemoveAllListeners();
-            attackButton.onClick.AddListener(CloseBattle);
+            SetFinishButton();
         }
 
         RefreshBattleText(log);
         if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(playerState);
+    }
+
+    private void SetFinishButton()
+    {
+        Text label = attackButton.GetComponentInChildren<Text>();
+        if (label != null) label.text = "结束战斗";
+        attackButton.onClick.RemoveAllListeners();
+        attackButton.onClick.AddListener(CloseBattle);
     }
 
     private void RefreshBattleText(string log)
@@ -582,7 +684,9 @@ public class BattleManager : MonoBehaviour
 
     private void CloseBattle()
     {
+        Action callback = battleFinishedCallback;
         CloseBattleSilently();
+        if (callback != null) callback.Invoke();
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
         if (locationUIManager != null) locationUIManager.ShowMessage("战斗结束，你重新回到自由探索。 ");
     }
@@ -592,6 +696,7 @@ public class BattleManager : MonoBehaviour
         IsBattleOpen = false;
         if (panelObject != null) panelObject.SetActive(false);
         currentBattle = null;
+        battleFinishedCallback = null;
     }
 
     private void EnsurePanel()
@@ -617,7 +722,6 @@ public class BattleManager : MonoBehaviour
         buttonRect.anchorMin = new Vector2(0.5f, 0.27f);
         buttonRect.anchorMax = new Vector2(0.5f, 0.27f);
         buttonRect.pivot = new Vector2(0.5f, 0.5f);
-        attackButton.onClick.AddListener(Attack);
     }
 
     private Text CreateText(Transform parent, string name, Font font, int size, TextAnchor align, Vector2 min, Vector2 max)
@@ -727,6 +831,7 @@ public class SaveButtonOverrideManager : MonoBehaviour
     {
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null) return;
+        playerState.EnsureLists();
         File.WriteAllText(SaveFilePath, JsonUtility.ToJson(playerState, true));
         if (locationUIManager != null) locationUIManager.ShowMessage("保存成功：" + SaveFilePath);
     }
@@ -752,6 +857,8 @@ public class SaveButtonOverrideManager : MonoBehaviour
         RefreshAfterStateChanged("读取存档成功。");
         OpeningStoryManager opening = GetComponent<OpeningStoryManager>();
         if (opening != null) opening.CheckOpeningAfterLoad();
+        BlockingEncounterManager encounterManager = GetComponent<BlockingEncounterManager>();
+        if (encounterManager != null) encounterManager.RestoreActiveEncounterUI();
     }
 
     private void NewGame()
@@ -765,6 +872,8 @@ public class SaveButtonOverrideManager : MonoBehaviour
 
     private void RefreshAfterStateChanged(string message)
     {
+        BlockingEncounterManager encounterManager = GetComponent<BlockingEncounterManager>();
+        if (encounterManager != null) encounterManager.RestoreActiveEncounterUI();
         DayEventManager dayEvent = GetComponent<DayEventManager>();
         if (dayEvent != null) dayEvent.CloseDayEventSilently();
         BattleManager battle = GetComponent<BattleManager>();

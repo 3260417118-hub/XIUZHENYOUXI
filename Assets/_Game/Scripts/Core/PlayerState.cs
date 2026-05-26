@@ -21,6 +21,13 @@ public class PlayerState
     public int spiritStones;
 
     public bool hasSeenOpening;
+
+    /// <summary>
+    /// 当前未解决的阻塞式剧情 NPC 事件。
+    /// 为空时可以自由移动；不为空时会阻止移动并在当前地点显示事件 NPC。
+    /// </summary>
+    public string activeBlockingEncounterId;
+
     public int hp;
     public int maxHp;
     public int attack;
@@ -48,6 +55,11 @@ public class PlayerState
         if (dayEventsTriggered == null)
         {
             dayEventsTriggered = new List<string>();
+        }
+
+        if (activeBlockingEncounterId == null)
+        {
+            activeBlockingEncounterId = "";
         }
 
         if (maxHp <= 0)

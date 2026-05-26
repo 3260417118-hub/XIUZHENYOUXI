@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// 负责判断和执行玩家在格子地图上的移动。
 /// 第一版只允许上下左右移动一格，移动不消耗行动点。
-/// 事件、对话、开场、日期事件或战斗打开时，禁止移动。
+/// 事件、对话、开场、阻塞 NPC 事件或战斗打开时，禁止移动。
 /// </summary>
 public class PlayerMapController : MonoBehaviour
 {
@@ -46,9 +46,12 @@ public class PlayerMapController : MonoBehaviour
             return true;
         }
 
-        if (DayEventManager.IsDayEventOpen)
+        BlockingEncounterManager blockingEncounterManager = BlockingEncounterManager.Instance != null
+            ? BlockingEncounterManager.Instance
+            : GetComponent<BlockingEncounterManager>();
+        if (blockingEncounterManager != null && blockingEncounterManager.HasActiveBlockingEncounter())
         {
-            message = "请先处理当前剧情事件。";
+            message = blockingEncounterManager.GetBlockMoveMessageOrDefault();
             return true;
         }
 
