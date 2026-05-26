@@ -16,6 +16,12 @@ public class MapCellData
     public bool walkable;
     public string[] npcIds;
     public string[] actionIds;
+
+    /// <summary>
+    /// 首次进入该地点时触发的剧情事件 id。
+    /// 为空时表示该地点没有首次进入事件。
+    /// </summary>
+    public string firstEnterEventId;
 }
 
 /// <summary>
