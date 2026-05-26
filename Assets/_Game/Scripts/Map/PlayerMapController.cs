@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>
 /// 负责判断和执行玩家在格子地图上的移动。
 /// 第一版只允许上下左右移动一格，移动不消耗行动点。
+/// 事件或对话打开时，禁止移动，避免 UI 混在一起。
 /// </summary>
 public class PlayerMapController : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class PlayerMapController : MonoBehaviour
     [SerializeField] private LocationUIManager locationUIManager;
     [SerializeField] private LocationActionManager locationActionManager;
     [SerializeField] private EventManager eventManager;
+    [SerializeField] private DialogueManager dialogueManager;
 
     public void SetReferences(
         GameManager game,
@@ -22,15 +24,15 @@ public class PlayerMapController : MonoBehaviour
         mapGridManager = mapGrid;
         locationUIManager = locationUI;
         locationActionManager = actionManager;
-        EnsureEventManager();
+        EnsureManagers();
     }
 
     private void Start()
     {
-        EnsureEventManager();
+        EnsureManagers();
     }
 
-    private void EnsureEventManager()
+    private void EnsureManagers()
     {
         if (eventManager == null)
         {
@@ -41,6 +43,35 @@ public class PlayerMapController : MonoBehaviour
         {
             eventManager = gameObject.AddComponent<EventManager>();
         }
+
+        if (dialogueManager == null)
+        {
+            dialogueManager = GetComponent<DialogueManager>();
+        }
+    }
+
+    /// <summary>
+    /// 事件或对话打开时，不允许玩家点击地图移动。
+    /// 这样玩家必须先处理完当前事件/对话，底部按钮不会和地点按钮混在一起。
+    /// </summary>
+    private bool IsInteractionBlockingMovement(out string message)
+    {
+        EnsureManagers();
+        message = "";
+
+        if (eventManager != null && eventManager.IsEventOpen)
+        {
+            message = "请先处理当前事件。";
+            return true;
+        }
+
+        if (dialogueManager != null && dialogueManager.IsDialogueOpen)
+        {
+            message = "请先结束当前对话。";
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -54,6 +85,11 @@ public class PlayerMapController : MonoBehaviour
         if (gameManager == null)
         {
             message = "缺少 GameManager。";
+            return false;
+        }
+
+        if (IsInteractionBlockingMovement(out message))
+        {
             return false;
         }
 
@@ -85,7 +121,7 @@ public class PlayerMapController : MonoBehaviour
         string message;
         if (!CanMoveTo(targetCell, out message))
         {
-            if (locationUIManager != null)
+            if (locationUIManager != null && !string.IsNullOrEmpty(message))
             {
                 locationUIManager.ShowMessage(message);
             }
@@ -115,7 +151,7 @@ public class PlayerMapController : MonoBehaviour
             locationActionManager.RefreshCurrentLocation();
         }
 
-        EnsureEventManager();
+        EnsureManagers();
         if (eventManager != null)
         {
             eventManager.TryShowFirstEnterEvent(targetCell);
