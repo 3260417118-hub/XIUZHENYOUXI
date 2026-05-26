@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +16,7 @@ public class SaveManager : MonoBehaviour
     [SerializeField] private LocationUIManager locationUIManager;
     [SerializeField] private LocationActionManager locationActionManager;
     [SerializeField] private DialogueManager dialogueManager;
+    [SerializeField] private EventManager eventManager;
 
     [Header("存档按钮")]
     [SerializeField] private Button saveGameButton;
@@ -46,6 +48,7 @@ public class SaveManager : MonoBehaviour
         locationUIManager = locationUI;
         locationActionManager = actionManager;
         dialogueManager = dialogue;
+        eventManager = GetComponent<EventManager>();
 
         EnsureSaveButtons();
         BindButtons();
@@ -84,6 +87,11 @@ public class SaveManager : MonoBehaviour
         {
             dialogueManager = GetComponent<DialogueManager>();
         }
+
+        if (eventManager == null)
+        {
+            eventManager = GetComponent<EventManager>();
+        }
     }
 
     private void BindButtons()
@@ -120,7 +128,13 @@ public class SaveManager : MonoBehaviour
 
         try
         {
-            string json = JsonUtility.ToJson(gameManager.GetPlayerState(), true);
+            PlayerState playerState = gameManager.GetPlayerState();
+            if (playerState != null)
+            {
+                playerState.EnsureLists();
+            }
+
+            string json = JsonUtility.ToJson(playerState, true);
             File.WriteAllText(SaveFilePath, json);
             ShowMessage("保存成功：" + SaveFilePath);
         }
@@ -165,6 +179,7 @@ public class SaveManager : MonoBehaviour
                 return;
             }
 
+            loadedState.EnsureLists();
             CopyPlayerState(loadedState, gameManager.GetPlayerState());
             RefreshAfterStateChanged("读取存档成功。");
         }
@@ -199,6 +214,9 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
+        source.EnsureLists();
+        target.EnsureLists();
+
         target.currentCellId = source.currentCellId;
         target.currentX = source.currentX;
         target.currentY = source.currentY;
@@ -208,14 +226,23 @@ public class SaveManager : MonoBehaviour
         target.cultivation = source.cultivation;
         target.realm = string.IsNullOrEmpty(source.realm) ? "凡人" : source.realm;
         target.spiritStones = source.spiritStones;
+        target.flags = new List<string>(source.flags);
+        target.visitedCellIds = new List<string>(source.visitedCellIds);
     }
 
     private void RefreshAfterStateChanged(string message)
     {
-        // 读取或新游戏时，先关闭可能正在显示的对话选项。
+        // 读取或新游戏时，先关闭可能正在显示的对话/事件选项。
+        FindMissingReferences();
+
         if (dialogueManager != null)
         {
             dialogueManager.CloseDialogueSilently();
+        }
+
+        if (eventManager != null)
+        {
+            eventManager.CloseEventSilently();
         }
 
         if (mapGridManager != null)
