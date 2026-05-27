@@ -97,9 +97,7 @@ public class LocationActionManager : MonoBehaviour
         EnsureDialogueManager();
         EnsureEventManager();
 
-        // 关键修复：如果当前有“首次进入事件 / 剧情事件 / 对话 / 战斗”等正在显示，
-        // 不要清掉事件按钮，也不要重新生成普通地点行为按钮。
-        // 否则会出现“事件：翻开竹简”和“可执行：查看书籍”叠在一起。
+        // 如果当前有剧情/对话/战斗正在显示，不重新生成普通地点按钮，避免按钮混在一起。
         if (IsNormalLocationUiBlocked()) return;
 
         ClearCurrentButtons();
@@ -187,7 +185,6 @@ public class LocationActionManager : MonoBehaviour
         {
             foreach (string npcId in currentCell.npcIds)
             {
-                // 白发老者只在第 18 天药田出现，并且相助或婉拒后消失。
                 if (npcId == "white_haired_elder")
                 {
                     ChapterOneLateStoryFixManager lateFix = GetComponent<ChapterOneLateStoryFixManager>();
@@ -286,14 +283,24 @@ public class LocationActionManager : MonoBehaviour
         }
 
         PlayerState playerState = gameManager.GetPlayerState();
-        if (actionData.cultivationGain > 0) playerState.cultivation += actionData.cultivationGain;
 
-        if (locationUIManager != null)
+        if (actionData.id == "cultivate")
         {
-            locationUIManager.RefreshPlayerStatus(playerState);
-            locationUIManager.ShowMessage(actionData.message);
+            CultivationManager cultivationManager = GetComponent<CultivationManager>();
+            if (cultivationManager != null) cultivationManager.AddCultivation(10);
+            else
+            {
+                playerState.cultivation += 10;
+                if (locationUIManager != null) locationUIManager.ShowMessage("你闭关修炼片刻，体内灵气流转，修为提升了 10 点。");
+            }
+        }
+        else
+        {
+            if (actionData.cultivationGain > 0) playerState.cultivation += actionData.cultivationGain;
+            if (locationUIManager != null) locationUIManager.ShowMessage(actionData.message);
         }
 
+        if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(playerState);
         RefreshCurrentLocation();
     }
 

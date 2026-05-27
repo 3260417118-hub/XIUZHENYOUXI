@@ -49,6 +49,9 @@ public class GameManager : MonoBehaviour
         EnsureComponent<MapUnlockManager>();
         EnsureComponent<NightEventManager>();
         EnsureComponent<RestManager>();
+        EnsureComponent<RealmManager>();
+        EnsureComponent<CultivationManager>();
+        EnsureComponent<BreakthroughButtonManager>();
         EnsureComponent<ChapterOneLocationMechanicsManager>();
         EnsureComponent<TutorialManager>();
         EnsureComponent<SaveButtonOverrideManager>();
@@ -77,16 +80,18 @@ public class GameManager : MonoBehaviour
         playerState.day = 1;
         playerState.maxActionPoints = 3;
         playerState.actionPoints = 3;
-        playerState.cultivation = 0;
         playerState.realm = "凡人";
+        playerState.realmLevel = 0;
+        playerState.cultivation = 0;
+        playerState.maxCultivation = 150;
         playerState.spiritStones = 0;
         playerState.hasSeenOpening = false;
         playerState.activeBlockingEncounterId = "";
         playerState.currentRestLocationId = "ruined_hut";
-        playerState.maxHp = 100;
-        playerState.hp = 100;
-        playerState.attack = 15;
-        playerState.defense = 3;
+        playerState.maxHp = 50;
+        playerState.hp = 50;
+        playerState.attack = 10;
+        playerState.defense = 0;
         playerState.EnsureLists();
         playerState.SetCounter("labor_level", 1);
     }
