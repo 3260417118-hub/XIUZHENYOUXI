@@ -36,6 +36,17 @@ public class BlockingEncounterOptionData
     public string startBattleId;
     public bool resolveEncounter;
     public bool closeOnly;
+
+    // 轻量条件字段：用于关键剧情选项显示。
+    public string[] requireFlags;
+    public string[] excludeFlags;
+    public string[] requireItems;
+    public string[] excludeItems;
+    public string[] requireSkills;
+    public string[] excludeSkills;
+    public int minCultivation;
+    public int minDay;
+    public int maxDay;
 }
 
 [Serializable]
@@ -61,7 +72,6 @@ public class BlockingEncounterDataList
 /// <summary>
 /// 开场剧情管理器。
 /// 新游戏第一次进入时，用全黑背景逐句淡入开场文字。
-/// 支持跳过：跳过后立即显示全部文字，并显示“进入游戏”按钮。
 /// </summary>
 public class OpeningStoryManager : MonoBehaviour
 {
@@ -120,7 +130,6 @@ public class OpeningStoryManager : MonoBehaviour
             if (chapterTitle != null) chapterTitle.HideImmediately();
             return;
         }
-
         PlayOpeningIfNeeded();
     }
 
@@ -129,7 +138,6 @@ public class OpeningStoryManager : MonoBehaviour
         if (gameManager == null) gameManager = GetComponent<GameManager>();
         if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
-
         if (playerState == null || playerState.hasSeenOpening)
         {
             HidePanelAndDeactivateOpening();
@@ -143,7 +151,6 @@ public class OpeningStoryManager : MonoBehaviour
         enterButton.gameObject.SetActive(false);
         skipButton.gameObject.SetActive(true);
         ClearLines();
-
         if (playCoroutine != null) StopCoroutine(playCoroutine);
         playCoroutine = StartCoroutine(PlayOpeningLines());
     }
@@ -161,11 +168,9 @@ public class OpeningStoryManager : MonoBehaviour
                 lineText.color = new Color(1f, 1f, 1f, alpha);
                 yield return null;
             }
-
             lineText.color = Color.white;
             yield return new WaitForSeconds(lineIntervalSeconds);
         }
-
         ShowEnterGameButton();
     }
 
@@ -176,7 +181,6 @@ public class OpeningStoryManager : MonoBehaviour
             StopCoroutine(playCoroutine);
             playCoroutine = null;
         }
-
         ShowAllOpeningTextImmediately();
         ShowEnterGameButton();
     }
@@ -184,10 +188,7 @@ public class OpeningStoryManager : MonoBehaviour
     private void ShowAllOpeningTextImmediately()
     {
         ClearLines();
-        foreach (string line in storyTexts)
-        {
-            CreateLineText(line, 1f);
-        }
+        foreach (string line in storyTexts) CreateLineText(line, 1f);
     }
 
     private void ShowEnterGameButton()
@@ -215,23 +216,19 @@ public class OpeningStoryManager : MonoBehaviour
 
     private void OnEnterGameClicked()
     {
-        // 点击“进入游戏”后，不立刻进地图，先播放章节标题。
         if (playCoroutine != null)
         {
             StopCoroutine(playCoroutine);
             playCoroutine = null;
         }
-
         if (panelObject != null) panelObject.SetActive(false);
         IsOpeningActive = true;
-
         ChapterTitleManager chapterTitle = GetOrCreateChapterTitleManager();
         if (chapterTitle == null)
         {
             FinishOpeningAndEnterMap();
             return;
         }
-
         chapterTitle.PlayChapterTitle("第一章：青石村外", FinishOpeningAndEnterMap);
     }
 
@@ -243,22 +240,16 @@ public class OpeningStoryManager : MonoBehaviour
             playerState.hasSeenOpening = true;
             playerState.AddFlag("tutorial_move_shown");
         }
-
         IsOpeningActive = false;
-        if (locationUIManager != null)
-        {
-            locationUIManager.ShowMessage("你在村口醒来，记忆一片混乱。");
-        }
+        if (locationUIManager != null) locationUIManager.ShowMessage("你在村口醒来，记忆一片混乱。");
+        LocationActionManager actionManager = GetComponent<LocationActionManager>();
+        if (actionManager != null) actionManager.RefreshCurrentLocation();
     }
 
     private ChapterTitleManager GetOrCreateChapterTitleManager()
     {
         ChapterTitleManager chapterTitle = GetComponent<ChapterTitleManager>();
-        if (chapterTitle == null)
-        {
-            chapterTitle = gameObject.AddComponent<ChapterTitleManager>();
-        }
-
+        if (chapterTitle == null) chapterTitle = gameObject.AddComponent<ChapterTitleManager>();
         return chapterTitle;
     }
 
@@ -270,7 +261,6 @@ public class OpeningStoryManager : MonoBehaviour
             StopCoroutine(playCoroutine);
             playCoroutine = null;
         }
-
         if (panelObject != null) panelObject.SetActive(false);
     }
 
@@ -279,7 +269,6 @@ public class OpeningStoryManager : MonoBehaviour
         if (panelObject != null) return;
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
-
         panelObject = new GameObject("OpeningPanel", typeof(RectTransform), typeof(Image));
         panelObject.transform.SetParent(canvas.transform, false);
         Stretch(panelObject.GetComponent<RectTransform>());
@@ -324,10 +313,7 @@ public class OpeningStoryManager : MonoBehaviour
     private void ClearLines()
     {
         if (lineContainer == null) return;
-        for (int i = lineContainer.childCount - 1; i >= 0; i--)
-        {
-            Destroy(lineContainer.GetChild(i).gameObject);
-        }
+        for (int i = lineContainer.childCount - 1; i >= 0; i--) Destroy(lineContainer.GetChild(i).gameObject);
     }
 
     private Button CreateButton(Transform parent, string objectName, string text, Vector2 size, int fontSize)
@@ -370,18 +356,12 @@ public class OpeningStoryManager : MonoBehaviour
     }
 }
 
-/// <summary>
-/// 章节标题转场管理器。
-/// 点击“进入游戏”后，先播放“第一章：青石村外”，再进入地图。
-/// </summary>
 public class ChapterTitleManager : MonoBehaviour
 {
     public static bool IsChapterTitleActive { get; private set; }
-
     [SerializeField] private float fadeInDuration = 1.2f;
     [SerializeField] private float holdDuration = 1.5f;
     [SerializeField] private float fadeOutDuration = 1.0f;
-
     private GameObject panelObject;
     private Text titleText;
     private Font cachedFont;
@@ -396,7 +376,6 @@ public class ChapterTitleManager : MonoBehaviour
             if (onFinished != null) onFinished.Invoke();
             return;
         }
-
         finishCallback = onFinished;
         if (playCoroutine != null) StopCoroutine(playCoroutine);
         panelObject.SetActive(true);
@@ -410,12 +389,8 @@ public class ChapterTitleManager : MonoBehaviour
     public void HideImmediately()
     {
         IsChapterTitleActive = false;
-        if (playCoroutine != null)
-        {
-            StopCoroutine(playCoroutine);
-            playCoroutine = null;
-        }
-
+        if (playCoroutine != null) StopCoroutine(playCoroutine);
+        playCoroutine = null;
         if (panelObject != null) panelObject.SetActive(false);
     }
 
@@ -424,7 +399,6 @@ public class ChapterTitleManager : MonoBehaviour
         yield return FadeTitle(0f, 1f, fadeInDuration);
         yield return new WaitForSeconds(holdDuration);
         yield return FadeTitle(1f, 0f, fadeOutDuration);
-
         IsChapterTitleActive = false;
         if (panelObject != null) panelObject.SetActive(false);
         Action callback = finishCallback;
@@ -440,11 +414,9 @@ public class ChapterTitleManager : MonoBehaviour
         {
             timer += Time.deltaTime;
             float t = Mathf.Clamp01(timer / safeDuration);
-            float alpha = Mathf.Lerp(from, to, t);
-            titleText.color = new Color(1f, 1f, 1f, alpha);
+            titleText.color = new Color(1f, 1f, 1f, Mathf.Lerp(from, to, t));
             yield return null;
         }
-
         titleText.color = new Color(1f, 1f, 1f, to);
     }
 
@@ -453,7 +425,6 @@ public class ChapterTitleManager : MonoBehaviour
         if (panelObject != null) return;
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
-
         panelObject = new GameObject("ChapterTitlePanel", typeof(RectTransform), typeof(Image));
         panelObject.transform.SetParent(canvas.transform, false);
         RectTransform panelRect = panelObject.GetComponent<RectTransform>();
@@ -464,7 +435,6 @@ public class ChapterTitleManager : MonoBehaviour
         Image image = panelObject.GetComponent<Image>();
         image.color = Color.black;
         image.raycastTarget = true;
-
         GameObject textObject = new GameObject("ChapterTitleText", typeof(RectTransform), typeof(Text));
         textObject.transform.SetParent(panelObject.transform, false);
         RectTransform textRect = textObject.GetComponent<RectTransform>();
@@ -479,7 +449,6 @@ public class ChapterTitleManager : MonoBehaviour
         titleText.color = new Color(1f, 1f, 1f, 0f);
         titleText.horizontalOverflow = HorizontalWrapMode.Wrap;
         titleText.verticalOverflow = VerticalWrapMode.Overflow;
-
         panelObject.SetActive(false);
     }
 
@@ -495,12 +464,10 @@ public class ChapterTitleManager : MonoBehaviour
 
 /// <summary>
 /// 阻塞式关键日期事件：到指定日期后，在玩家当前格生成临时 NPC。
-/// 事件未解决前不能移动，点击 NPC 后在底部区域显示剧情和选项。
 /// </summary>
 public class BlockingEncounterManager : MonoBehaviour
 {
     public static BlockingEncounterManager Instance { get; private set; }
-
     private readonly Dictionary<string, BlockingEncounterData> encounterById = new Dictionary<string, BlockingEncounterData>();
     private GameManager gameManager;
     private LocationUIManager locationUIManager;
@@ -530,10 +497,7 @@ public class BlockingEncounterManager : MonoBehaviour
         yield return null;
         BindEndDayButton();
         RestoreActiveEncounterUI();
-        if (!OpeningStoryManager.IsOpeningActive && !ChapterTitleManager.IsChapterTitleActive)
-        {
-            CheckTodayEncounter();
-        }
+        if (!OpeningStoryManager.IsOpeningActive && !ChapterTitleManager.IsChapterTitleActive) CheckTodayEncounter();
     }
 
     private void LoadEncounters()
@@ -545,10 +509,7 @@ public class BlockingEncounterManager : MonoBehaviour
         if (dataList == null || dataList.encounters == null) return;
         foreach (BlockingEncounterData encounter in dataList.encounters)
         {
-            if (encounter != null && !string.IsNullOrEmpty(encounter.id))
-            {
-                encounterById[encounter.id] = encounter;
-            }
+            if (encounter != null && !string.IsNullOrEmpty(encounter.id)) encounterById[encounter.id] = encounter;
         }
     }
 
@@ -566,50 +527,19 @@ public class BlockingEncounterManager : MonoBehaviour
 
     public void EndDayAndCheckEncounter()
     {
-        if (gameManager == null) gameManager = GetComponent<GameManager>();
         if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
-        if (locationActionManager == null) locationActionManager = GetComponent<LocationActionManager>();
-        if (eventManager == null) eventManager = GetComponent<EventManager>();
-        if (dialogueManager == null) dialogueManager = GetComponent<DialogueManager>();
-
-        if (OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || BattleManager.IsBattleOpen || HasActiveBlockingEncounter())
-        {
-            if (locationUIManager != null) locationUIManager.ShowMessage(GetBlockMoveMessageOrDefault());
-            return;
-        }
-
-        if (eventManager != null && eventManager.IsEventOpen)
-        {
-            if (locationUIManager != null) locationUIManager.ShowMessage("请先处理当前事件。");
-            return;
-        }
-
-        if (dialogueManager != null && dialogueManager.IsDialogueOpen)
-        {
-            if (locationUIManager != null) locationUIManager.ShowMessage("请先结束当前对话。");
-            return;
-        }
-
-        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
-        if (playerState == null) return;
-
-        ActionPointRules.EndDay(playerState);
-        if (locationUIManager != null)
-        {
-            locationUIManager.RefreshPlayerStatus(playerState);
-            locationUIManager.ShowMessage("新的一天开始了，行动点已恢复。");
-        }
-
-        CheckTodayEncounter();
-        RefreshLocationButtons();
+        if (locationUIManager != null) locationUIManager.ShowMessage("你需要回到破败小屋休息，才能结束今日。");
     }
 
     public void CheckTodayEncounter()
     {
         if (gameManager == null) gameManager = GetComponent<GameManager>();
+        if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive) return;
         playerState.EnsureLists();
+        ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
+        if (chapterOne != null) chapterOne.HandleDailyStoryTrigger();
 
         if (!string.IsNullOrEmpty(playerState.activeBlockingEncounterId))
         {
@@ -638,16 +568,8 @@ public class BlockingEncounterManager : MonoBehaviour
     public string GetBlockMoveMessageOrDefault()
     {
         BlockingEncounterData encounter = GetActiveEncounter();
-        if (encounter != null && !string.IsNullOrEmpty(encounter.blockMoveMessage))
-        {
-            return encounter.blockMoveMessage;
-        }
-
-        if (OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive)
-        {
-            return "请先看完当前剧情。";
-        }
-
+        if (encounter != null && !string.IsNullOrEmpty(encounter.blockMoveMessage)) return encounter.blockMoveMessage;
+        if (OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive) return "请先看完当前剧情。";
         return "有人拦住了你。";
     }
 
@@ -671,8 +593,31 @@ public class BlockingEncounterManager : MonoBehaviour
     {
         BlockingEncounterData encounter = GetActiveEncounter();
         if (encounter == null || locationUIManager == null) return;
-        locationUIManager.ShowEvent(encounter.title, "\n" + encounter.text);
+        locationUIManager.ShowEvent(encounter.title, "\n" + GetEncounterText(encounter));
         RefreshLocationButtonsWithEncounterOptions(encounter);
+    }
+
+    private string GetEncounterText(BlockingEncounterData encounter)
+    {
+        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
+        if (playerState == null || encounter == null) return encounter != null ? encounter.text : "";
+        if (encounter.id == "encounter_day4_thug_saw_sister")
+        {
+            if (playerState.HasFlag("rescued_sister") || playerState.HasFlag("sister_at_ruined_hut"))
+            {
+                return "第四日午后，一个吊儿郎当的小混混挡在林昊面前。他原本只是想敲诈几枚铜钱，可目光扫过破败小屋的方向时，眼神顿时变了。“听说你身边藏着个小丫头？嘿，跟着你这穷小子有什么前途？不如让她去赵爷府上享福。”";
+            }
+            return "第四日午后，一个吊儿郎当的小混混挡在林昊面前，斜着眼打量你：“外乡来的小子，最近在村里到处乱晃？识相点，把身上的东西交出来。”";
+        }
+        if (encounter.id == "encounter_day7_bully_helpers")
+        {
+            if (playerState.HasFlag("thug_reported_sister") || playerState.HasFlag("sister_at_ruined_hut"))
+            {
+                return "第七日清晨，两名赵霸天的帮手堵住去路。为首一人冷笑道：“就是你打了赵爷的人？听说你还藏着个漂亮丫头。赵爷近日有事脱不开身，便让我们先来请人。”";
+            }
+            return "第七日清晨，两名赵霸天的帮手堵住去路。为首一人冷笑道：“就是你这外乡小子，敢在青石村不给赵爷面子？”";
+        }
+        return encounter.text;
     }
 
     private void RefreshLocationButtonsWithEncounterOptions(BlockingEncounterData encounter)
@@ -688,14 +633,9 @@ public class BlockingEncounterManager : MonoBehaviour
         if (option == null) return;
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null) return;
-
         ApplyFlags(option.setFlags);
         string optionMessage = option.message;
-        if (!string.IsNullOrEmpty(optionMessage) && locationUIManager != null)
-        {
-            locationUIManager.ShowMessage(optionMessage);
-        }
-
+        if (!string.IsNullOrEmpty(optionMessage) && locationUIManager != null) locationUIManager.ShowMessage(optionMessage);
         if (!string.IsNullOrEmpty(option.startBattleId))
         {
             if (locationActionManager != null) locationActionManager.ClearCurrentButtons();
@@ -704,7 +644,6 @@ public class BlockingEncounterManager : MonoBehaviour
             else if (option.resolveEncounter) ResolveActiveEncounter(optionMessage);
             return;
         }
-
         if (option.resolveEncounter) ResolveActiveEncounter(optionMessage);
         else if (option.closeOnly) RefreshLocationButtons();
     }
@@ -731,20 +670,14 @@ public class BlockingEncounterManager : MonoBehaviour
         BlockingEncounterData encounter = GetActiveEncounter();
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null) return;
-
         if (encounter != null)
         {
             ApplyFlags(encounter.resolvedFlags);
             playerState.AddTriggeredDayEvent(encounter.id);
         }
-
         playerState.activeBlockingEncounterId = "";
         RefreshLocationButtons();
-
-        if (!string.IsNullOrEmpty(finalMessage) && locationUIManager != null)
-        {
-            locationUIManager.ShowMessage(finalMessage);
-        }
+        if (!string.IsNullOrEmpty(finalMessage) && locationUIManager != null) locationUIManager.ShowMessage(finalMessage);
     }
 
     public void RestoreActiveEncounterUI()
@@ -759,10 +692,6 @@ public class BlockingEncounterManager : MonoBehaviour
     }
 }
 
-/// <summary>
-/// 旧 DayEventManager 保留为兼容空壳，避免旧场景或旧引用报错。
-/// 新的第 7/9 天剧情由 BlockingEncounterManager 处理。
-/// </summary>
 public class DayEventManager : MonoBehaviour
 {
     public static bool IsDayEventOpen { get { return false; } }
@@ -773,7 +702,6 @@ public class DayEventManager : MonoBehaviour
 public class BattleManager : MonoBehaviour
 {
     public static bool IsBattleOpen { get; private set; }
-
     private readonly Dictionary<string, BattleData> battleById = new Dictionary<string, BattleData>();
     private GameManager gameManager;
     private LocationUIManager locationUIManager;
@@ -824,7 +752,6 @@ public class BattleManager : MonoBehaviour
             if (locationUIManager != null) locationUIManager.ShowMessage("找不到战斗数据：" + battleId);
             return;
         }
-
         currentBattle = battle;
         enemyHp = battle.enemyHp;
         battleFinishedCallback = onFinished;
@@ -846,7 +773,6 @@ public class BattleManager : MonoBehaviour
         int playerDamage = Mathf.Max(1, playerState.attack - currentBattle.enemyDefense);
         enemyHp -= playerDamage;
         string log = "你攻击了" + currentBattle.enemyName + "，造成 " + playerDamage + " 点伤害。";
-
         if (enemyHp <= 0)
         {
             ApplyFlags(currentBattle.winFlags);
@@ -856,12 +782,10 @@ public class BattleManager : MonoBehaviour
             SetFinishButton();
             return;
         }
-
         int enemyDamage = Mathf.Max(1, currentBattle.enemyAttack - playerState.defense);
         playerState.hp -= enemyDamage;
         if (playerState.hp < 0) playerState.hp = 0;
         log += "\n" + currentBattle.enemyName + "反击，造成 " + enemyDamage + " 点伤害。";
-
         if (playerState.hp <= 0)
         {
             ApplyFlags(currentBattle.loseFlags);
@@ -870,7 +794,6 @@ public class BattleManager : MonoBehaviour
             playerState.hp = Mathf.Max(1, playerState.maxHp / 2);
             SetFinishButton();
         }
-
         RefreshBattleText(log);
         if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(playerState);
     }
@@ -904,10 +827,7 @@ public class BattleManager : MonoBehaviour
         CloseBattleSilently();
         if (callback != null) callback.Invoke();
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
-        if (!string.IsNullOrEmpty(resultMessage) && locationUIManager != null)
-        {
-            locationUIManager.ShowMessage(resultMessage);
-        }
+        if (!string.IsNullOrEmpty(resultMessage) && locationUIManager != null) locationUIManager.ShowMessage(resultMessage);
     }
 
     public void CloseBattleSilently()
@@ -995,21 +915,18 @@ public class TutorialManager : MonoBehaviour
     private void Update()
     {
         if (OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive) return;
-
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null || locationUIManager == null) return;
-
         MapCellData currentCell = mapGridManager != null ? mapGridManager.GetCurrentCell() : null;
         if (currentCell != null && currentCell.actionIds != null && currentCell.actionIds.Length > 0 && !playerState.HasFlag("tutorial_action_shown"))
         {
             playerState.AddFlag("tutorial_action_shown");
             locationUIManager.ShowMessage("修炼、搜索、采集等行为会消耗行动点。每天只有 3 点行动点。");
         }
-
         if (playerState.actionPoints <= 0 && !playerState.HasFlag("tutorial_no_ap_shown"))
         {
             playerState.AddFlag("tutorial_no_ap_shown");
-            locationUIManager.ShowMessage("今日行动点已用尽。你仍然可以移动和对话，也可以点击结束今日。");
+            locationUIManager.ShowMessage("今日行动点已用尽。你仍然可以移动和对话，也可以点击休息过夜。");
         }
     }
 }
@@ -1021,10 +938,7 @@ public class SaveButtonOverrideManager : MonoBehaviour
     private LocationUIManager locationUIManager;
     private LocationActionManager locationActionManager;
 
-    private string SaveFilePath
-    {
-        get { return Path.Combine(Application.persistentDataPath, "xianxia_save.json"); }
-    }
+    private string SaveFilePath { get { return Path.Combine(Application.persistentDataPath, "xianxia_save.json"); } }
 
     private IEnumerator Start()
     {
@@ -1051,6 +965,7 @@ public class SaveButtonOverrideManager : MonoBehaviour
 
     private void SaveGame()
     {
+        if (RestManager.IsRestingTransition) { if (locationUIManager != null) locationUIManager.ShowMessage("正在休息过夜，暂时不能保存。"); return; }
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null) return;
         playerState.EnsureLists();
@@ -1060,19 +975,18 @@ public class SaveButtonOverrideManager : MonoBehaviour
 
     private void LoadGame()
     {
+        if (RestManager.IsRestingTransition) { if (locationUIManager != null) locationUIManager.ShowMessage("正在休息过夜，暂时不能读取。"); return; }
         if (!File.Exists(SaveFilePath))
         {
             if (locationUIManager != null) locationUIManager.ShowMessage("暂无存档");
             return;
         }
-
         PlayerState loaded = JsonUtility.FromJson<PlayerState>(File.ReadAllText(SaveFilePath));
         if (loaded == null)
         {
             if (locationUIManager != null) locationUIManager.ShowMessage("存档数据无效。");
             return;
         }
-
         loaded.EnsureLists();
         FieldInfo field = typeof(GameManager).GetField("playerState", BindingFlags.Instance | BindingFlags.NonPublic);
         if (field != null) field.SetValue(gameManager, loaded);
@@ -1085,6 +999,7 @@ public class SaveButtonOverrideManager : MonoBehaviour
 
     private void NewGame()
     {
+        if (RestManager.IsRestingTransition) { if (locationUIManager != null) locationUIManager.ShowMessage("正在休息过夜，暂时不能新游戏。"); return; }
         if (gameManager == null) return;
         gameManager.InitNewGame();
         RefreshAfterStateChanged("新游戏开始。");
@@ -1100,19 +1015,13 @@ public class SaveButtonOverrideManager : MonoBehaviour
         if (dayEvent != null) dayEvent.CloseDayEventSilently();
         BattleManager battle = GetComponent<BattleManager>();
         if (battle != null) battle.CloseBattleSilently();
-        EventManager eventManager = GetComponent<EventManager>();
-        if (eventManager != null) eventManager.CloseEventSilently();
-        DialogueManager dialogueManager = GetComponent<DialogueManager>();
-        if (dialogueManager != null) dialogueManager.CloseDialogueSilently();
-        ChapterTitleManager chapterTitle = GetComponent<ChapterTitleManager>();
-        if (chapterTitle != null) chapterTitle.HideImmediately();
-
+        ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
+        if (chapterOne != null) chapterOne.CloseChapterOneEventSilently();
         if (mapGridManager != null)
         {
             mapGridManager.SyncPlayerPositionToCurrentCell();
             mapGridManager.RefreshMap();
         }
-
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         MapCellData currentCell = mapGridManager != null ? mapGridManager.GetCurrentCell() : null;
         if (locationUIManager != null)
