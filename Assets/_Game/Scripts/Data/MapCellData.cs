@@ -22,6 +22,21 @@ public class MapCellData
     /// 为空时表示该地点没有首次进入事件。
     /// </summary>
     public string firstEnterEventId;
+
+    /// <summary>是否锁定。锁定格子显示但不能进入，除非满足条件或已解锁。</summary>
+    public bool locked;
+
+    /// <summary>拥有该 flag 后可进入/显示。</summary>
+    public string unlockFlag;
+
+    /// <summary>拥有该物品后可进入/显示。</summary>
+    public string unlockItem;
+
+    /// <summary>拥有该功法后可进入/显示。</summary>
+    public string unlockSkill;
+
+    /// <summary>为 true 时，未满足解锁条件前不在地图上显示。</summary>
+    public bool hiddenUntilUnlocked;
 }
 
 /// <summary>
