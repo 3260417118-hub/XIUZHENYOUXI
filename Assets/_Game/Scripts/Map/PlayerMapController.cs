@@ -40,9 +40,15 @@ public class PlayerMapController : MonoBehaviour
         EnsureManagers();
         message = "";
 
-        if (OpeningStoryManager.IsOpeningActive)
+        if (OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive)
         {
-            message = "请先看完开场剧情。";
+            message = "请先看完当前剧情。";
+            return true;
+        }
+
+        if (RestManager.IsRestingTransition)
+        {
+            message = "正在休息过夜。";
             return true;
         }
 
@@ -94,13 +100,25 @@ public class PlayerMapController : MonoBehaviour
             return false;
         }
 
+        PlayerState playerState = gameManager.GetPlayerState();
+        if (!IsCellVisibleOrUnlocked(targetCell, playerState))
+        {
+            message = "这里暂时还没有发现。";
+            return false;
+        }
+
+        if (targetCell.locked && !IsCellUnlockedByState(targetCell, playerState))
+        {
+            message = "这里暂时无法进入。";
+            return false;
+        }
+
         if (!targetCell.walkable)
         {
             message = "这里暂时不能进入。";
             return false;
         }
 
-        PlayerState playerState = gameManager.GetPlayerState();
         if (!MapRuleUtility.IsOrthogonalNeighbor(playerState.currentX, playerState.currentY, targetCell.x, targetCell.y))
         {
             message = "只能移动到上下左右相邻的格子。";
@@ -138,5 +156,24 @@ public class PlayerMapController : MonoBehaviour
         EnsureManagers();
         if (eventManager != null) eventManager.TryShowFirstEnterEvent(targetCell);
         return true;
+    }
+
+    public bool IsCellVisibleOrUnlocked(MapCellData cell, PlayerState playerState)
+    {
+        if (cell == null || playerState == null) return false;
+        playerState.EnsureLists();
+        if (!cell.hiddenUntilUnlocked) return true;
+        return IsCellUnlockedByState(cell, playerState);
+    }
+
+    public bool IsCellUnlockedByState(MapCellData cell, PlayerState playerState)
+    {
+        if (cell == null || playerState == null) return false;
+        playerState.EnsureLists();
+        if (playerState.IsCellUnlocked(cell.id)) return true;
+        if (!string.IsNullOrEmpty(cell.unlockFlag) && playerState.HasFlag(cell.unlockFlag)) return true;
+        if (!string.IsNullOrEmpty(cell.unlockItem) && playerState.HasItem(cell.unlockItem)) return true;
+        if (!string.IsNullOrEmpty(cell.unlockSkill) && playerState.HasSkill(cell.unlockSkill)) return true;
+        return false;
     }
 }
