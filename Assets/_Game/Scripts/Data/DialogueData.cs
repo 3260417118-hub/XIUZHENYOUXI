@@ -4,7 +4,7 @@ using System.Collections.Generic;
 /// <summary>
 /// 单个对话选项数据。
 /// action 支持：close、message、dialogue。
-/// 并支持轻量条件显示。
+/// 并支持轻量条件显示和轻量奖励效果。
 /// </summary>
 [Serializable]
 public class DialogueOptionData
@@ -24,6 +24,14 @@ public class DialogueOptionData
     public int minCultivation;
     public int minDay;
     public int maxDay;
+
+    // 轻量效果字段：用于白发老者等简单 NPC 奖励。
+    public string[] setFlags;
+    public string[] addItems;
+    public string[] removeItems;
+    public string[] learnSkills;
+    public int cultivationGain;
+    public int spiritStoneGain;
 }
 
 /// <summary>
