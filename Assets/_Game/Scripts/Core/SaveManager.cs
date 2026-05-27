@@ -144,6 +144,8 @@ public class SaveManager : MonoBehaviour
             }
             loadedState.EnsureLists();
             CopyPlayerState(loadedState, gameManager.GetPlayerState());
+            RealmManager realmManager = GetComponent<RealmManager>();
+            if (realmManager != null) realmManager.NormalizePlayerRealm();
             RefreshAfterStateChanged("读取存档成功。");
             OpeningStoryManager openingStory = GetComponent<OpeningStoryManager>();
             if (openingStory != null) openingStory.CheckOpeningAfterLoad();
@@ -170,6 +172,8 @@ public class SaveManager : MonoBehaviour
             return;
         }
         gameManager.InitNewGame();
+        RealmManager realmManager = GetComponent<RealmManager>();
+        if (realmManager != null) realmManager.NormalizePlayerRealm();
         RefreshAfterStateChanged("新游戏开始。旧存档不会自动删除。 ");
         OpeningStoryManager openingStory = GetComponent<OpeningStoryManager>();
         if (openingStory != null) openingStory.PlayOpeningIfNeeded();
@@ -190,14 +194,16 @@ public class SaveManager : MonoBehaviour
         target.maxActionPoints = source.maxActionPoints <= 0 ? 3 : source.maxActionPoints;
         target.cultivation = source.cultivation;
         target.realm = string.IsNullOrEmpty(source.realm) ? "凡人" : source.realm;
+        target.realmLevel = source.realmLevel < 0 ? 0 : source.realmLevel;
+        target.maxCultivation = source.maxCultivation <= 0 ? 150 : source.maxCultivation;
         target.spiritStones = source.spiritStones;
         target.hasSeenOpening = source.hasSeenOpening;
         target.activeBlockingEncounterId = source.activeBlockingEncounterId;
         target.currentRestLocationId = string.IsNullOrEmpty(source.currentRestLocationId) ? "ruined_hut" : source.currentRestLocationId;
-        target.hp = source.hp <= 0 ? 100 : source.hp;
-        target.maxHp = source.maxHp <= 0 ? 100 : source.maxHp;
-        target.attack = source.attack <= 0 ? 15 : source.attack;
-        target.defense = source.defense <= 0 ? 3 : source.defense;
+        target.hp = source.hp <= 0 ? 50 : source.hp;
+        target.maxHp = source.maxHp <= 0 ? 50 : source.maxHp;
+        target.attack = source.attack <= 0 ? 10 : source.attack;
+        target.defense = source.defense < 0 ? 0 : source.defense;
         target.flags = new List<string>(source.flags);
         target.visitedCellIds = new List<string>(source.visitedCellIds);
         target.dayEventsTriggered = new List<string>(source.dayEventsTriggered);
@@ -227,6 +233,8 @@ public class SaveManager : MonoBehaviour
         if (chapterTitle != null) chapterTitle.HideImmediately();
         ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
         if (chapterOne != null) chapterOne.CloseChapterOneEventSilently();
+        RealmManager realmManager = GetComponent<RealmManager>();
+        if (realmManager != null) realmManager.NormalizePlayerRealm();
         if (mapGridManager != null)
         {
             mapGridManager.SyncPlayerPositionToCurrentCell();
