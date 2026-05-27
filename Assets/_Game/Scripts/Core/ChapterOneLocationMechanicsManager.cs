@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 第一章第一批地点机制。
-/// 只做轻量剧情/奖励/解锁，不做完整背包 UI、装备 UI、商店系统。
+/// 只做轻量剧情/奖励/地图切换，不做完整背包 UI、装备 UI、商店系统。
 /// </summary>
 public class ChapterOneLocationMechanicsManager : MonoBehaviour
 {
@@ -17,6 +19,13 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     private ActionPointManager actionPointManager;
     private BattleManager battleManager;
     private NightEventManager nightEventManager;
+
+    private GameObject storyPanelObject;
+    private CanvasGroup storyCanvasGroup;
+    private Text storyText;
+    private Font cachedFont;
+
+    private const string CaveStoryText = "【山洞中的哭声】\n\n你拨开藤蔓，洞中传来微弱的哭声。一个小女孩蜷缩在石壁旁，衣衫凌乱，手腕上还留着绳痕。她抬头看见你，眼中先是恐惧，随后像是认出了什么，颤声喊道：“哥哥……”";
 
     private void Start()
     {
@@ -49,7 +58,13 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
 
         if (currentCell.id == "black_wind_forest_entrance" && actionData.id == "enter_black_forest")
         {
-            EnterBlackForest();
+            EnterBlackForestMap();
+            return true;
+        }
+
+        if (currentCell.id == "forest_woods" && actionData.id == "return_from_black_forest")
+        {
+            ReturnFromBlackForestMap();
             return true;
         }
 
@@ -111,7 +126,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
 
         if (currentCell.id == "forest_cave" && !playerState.HasFlag("found_sister_in_cave") && !playerState.HasFlag("rescued_sister"))
         {
-            ShowSisterCaveEvent();
+            StartCoroutine(ShowSisterCaveStoryThenOptions());
             return;
         }
 
@@ -132,6 +147,42 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             playerState.AddFlag("heard_sect_recruit_notice");
             ShowMessage("青云宗将在第十日进行弟子选拔招募，凡有灵根者皆可一试。");
         }
+    }
+
+    private void EnterBlackForestMap()
+    {
+        PlayerState playerState = GetState();
+        if (playerState == null) return;
+        if (!playerState.HasSkill("skill_qi_training_basic") && !playerState.HasSkill("skill_body_tempering_basic"))
+        {
+            ShowMessage("黑风林中妖气森森，你现在毫无修炼根基，贸然进入恐怕有去无回。");
+            return;
+        }
+
+        playerState.AddFlag("entered_black_forest");
+        playerState.returnMainCellId = "black_wind_forest_entrance";
+        SwitchToCell("forest_woods", "black_forest", "你踏入黑风林，四周雾气渐浓。");
+    }
+
+    private void ReturnFromBlackForestMap()
+    {
+        PlayerState playerState = GetState();
+        if (playerState == null) return;
+        string returnCellId = string.IsNullOrEmpty(playerState.returnMainCellId) ? "black_wind_forest_entrance" : playerState.returnMainCellId;
+        SwitchToCell(returnCellId, "main", "你离开黑风林，回到入口处。");
+    }
+
+    private void SwitchToCell(string cellId, string mapId, string message)
+    {
+        PlayerState playerState = GetState();
+        MapCellData cell = mapGridManager != null ? mapGridManager.GetCellById(cellId) : null;
+        if (playerState == null || cell == null) return;
+        playerState.currentMapId = mapId;
+        playerState.currentCellId = cell.id;
+        playerState.currentX = cell.x;
+        playerState.currentY = cell.y;
+        RefreshAll();
+        ShowMessage(message);
     }
 
     private void ShowBlackForestShovelEvent()
@@ -160,22 +211,6 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             });
     }
 
-    private void EnterBlackForest()
-    {
-        PlayerState playerState = GetState();
-        if (playerState == null) return;
-        if (!playerState.HasSkill("skill_qi_training_basic") && !playerState.HasSkill("skill_body_tempering_basic"))
-        {
-            ShowMessage("黑风林中妖气森森，你现在毫无修炼根基，贸然进入恐怕有去无回。");
-            return;
-        }
-
-        playerState.AddFlag("entered_black_forest");
-        UnlockCells("forest_woods", "forest_bushes", "forest_cave");
-        ShowMessage("你定了定神，踏入黑风林边缘。新的道路已经显现。");
-        RefreshAll();
-    }
-
     private void ShowHiddenMistEvent()
     {
         OpenEvent(
@@ -202,11 +237,35 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             });
     }
 
-    private void ShowSisterCaveEvent()
+    private IEnumerator ShowSisterCaveStoryThenOptions()
+    {
+        IsChapterOneEventOpen = true;
+        if (locationActionManager != null) locationActionManager.ClearCurrentButtons();
+        EnsureStoryPanel();
+        if (storyPanelObject != null)
+        {
+            storyPanelObject.SetActive(true);
+            storyPanelObject.transform.SetAsLastSibling();
+        }
+        if (storyText != null)
+        {
+            storyText.text = CaveStoryText;
+            storyText.color = new Color(1f, 1f, 1f, 0f);
+        }
+        yield return FadeStoryPanel(0f, 1f, 0.8f);
+        yield return FadeStoryText(0f, 1f, 1.2f);
+        yield return new WaitForSeconds(1.4f);
+        yield return FadeStoryText(1f, 0f, 0.5f);
+        yield return FadeStoryPanel(1f, 0f, 0.7f);
+        if (storyPanelObject != null) storyPanelObject.SetActive(false);
+        ShowSisterCaveEventBottomOptions();
+    }
+
+    private void ShowSisterCaveEventBottomOptions()
     {
         OpenEvent(
             "山洞中的哭声",
-            "你拨开藤蔓，洞中传来微弱的哭声。一个小女孩蜷缩在石壁旁，衣衫凌乱，手腕上还留着绳痕。她抬头看见你，眼中先是恐惧，随后像是认出了什么，颤声喊道：“哥哥……”",
+            "你拨开藤蔓，洞中传来微弱的哭声。那个小女孩仍蜷缩在石壁旁，颤声喊着你。",
             new List<BlockingEncounterOptionData>
             {
                 new BlockingEncounterOptionData { text = "冲上前救她", startBattleId = "battle_forest_demon" },
@@ -219,10 +278,9 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
                 {
                     playerState.AddFlag("observed_cave_before_rescue");
                     ShowMessage("洞中妖气浓重，你感觉黑暗深处有什么东西正在盯着你。");
-                    ShowSisterCaveEvent();
+                    ShowSisterCaveEventBottomOptions();
                     return;
                 }
-
                 playerState.AddFlag("found_sister_in_cave");
                 StartBattleAndCloseEvent("battle_forest_demon", OnForestDemonBattleFinished);
             });
@@ -232,7 +290,6 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     {
         PlayerState playerState = GetState();
         if (playerState == null) return;
-
         if (playerState.HasFlag("rescued_sister"))
         {
             playerState.AddItem("sister_ribbon");
@@ -243,7 +300,6 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             playerState.hp = 1;
             ShowMessage("你被妖怪击倒，意识模糊前，只听见妹妹惊恐地喊着你的名字。");
         }
-
         RefreshAll();
     }
 
@@ -252,10 +308,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         OpenEvent(
             "洞府骸骨",
             "洞府中盘坐着一具枯骨。你刚踏入其中，枯骨眼眶中忽然亮起幽光，竟摇摇晃晃站了起来。",
-            new List<BlockingEncounterOptionData>
-            {
-                new BlockingEncounterOptionData { text = "迎战骸骨", startBattleId = "battle_cave_skeleton" }
-            },
+            new List<BlockingEncounterOptionData> { new BlockingEncounterOptionData { text = "迎战骸骨", startBattleId = "battle_cave_skeleton" } },
             delegate(BlockingEncounterOptionData option)
             {
                 PlayerState playerState = GetState();
@@ -268,7 +321,6 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     {
         PlayerState playerState = GetState();
         if (playerState == null) return;
-
         if (playerState.HasFlag("obtained_qiankun_fragment") && !playerState.HasFlag("cave_skeleton_reward_claimed"))
         {
             playerState.AddFlag("cave_skeleton_reward_claimed");
@@ -285,11 +337,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         {
             playerState.AddFlag("heard_cliff_call_day");
             playerState.SetCounter("cliff_call_first_day", playerState.day);
-            OpenEvent(
-                "悬崖下的呼唤",
-                "你来到后山，忽然感觉悬崖下方有什么东西在呼唤自己。那种感觉一闪而逝，像是幻觉。",
-                new List<BlockingEncounterOptionData> { new BlockingEncounterOptionData { text = "离开", closeOnly = true } },
-                delegate(BlockingEncounterOptionData option) { CloseEvent("你将那一瞬间的异样压在心底。"); });
+            OpenEvent("悬崖下的呼唤", "你来到后山，忽然感觉悬崖下方有什么东西在呼唤自己。那种感觉一闪而逝，像是幻觉。", new List<BlockingEncounterOptionData> { new BlockingEncounterOptionData { text = "离开", closeOnly = true } }, delegate(BlockingEncounterOptionData option) { CloseEvent("你将那一瞬间的异样压在心底。"); });
             return;
         }
 
@@ -299,11 +347,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             OpenEvent(
                 "金光与低语",
                 "悬崖下亮起隐隐金光。一个蛊惑般的声音在耳边响起：“想要守护自己最重要的人吗？那就跳下来吧。”",
-                new List<BlockingEncounterOptionData>
-                {
-                    new BlockingEncounterOptionData { text = "跳下去", closeOnly = true },
-                    new BlockingEncounterOptionData { text = "不跳下去", closeOnly = true }
-                },
+                new List<BlockingEncounterOptionData> { new BlockingEncounterOptionData { text = "跳下去", closeOnly = true }, new BlockingEncounterOptionData { text = "不跳下去", closeOnly = true } },
                 delegate(BlockingEncounterOptionData option)
                 {
                     if (option.text == "跳下去")
@@ -329,15 +373,12 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             ShowMessage("今日已经查看过书籍了。");
             return;
         }
-
         if (!TrySpend(cost)) return;
         playerState.MarkDoneToday("attic_read_books");
-
         int roll = UnityEngine.Random.Range(1, 101);
         int gain = roll <= 70 ? 1 : (roll <= 95 ? 3 : 5);
         playerState.cultivation += gain;
         playerState.AddCounter("attic_read_count", 1);
-
         string message = "你翻看阁楼旧书，心有所悟，修为 +" + gain + "。";
         if (playerState.GetCounter("attic_read_count") >= 3 && !playerState.HasFlag("attic_books_reward_claimed"))
         {
@@ -346,7 +387,6 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             playerState.LearnSkill("spell_guiyuan_qigong");
             message += "你终于读懂几卷入门书册，学会了练气入门与归元气功。";
         }
-
         ShowMessage(message);
         RefreshAll();
     }
@@ -359,11 +399,9 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             ShowMessage("今日已经上过香了。");
             return;
         }
-
         if (!TrySpend(cost)) return;
         playerState.MarkDoneToday("temple_burn_incense");
         playerState.AddCounter("temple_incense_count", 1);
-
         int roll = UnityEngine.Random.Range(0, 3);
         string message;
         if (roll == 0)
@@ -381,18 +419,12 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             playerState.AddFlag("temple_blessing_today");
             message = "今日似有神意庇护。";
         }
-
-        if (playerState.GetCounter("temple_incense_count") >= 5)
-        {
-            playerState.AddFlag("temple_incense_5");
-        }
-
+        if (playerState.GetCounter("temple_incense_count") >= 5) playerState.AddFlag("temple_incense_5");
         if (playerState.HasFlag("temple_repaired") && !playerState.HasFlag("received_star_sword"))
         {
             playerState.AddPendingNightEvent("night_temple_god_reward");
             message += " 夜色降临时，或许会有异象。";
         }
-
         ShowMessage(message);
         RefreshAll();
     }
@@ -405,22 +437,20 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             ShowMessage("寺庙已经修缮过了。");
             return;
         }
-
         if (playerState.GetCounter("temple_incense_count") < 5)
         {
             ShowMessage("你对这里还不够熟悉，暂时不知道该如何修缮。需上香满 5 次。 ");
             return;
         }
-
         if (playerState.spiritStones < 50)
         {
             ShowMessage("修缮破庙需要 50 灵石。你现在灵石不足。 ");
             return;
         }
-
         playerState.spiritStones -= 50;
         playerState.AddFlag("temple_repaired");
-        ShowMessage("你请人简单修缮了破庙。修缮后的寺庙虽然简陋，却多了几分庄严气息。 ");
+        if (!playerState.HasFlag("received_star_sword")) playerState.AddPendingNightEvent("night_temple_god_reward");
+        ShowMessage("你请人简单修缮了破庙。今夜若回小屋休息，也许会梦见什么。 ");
         RefreshAll();
     }
 
@@ -428,13 +458,11 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     {
         PlayerState playerState = GetState();
         if (!TrySpend(cost)) return;
-
         int level = Mathf.Clamp(playerState.GetCounter("labor_level"), 1, 3);
         if (level <= 0) level = 1;
         int reward = level == 1 ? 5 : (level == 2 ? 8 : 12);
         playerState.spiritStones += reward;
         playerState.AddCounter("labor_exp", 1);
-
         string message = "你完成杂役劳作，获得灵石 " + reward + "。";
         int exp = playerState.GetCounter("labor_exp");
         if (exp >= 3 && level < 3)
@@ -444,11 +472,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             playerState.SetCounter("labor_exp", 0);
             message += "你对杂役事务更加熟练，劳作等级提升到 " + level + "。";
         }
-        else if (playerState.GetCounter("labor_level") <= 0)
-        {
-            playerState.SetCounter("labor_level", 1);
-        }
-
+        else if (playerState.GetCounter("labor_level") <= 0) playerState.SetCounter("labor_level", 1);
         ShowMessage(message);
         RefreshAll();
     }
@@ -457,7 +481,6 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     {
         PlayerState playerState = GetState();
         if (!TrySpend(cost)) return;
-
         if (!playerState.HasFlag("got_broom"))
         {
             playerState.AddFlag("got_broom");
@@ -468,7 +491,6 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         {
             ShowMessage("你在杂役院四处看了看，只看见柴米、水桶和来往忙碌的杂役弟子。");
         }
-
         RefreshAll();
     }
 
@@ -477,10 +499,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         IsChapterOneEventOpen = false;
         if (locationActionManager != null) locationActionManager.ClearCurrentButtons();
         if (battleManager == null) battleManager = GetComponent<BattleManager>();
-        if (battleManager != null)
-        {
-            battleManager.StartBattle(battleId, onFinished);
-        }
+        if (battleManager != null) battleManager.StartBattle(battleId, onFinished);
     }
 
     private void OpenEvent(string title, string text, List<BlockingEncounterOptionData> options, Action<BlockingEncounterOptionData> onOptionClicked)
@@ -501,6 +520,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     public void CloseChapterOneEventSilently()
     {
         IsChapterOneEventOpen = false;
+        if (storyPanelObject != null) storyPanelObject.SetActive(false);
     }
 
     private bool TrySpend(int cost)
@@ -513,10 +533,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     {
         PlayerState playerState = GetState();
         if (playerState == null || cellIds == null) return;
-        foreach (string cellId in cellIds)
-        {
-            playerState.UnlockCell(cellId);
-        }
+        foreach (string cellId in cellIds) playerState.UnlockCell(cellId);
     }
 
     private PlayerState GetState()
@@ -541,5 +558,78 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     private void ShowMessage(string message)
     {
         if (locationUIManager != null) locationUIManager.ShowMessage(message);
+    }
+
+    private void EnsureStoryPanel()
+    {
+        if (storyPanelObject != null) return;
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+        storyPanelObject = new GameObject("ChapterOneStoryPanel", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+        storyPanelObject.transform.SetParent(canvas.transform, false);
+        RectTransform panelRect = storyPanelObject.GetComponent<RectTransform>();
+        panelRect.anchorMin = Vector2.zero;
+        panelRect.anchorMax = Vector2.one;
+        panelRect.offsetMin = Vector2.zero;
+        panelRect.offsetMax = Vector2.zero;
+        Image image = storyPanelObject.GetComponent<Image>();
+        image.color = Color.black;
+        image.raycastTarget = true;
+        storyCanvasGroup = storyPanelObject.GetComponent<CanvasGroup>();
+        storyCanvasGroup.alpha = 0f;
+        storyCanvasGroup.blocksRaycasts = true;
+        storyCanvasGroup.interactable = true;
+        GameObject textObject = new GameObject("ChapterOneStoryText", typeof(RectTransform), typeof(Text));
+        textObject.transform.SetParent(storyPanelObject.transform, false);
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = new Vector2(0.14f, 0.28f);
+        textRect.anchorMax = new Vector2(0.86f, 0.72f);
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+        storyText = textObject.GetComponent<Text>();
+        storyText.font = GetDefaultFont();
+        storyText.fontSize = 28;
+        storyText.alignment = TextAnchor.MiddleCenter;
+        storyText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        storyText.verticalOverflow = VerticalWrapMode.Overflow;
+        storyText.color = new Color(1f, 1f, 1f, 0f);
+        storyPanelObject.SetActive(false);
+    }
+
+    private IEnumerator FadeStoryPanel(float from, float to, float duration)
+    {
+        float timer = 0f;
+        float safeDuration = Mathf.Max(0.01f, duration);
+        while (timer < safeDuration)
+        {
+            timer += Time.deltaTime;
+            float t = Mathf.Clamp01(timer / safeDuration);
+            if (storyCanvasGroup != null) storyCanvasGroup.alpha = Mathf.Lerp(from, to, t);
+            yield return null;
+        }
+        if (storyCanvasGroup != null) storyCanvasGroup.alpha = to;
+    }
+
+    private IEnumerator FadeStoryText(float from, float to, float duration)
+    {
+        float timer = 0f;
+        float safeDuration = Mathf.Max(0.01f, duration);
+        while (timer < safeDuration)
+        {
+            timer += Time.deltaTime;
+            float t = Mathf.Clamp01(timer / safeDuration);
+            if (storyText != null) storyText.color = new Color(1f, 1f, 1f, Mathf.Lerp(from, to, t));
+            yield return null;
+        }
+        if (storyText != null) storyText.color = new Color(1f, 1f, 1f, to);
+    }
+
+    private Font GetDefaultFont()
+    {
+        if (cachedFont != null) return cachedFont;
+        cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 24);
+        if (cachedFont != null) return cachedFont;
+        cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        return cachedFont;
     }
 }
