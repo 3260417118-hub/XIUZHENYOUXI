@@ -61,6 +61,7 @@ public class BlockingEncounterDataList
 /// <summary>
 /// 开场剧情管理器。
 /// 新游戏第一次进入时，用全黑背景逐句淡入开场文字。
+/// 支持跳过：跳过后立即显示全部文字，并显示“进入游戏”按钮。
 /// </summary>
 public class OpeningStoryManager : MonoBehaviour
 {
@@ -91,6 +92,7 @@ public class OpeningStoryManager : MonoBehaviour
     private GameObject panelObject;
     private RectTransform lineContainer;
     private Button enterButton;
+    private Button skipButton;
     private Coroutine playCoroutine;
     private Font cachedFont;
 
@@ -113,7 +115,9 @@ public class OpeningStoryManager : MonoBehaviour
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState != null && playerState.hasSeenOpening)
         {
-            HidePanel();
+            HidePanelAndDeactivateOpening();
+            ChapterTitleManager chapterTitle = GetOrCreateChapterTitleManager();
+            if (chapterTitle != null) chapterTitle.HideImmediately();
             return;
         }
 
@@ -128,7 +132,7 @@ public class OpeningStoryManager : MonoBehaviour
 
         if (playerState == null || playerState.hasSeenOpening)
         {
-            HidePanel();
+            HidePanelAndDeactivateOpening();
             return;
         }
 
@@ -137,6 +141,7 @@ public class OpeningStoryManager : MonoBehaviour
         panelObject.SetActive(true);
         panelObject.transform.SetAsLastSibling();
         enterButton.gameObject.SetActive(false);
+        skipButton.gameObject.SetActive(true);
         ClearLines();
 
         if (playCoroutine != null) StopCoroutine(playCoroutine);
@@ -147,7 +152,7 @@ public class OpeningStoryManager : MonoBehaviour
     {
         for (int i = 0; i < storyTexts.Length; i++)
         {
-            Text lineText = CreateLineText(storyTexts[i]);
+            Text lineText = CreateLineText(storyTexts[i], 0f);
             float timer = 0f;
             while (timer < lineFadeSeconds)
             {
@@ -161,10 +166,37 @@ public class OpeningStoryManager : MonoBehaviour
             yield return new WaitForSeconds(lineIntervalSeconds);
         }
 
-        enterButton.gameObject.SetActive(true);
+        ShowEnterGameButton();
     }
 
-    private Text CreateLineText(string content)
+    private void OnSkipClicked()
+    {
+        if (playCoroutine != null)
+        {
+            StopCoroutine(playCoroutine);
+            playCoroutine = null;
+        }
+
+        ShowAllOpeningTextImmediately();
+        ShowEnterGameButton();
+    }
+
+    private void ShowAllOpeningTextImmediately()
+    {
+        ClearLines();
+        foreach (string line in storyTexts)
+        {
+            CreateLineText(line, 1f);
+        }
+    }
+
+    private void ShowEnterGameButton()
+    {
+        if (skipButton != null) skipButton.gameObject.SetActive(false);
+        if (enterButton != null) enterButton.gameObject.SetActive(true);
+    }
+
+    private Text CreateLineText(string content, float alpha)
     {
         GameObject lineObject = new GameObject("OpeningLine", typeof(RectTransform), typeof(Text), typeof(LayoutElement));
         lineObject.transform.SetParent(lineContainer, false);
@@ -172,7 +204,7 @@ public class OpeningStoryManager : MonoBehaviour
         text.text = content;
         text.font = GetDefaultFont();
         text.fontSize = 22;
-        text.color = new Color(1f, 1f, 1f, 0f);
+        text.color = new Color(1f, 1f, 1f, Mathf.Clamp01(alpha));
         text.alignment = TextAnchor.MiddleCenter;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
         text.verticalOverflow = VerticalWrapMode.Overflow;
@@ -183,6 +215,28 @@ public class OpeningStoryManager : MonoBehaviour
 
     private void OnEnterGameClicked()
     {
+        // 点击“进入游戏”后，不立刻进地图，先播放章节标题。
+        if (playCoroutine != null)
+        {
+            StopCoroutine(playCoroutine);
+            playCoroutine = null;
+        }
+
+        if (panelObject != null) panelObject.SetActive(false);
+        IsOpeningActive = true;
+
+        ChapterTitleManager chapterTitle = GetOrCreateChapterTitleManager();
+        if (chapterTitle == null)
+        {
+            FinishOpeningAndEnterMap();
+            return;
+        }
+
+        chapterTitle.PlayChapterTitle("第一章：青石村外", FinishOpeningAndEnterMap);
+    }
+
+    private void FinishOpeningAndEnterMap()
+    {
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState != null)
         {
@@ -190,15 +244,25 @@ public class OpeningStoryManager : MonoBehaviour
             playerState.AddFlag("tutorial_move_shown");
         }
 
-        HidePanel();
-
+        IsOpeningActive = false;
         if (locationUIManager != null)
         {
-            locationUIManager.ShowMessage("你在村口醒来，记忆一片混乱。你可以点击周围相邻格子移动。移动不会消耗行动点。");
+            locationUIManager.ShowMessage("你在村口醒来，记忆一片混乱。");
         }
     }
 
-    private void HidePanel()
+    private ChapterTitleManager GetOrCreateChapterTitleManager()
+    {
+        ChapterTitleManager chapterTitle = GetComponent<ChapterTitleManager>();
+        if (chapterTitle == null)
+        {
+            chapterTitle = gameObject.AddComponent<ChapterTitleManager>();
+        }
+
+        return chapterTitle;
+    }
+
+    private void HidePanelAndDeactivateOpening()
     {
         IsOpeningActive = false;
         if (playCoroutine != null)
@@ -238,14 +302,23 @@ public class OpeningStoryManager : MonoBehaviour
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = true;
 
-        enterButton = CreateButton(panelObject.transform, "EnterGameButton", "进入游戏", new Vector2(180f, 54f));
-        RectTransform buttonRect = enterButton.GetComponent<RectTransform>();
-        buttonRect.anchorMin = new Vector2(0.5f, 0.10f);
-        buttonRect.anchorMax = new Vector2(0.5f, 0.10f);
-        buttonRect.pivot = new Vector2(0.5f, 0.5f);
-        buttonRect.anchoredPosition = Vector2.zero;
+        enterButton = CreateButton(panelObject.transform, "EnterGameButton", "进入游戏", new Vector2(180f, 54f), 22);
+        RectTransform enterRect = enterButton.GetComponent<RectTransform>();
+        enterRect.anchorMin = new Vector2(0.5f, 0.10f);
+        enterRect.anchorMax = new Vector2(0.5f, 0.10f);
+        enterRect.pivot = new Vector2(0.5f, 0.5f);
+        enterRect.anchoredPosition = Vector2.zero;
         enterButton.onClick.AddListener(OnEnterGameClicked);
         enterButton.gameObject.SetActive(false);
+
+        skipButton = CreateButton(panelObject.transform, "SkipOpeningButton", "跳过", new Vector2(110f, 42f), 18);
+        RectTransform skipRect = skipButton.GetComponent<RectTransform>();
+        skipRect.anchorMin = new Vector2(1f, 1f);
+        skipRect.anchorMax = new Vector2(1f, 1f);
+        skipRect.pivot = new Vector2(1f, 1f);
+        skipRect.anchoredPosition = new Vector2(-32f, -32f);
+        skipButton.onClick.AddListener(OnSkipClicked);
+        skipButton.gameObject.SetActive(false);
     }
 
     private void ClearLines()
@@ -257,7 +330,7 @@ public class OpeningStoryManager : MonoBehaviour
         }
     }
 
-    private Button CreateButton(Transform parent, string objectName, string text, Vector2 size)
+    private Button CreateButton(Transform parent, string objectName, string text, Vector2 size, int fontSize)
     {
         GameObject buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(parent, false);
@@ -272,7 +345,7 @@ public class OpeningStoryManager : MonoBehaviour
         Stretch(textObject.GetComponent<RectTransform>());
         Text label = textObject.GetComponent<Text>();
         label.font = GetDefaultFont();
-        label.fontSize = 22;
+        label.fontSize = fontSize;
         label.color = Color.white;
         label.alignment = TextAnchor.MiddleCenter;
         label.text = text;
@@ -294,6 +367,129 @@ public class OpeningStoryManager : MonoBehaviour
         rect.anchorMax = Vector2.one;
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
+    }
+}
+
+/// <summary>
+/// 章节标题转场管理器。
+/// 点击“进入游戏”后，先播放“第一章：青石村外”，再进入地图。
+/// </summary>
+public class ChapterTitleManager : MonoBehaviour
+{
+    public static bool IsChapterTitleActive { get; private set; }
+
+    [SerializeField] private float fadeInDuration = 1.2f;
+    [SerializeField] private float holdDuration = 1.5f;
+    [SerializeField] private float fadeOutDuration = 1.0f;
+
+    private GameObject panelObject;
+    private Text titleText;
+    private Font cachedFont;
+    private Coroutine playCoroutine;
+    private Action finishCallback;
+
+    public void PlayChapterTitle(string title, Action onFinished)
+    {
+        EnsurePanel();
+        if (panelObject == null)
+        {
+            if (onFinished != null) onFinished.Invoke();
+            return;
+        }
+
+        finishCallback = onFinished;
+        if (playCoroutine != null) StopCoroutine(playCoroutine);
+        panelObject.SetActive(true);
+        panelObject.transform.SetAsLastSibling();
+        titleText.text = title;
+        titleText.color = new Color(1f, 1f, 1f, 0f);
+        IsChapterTitleActive = true;
+        playCoroutine = StartCoroutine(PlayRoutine());
+    }
+
+    public void HideImmediately()
+    {
+        IsChapterTitleActive = false;
+        if (playCoroutine != null)
+        {
+            StopCoroutine(playCoroutine);
+            playCoroutine = null;
+        }
+
+        if (panelObject != null) panelObject.SetActive(false);
+    }
+
+    private IEnumerator PlayRoutine()
+    {
+        yield return FadeTitle(0f, 1f, fadeInDuration);
+        yield return new WaitForSeconds(holdDuration);
+        yield return FadeTitle(1f, 0f, fadeOutDuration);
+
+        IsChapterTitleActive = false;
+        if (panelObject != null) panelObject.SetActive(false);
+        Action callback = finishCallback;
+        finishCallback = null;
+        if (callback != null) callback.Invoke();
+    }
+
+    private IEnumerator FadeTitle(float from, float to, float duration)
+    {
+        float timer = 0f;
+        float safeDuration = Mathf.Max(0.01f, duration);
+        while (timer < safeDuration)
+        {
+            timer += Time.deltaTime;
+            float t = Mathf.Clamp01(timer / safeDuration);
+            float alpha = Mathf.Lerp(from, to, t);
+            titleText.color = new Color(1f, 1f, 1f, alpha);
+            yield return null;
+        }
+
+        titleText.color = new Color(1f, 1f, 1f, to);
+    }
+
+    private void EnsurePanel()
+    {
+        if (panelObject != null) return;
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        panelObject = new GameObject("ChapterTitlePanel", typeof(RectTransform), typeof(Image));
+        panelObject.transform.SetParent(canvas.transform, false);
+        RectTransform panelRect = panelObject.GetComponent<RectTransform>();
+        panelRect.anchorMin = Vector2.zero;
+        panelRect.anchorMax = Vector2.one;
+        panelRect.offsetMin = Vector2.zero;
+        panelRect.offsetMax = Vector2.zero;
+        Image image = panelObject.GetComponent<Image>();
+        image.color = Color.black;
+        image.raycastTarget = true;
+
+        GameObject textObject = new GameObject("ChapterTitleText", typeof(RectTransform), typeof(Text));
+        textObject.transform.SetParent(panelObject.transform, false);
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = new Vector2(0.1f, 0.42f);
+        textRect.anchorMax = new Vector2(0.9f, 0.58f);
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+        titleText = textObject.GetComponent<Text>();
+        titleText.font = GetDefaultFont();
+        titleText.fontSize = 42;
+        titleText.alignment = TextAnchor.MiddleCenter;
+        titleText.color = new Color(1f, 1f, 1f, 0f);
+        titleText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        titleText.verticalOverflow = VerticalWrapMode.Overflow;
+
+        panelObject.SetActive(false);
+    }
+
+    private Font GetDefaultFont()
+    {
+        if (cachedFont != null) return cachedFont;
+        cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 32);
+        if (cachedFont != null) return cachedFont;
+        cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        return cachedFont;
     }
 }
 
@@ -334,7 +530,7 @@ public class BlockingEncounterManager : MonoBehaviour
         yield return null;
         BindEndDayButton();
         RestoreActiveEncounterUI();
-        if (!OpeningStoryManager.IsOpeningActive)
+        if (!OpeningStoryManager.IsOpeningActive && !ChapterTitleManager.IsChapterTitleActive)
         {
             CheckTodayEncounter();
         }
@@ -376,7 +572,7 @@ public class BlockingEncounterManager : MonoBehaviour
         if (eventManager == null) eventManager = GetComponent<EventManager>();
         if (dialogueManager == null) dialogueManager = GetComponent<DialogueManager>();
 
-        if (OpeningStoryManager.IsOpeningActive || BattleManager.IsBattleOpen || HasActiveBlockingEncounter())
+        if (OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || BattleManager.IsBattleOpen || HasActiveBlockingEncounter())
         {
             if (locationUIManager != null) locationUIManager.ShowMessage(GetBlockMoveMessageOrDefault());
             return;
@@ -412,7 +608,7 @@ public class BlockingEncounterManager : MonoBehaviour
     {
         if (gameManager == null) gameManager = GetComponent<GameManager>();
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
-        if (playerState == null || OpeningStoryManager.IsOpeningActive) return;
+        if (playerState == null || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive) return;
         playerState.EnsureLists();
 
         if (!string.IsNullOrEmpty(playerState.activeBlockingEncounterId))
@@ -447,6 +643,11 @@ public class BlockingEncounterManager : MonoBehaviour
             return encounter.blockMoveMessage;
         }
 
+        if (OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive)
+        {
+            return "请先看完当前剧情。";
+        }
+
         return "有人拦住了你。";
     }
 
@@ -477,11 +678,7 @@ public class BlockingEncounterManager : MonoBehaviour
     private void RefreshLocationButtonsWithEncounterOptions(BlockingEncounterData encounter)
     {
         LocationActionManager manager = locationActionManager != null ? locationActionManager : GetComponent<LocationActionManager>();
-        if (manager == null)
-        {
-            return;
-        }
-
+        if (manager == null) return;
         manager.ClearCurrentButtons();
         manager.CreateEncounterOptionButtons(encounter.options, ExecuteOption);
     }
@@ -501,41 +698,22 @@ public class BlockingEncounterManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(option.startBattleId))
         {
-            if (locationActionManager != null)
-            {
-                locationActionManager.ClearCurrentButtons();
-            }
-
+            if (locationActionManager != null) locationActionManager.ClearCurrentButtons();
             BattleManager battleManager = GetComponent<BattleManager>();
-            if (battleManager != null)
-            {
-                battleManager.StartBattle(option.startBattleId, ResolveActiveEncounterAfterBattle);
-            }
-            else if (option.resolveEncounter)
-            {
-                ResolveActiveEncounter(optionMessage);
-            }
+            if (battleManager != null) battleManager.StartBattle(option.startBattleId, ResolveActiveEncounterAfterBattle);
+            else if (option.resolveEncounter) ResolveActiveEncounter(optionMessage);
             return;
         }
 
-        if (option.resolveEncounter)
-        {
-            ResolveActiveEncounter(optionMessage);
-        }
-        else if (option.closeOnly)
-        {
-            RefreshLocationButtons();
-        }
+        if (option.resolveEncounter) ResolveActiveEncounter(optionMessage);
+        else if (option.closeOnly) RefreshLocationButtons();
     }
 
     private void ApplyFlags(string[] flags)
     {
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null || flags == null) return;
-        foreach (string flag in flags)
-        {
-            playerState.AddFlag(flag);
-        }
+        foreach (string flag in flags) playerState.AddFlag(flag);
     }
 
     private void ResolveActiveEncounterAfterBattle()
@@ -816,6 +994,8 @@ public class TutorialManager : MonoBehaviour
 
     private void Update()
     {
+        if (OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive) return;
+
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null || locationUIManager == null) return;
 
@@ -924,6 +1104,8 @@ public class SaveButtonOverrideManager : MonoBehaviour
         if (eventManager != null) eventManager.CloseEventSilently();
         DialogueManager dialogueManager = GetComponent<DialogueManager>();
         if (dialogueManager != null) dialogueManager.CloseDialogueSilently();
+        ChapterTitleManager chapterTitle = GetComponent<ChapterTitleManager>();
+        if (chapterTitle != null) chapterTitle.HideImmediately();
 
         if (mapGridManager != null)
         {
