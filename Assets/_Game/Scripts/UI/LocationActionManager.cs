@@ -103,12 +103,15 @@ public class LocationActionManager : MonoBehaviour
             return;
         }
 
+        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         bool createdAny = false;
         foreach (BlockingEncounterOptionData option in options)
         {
             if (option == null) continue;
+            if (!ConditionUtility.IsMet(playerState, option.requireFlags, option.excludeFlags, option.requireItems, option.excludeItems, option.requireSkills, option.excludeSkills, option.minCultivation, option.minDay, option.maxDay)) continue;
+
             BlockingEncounterOptionData captured = option;
-            Button button = CreateButton(actionButtonContainer, option.text, 140f);
+            Button button = CreateButton(actionButtonContainer, option.text, 150f);
             button.onClick.AddListener(delegate
             {
                 if (RestManager.IsRestingTransition) return;
@@ -165,6 +168,25 @@ public class LocationActionManager : MonoBehaviour
                 {
                     if (RestManager.IsRestingTransition) return;
                     StartNpcDialogue(capturedNpcId);
+                });
+                hasAnyNpc = true;
+            }
+        }
+
+        ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
+        if (chapterOne != null)
+        {
+            string[] extraNpcIds = { "passing_farmer", "sister", "jianghe" };
+            foreach (string npcId in extraNpcIds)
+            {
+                if (!chapterOne.ShouldShowChapterOneNpc(npcId, currentCell)) continue;
+                string npcName = chapterOne.GetChapterOneNpcName(npcId);
+                Button button = CreateButton(npcButtonContainer, npcName, 120f);
+                string captured = npcId;
+                button.onClick.AddListener(delegate
+                {
+                    if (RestManager.IsRestingTransition) return;
+                    chapterOne.StartChapterOneNpcDialogue(captured);
                 });
                 hasAnyNpc = true;
             }
