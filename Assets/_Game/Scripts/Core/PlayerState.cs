@@ -15,6 +15,8 @@ public class CounterRecord
 [Serializable]
 public class PlayerState
 {
+    public string playerName;
+
     public string currentCellId;
     public int currentX;
     public int currentY;
@@ -29,17 +31,33 @@ public class PlayerState
     public int actionPoints;
     public int maxActionPoints;
 
-    /// <summary>当前修为。</summary>
+    /// <summary>当前累计总修为。</summary>
     public int cultivation;
 
-    /// <summary>当前境界名称，例如：凡人、炼气一层。</summary>
+    /// <summary>当前修炼境界名称，例如：凡人、炼气一层。</summary>
     public string realm;
 
-    /// <summary>当前境界等级数字，用于判断突破。</summary>
+    /// <summary>当前修炼境界等级数字，用于判断突破。</summary>
     public int realmLevel;
 
-    /// <summary>当前距离下一次突破所需修为。</summary>
+    /// <summary>下一次修炼突破所需修为。顶部不显示，只做内部判断。</summary>
     public int maxCultivation;
+
+    /// <summary>当前肉身锻体值。</summary>
+    public int bodyCultivation;
+
+    /// <summary>当前肉身境界名称，例如：凡体、锻体一层。</summary>
+    public string bodyRealm;
+
+    /// <summary>当前肉身境界等级数字，用于判断锻体突破。</summary>
+    public int bodyRealmLevel;
+
+    /// <summary>下一次肉身突破所需锻体值。</summary>
+    public int maxBodyCultivation;
+
+    public string equippedCultivationSkillId;
+    public string equippedBodyMethodId;
+    public string equippedSpellSkillId;
 
     public int spiritStones;
 
@@ -51,6 +69,12 @@ public class PlayerState
     /// </summary>
     public string activeBlockingEncounterId;
 
+    /// <summary>基础属性。最终属性由基础属性 + 修炼境界加成 + 锻体境界加成计算。</summary>
+    public int baseMaxHp;
+    public int baseAttack;
+    public int baseDefense;
+
+    /// <summary>最终战斗属性。BattleManager 直接读取这些值。</summary>
     public int hp;
     public int maxHp;
     public int attack;
@@ -96,6 +120,7 @@ public class PlayerState
         if (counters == null) counters = new List<CounterRecord>();
         if (pendingNightEvents == null) pendingNightEvents = new List<string>();
 
+        if (string.IsNullOrEmpty(playerName)) playerName = "林昊";
         if (string.IsNullOrEmpty(currentMapId)) currentMapId = "main";
         if (returnMainCellId == null) returnMainCellId = "";
         if (activeBlockingEncounterId == null) activeBlockingEncounterId = "";
@@ -105,10 +130,38 @@ public class PlayerState
         if (realmLevel < 0) realmLevel = 0;
         if (maxCultivation <= 0) maxCultivation = 150;
 
-        if (maxHp <= 0) maxHp = 50;
+        if (string.IsNullOrEmpty(bodyRealm)) bodyRealm = "凡体";
+        if (bodyRealmLevel < 0) bodyRealmLevel = 0;
+        if (maxBodyCultivation <= 0) maxBodyCultivation = 150;
+        if (bodyCultivation < 0) bodyCultivation = 0;
+
+        if (equippedCultivationSkillId == null) equippedCultivationSkillId = "";
+        if (equippedBodyMethodId == null) equippedBodyMethodId = "";
+        if (equippedSpellSkillId == null) equippedSpellSkillId = "";
+
+        if (learnedSkills.Contains("skill_body_tempering_basic") && string.IsNullOrEmpty(equippedBodyMethodId))
+        {
+            equippedBodyMethodId = "skill_body_tempering_basic";
+        }
+
+        if (learnedSkills.Contains("skill_qi_training_basic") && string.IsNullOrEmpty(equippedCultivationSkillId))
+        {
+            equippedCultivationSkillId = "skill_qi_training_basic";
+        }
+
+        if (learnedSkills.Contains("spell_guiyuan_qigong") && string.IsNullOrEmpty(equippedSpellSkillId))
+        {
+            equippedSpellSkillId = "spell_guiyuan_qigong";
+        }
+
+        if (baseMaxHp <= 0) baseMaxHp = 50;
+        if (baseAttack <= 0) baseAttack = 10;
+        if (baseDefense < 0) baseDefense = 0;
+
+        if (maxHp <= 0) maxHp = baseMaxHp;
         if (hp <= 0) hp = maxHp;
-        if (attack <= 0) attack = 10;
-        if (defense < 0) defense = 0;
+        if (attack <= 0) attack = baseAttack;
+        if (defense < 0) defense = baseDefense;
         if (maxActionPoints <= 0) maxActionPoints = 3;
     }
 
@@ -194,6 +247,9 @@ public class PlayerState
         if (string.IsNullOrEmpty(skillId)) return;
         EnsureLists();
         if (!learnedSkills.Contains(skillId)) learnedSkills.Add(skillId);
+        if (skillId == "skill_body_tempering_basic" && string.IsNullOrEmpty(equippedBodyMethodId)) equippedBodyMethodId = skillId;
+        if (skillId == "skill_qi_training_basic" && string.IsNullOrEmpty(equippedCultivationSkillId)) equippedCultivationSkillId = skillId;
+        if (skillId == "spell_guiyuan_qigong" && string.IsNullOrEmpty(equippedSpellSkillId)) equippedSpellSkillId = skillId;
     }
 
     public bool IsCellUnlocked(string cellId)
