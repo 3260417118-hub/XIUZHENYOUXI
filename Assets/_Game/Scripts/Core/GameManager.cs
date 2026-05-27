@@ -51,7 +51,9 @@ public class GameManager : MonoBehaviour
         EnsureComponent<RestManager>();
         EnsureComponent<RealmManager>();
         EnsureComponent<CultivationManager>();
-        EnsureComponent<BreakthroughButtonManager>();
+        EnsureComponent<BodyRealmManager>();
+        EnsureComponent<BodyCultivationManager>();
+        EnsureComponent<CharacterStatusUIManager>();
         EnsureComponent<ChapterOneLocationMechanicsManager>();
         EnsureComponent<TutorialManager>();
         EnsureComponent<SaveButtonOverrideManager>();
@@ -72,6 +74,7 @@ public class GameManager : MonoBehaviour
     public void InitNewGame()
     {
         playerState = new PlayerState();
+        playerState.playerName = "林昊";
         playerState.currentCellId = "village_gate";
         playerState.currentX = 0;
         playerState.currentY = 0;
@@ -84,10 +87,20 @@ public class GameManager : MonoBehaviour
         playerState.realmLevel = 0;
         playerState.cultivation = 0;
         playerState.maxCultivation = 150;
+        playerState.bodyRealm = "凡体";
+        playerState.bodyRealmLevel = 0;
+        playerState.bodyCultivation = 0;
+        playerState.maxBodyCultivation = 150;
+        playerState.equippedCultivationSkillId = "";
+        playerState.equippedBodyMethodId = "";
+        playerState.equippedSpellSkillId = "";
         playerState.spiritStones = 0;
         playerState.hasSeenOpening = false;
         playerState.activeBlockingEncounterId = "";
         playerState.currentRestLocationId = "ruined_hut";
+        playerState.baseMaxHp = 50;
+        playerState.baseAttack = 10;
+        playerState.baseDefense = 0;
         playerState.maxHp = 50;
         playerState.hp = 50;
         playerState.attack = 10;
