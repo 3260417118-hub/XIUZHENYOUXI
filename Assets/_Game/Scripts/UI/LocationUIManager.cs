@@ -43,14 +43,23 @@ public class LocationUIManager : MonoBehaviour
     {
         if (currentCell != null)
         {
+            string displayName = currentCell.name;
+            string displayDescription = currentCell.description;
+
+            if (currentCell.id == "ruined_temple" && playerState != null && playerState.HasFlag("temple_repaired"))
+            {
+                displayName = "寺庙";
+                displayDescription = "修缮后的寺庙虽然简陋，却多了几分庄严气息。";
+            }
+
             if (locationNameText != null)
             {
-                locationNameText.text = "【" + currentCell.name + "】";
+                locationNameText.text = "【" + displayName + "】";
             }
 
             if (locationDescriptionText != null)
             {
-                locationDescriptionText.text = currentCell.description;
+                locationDescriptionText.text = displayDescription;
             }
         }
 
