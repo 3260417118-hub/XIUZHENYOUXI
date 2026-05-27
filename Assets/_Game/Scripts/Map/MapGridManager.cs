@@ -26,11 +26,6 @@ public class MapGridManager : MonoBehaviour
     private readonly List<GameObject> createdMapObjects = new List<GameObject>();
     private Font cachedFont;
 
-    /// <summary>
-    /// 当前地图视窗中心对应的世界坐标。
-    /// 默认优先使用 (0,0)，所以村口会出现在地图面板正中间。
-    /// 只有当前可见格子会溢出边界时，才临时偏移这个中心。
-    /// </summary>
     private int viewportCenterX;
     private int viewportCenterY;
 
@@ -76,10 +71,6 @@ public class MapGridManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 第一章地图变大后，需要更大的显示范围、更大的格子和更清楚的间距。
-    /// 这里在运行时兜底设置，避免旧场景序列化值覆盖代码默认值。
-    /// </summary>
     private void ApplyChapterOneMapLayoutDefaults()
     {
         visibleRange = Mathf.Max(visibleRange, 3);
@@ -88,9 +79,6 @@ public class MapGridManager : MonoBehaviour
         edgePadding = new Vector2(18f, 18f);
     }
 
-    /// <summary>
-    /// 从 Resources/Data/map_cells.json 读取地图数据。
-    /// </summary>
     public void LoadMapCells()
     {
         cellById.Clear();
@@ -114,11 +102,7 @@ public class MapGridManager : MonoBehaviour
 
         foreach (MapCellData cell in dataList.cells)
         {
-            if (cell == null || string.IsNullOrEmpty(cell.id))
-            {
-                continue;
-            }
-
+            if (cell == null || string.IsNullOrEmpty(cell.id)) continue;
             allCells.Add(cell);
             cellById[cell.id] = cell;
         }
@@ -126,11 +110,7 @@ public class MapGridManager : MonoBehaviour
 
     public MapCellData GetCellById(string cellId)
     {
-        if (string.IsNullOrEmpty(cellId))
-        {
-            return null;
-        }
-
+        if (string.IsNullOrEmpty(cellId)) return null;
         MapCellData cell;
         cellById.TryGetValue(cellId, out cell);
         return cell;
@@ -138,73 +118,39 @@ public class MapGridManager : MonoBehaviour
 
     public MapCellData GetCurrentCell()
     {
-        if (gameManager == null)
-        {
-            return null;
-        }
-
+        if (gameManager == null) return null;
         return GetCellById(gameManager.GetPlayerState().currentCellId);
     }
 
-    /// <summary>
-    /// 根据 currentCellId 把玩家坐标同步到地图数据。
-    /// 这样地图坐标调整后，旧存档也不会因为保存了旧 x/y 而错位。
-    /// </summary>
     public void SyncPlayerPositionToCurrentCell()
     {
-        if (gameManager == null)
-        {
-            return;
-        }
-
+        if (gameManager == null) return;
         PlayerState playerState = gameManager.GetPlayerState();
-        if (playerState == null)
-        {
-            return;
-        }
-
+        if (playerState == null) return;
         MapCellData currentCell = GetCellById(playerState.currentCellId);
-        if (currentCell == null)
-        {
-            return;
-        }
-
+        if (currentCell == null) return;
         playerState.currentX = currentCell.x;
         playerState.currentY = currentCell.y;
     }
 
-    /// <summary>
-    /// 刷新地图按钮：当前位置高亮，相邻可走格子可点击，其他格子不可点击。
-    /// </summary>
     public void RefreshMap()
     {
         ApplyChapterOneMapLayoutDefaults();
         ClearCreatedButtons();
 
-        if (mapPanel == null || gameManager == null)
-        {
-            return;
-        }
-
+        if (mapPanel == null || gameManager == null) return;
         PrepareMapPanelForManualLayout();
 
         PlayerState playerState = gameManager.GetPlayerState();
-
         List<MapCellData> visibleCells = new List<MapCellData>();
         foreach (MapCellData cell in allCells)
         {
-            if (IsInVisibleRange(cell, playerState))
-            {
-                visibleCells.Add(cell);
-            }
+            if (!ShouldDisplayCell(cell, playerState)) continue;
+            if (IsInVisibleRange(cell, playerState)) visibleCells.Add(cell);
         }
 
-        // 优先让 (0,0) 居中；如果可见格子会溢出，再临时偏移视窗中心。
         UpdateViewportCenterForVisibleCells(visibleCells);
-
-        // 按 y 从上到下、x 从左到右排序，让按钮看起来更像地图。
         visibleCells.Sort(CompareCellsForDisplay);
-
         CreateConnectionLines(visibleCells);
 
         foreach (MapCellData cell in visibleCells)
@@ -213,13 +159,27 @@ public class MapGridManager : MonoBehaviour
         }
     }
 
+    private bool ShouldDisplayCell(MapCellData cell, PlayerState playerState)
+    {
+        if (cell == null || playerState == null) return false;
+        playerState.EnsureLists();
+        if (!cell.hiddenUntilUnlocked) return true;
+        return IsUnlockedByState(cell, playerState);
+    }
+
+    private bool IsUnlockedByState(MapCellData cell, PlayerState playerState)
+    {
+        if (cell == null || playerState == null) return false;
+        if (playerState.IsCellUnlocked(cell.id)) return true;
+        if (!string.IsNullOrEmpty(cell.unlockFlag) && playerState.HasFlag(cell.unlockFlag)) return true;
+        if (!string.IsNullOrEmpty(cell.unlockItem) && playerState.HasItem(cell.unlockItem)) return true;
+        if (!string.IsNullOrEmpty(cell.unlockSkill) && playerState.HasSkill(cell.unlockSkill)) return true;
+        return false;
+    }
+
     private void EnsurePlayerStartsOnValidCell()
     {
-        if (gameManager == null || allCells.Count == 0)
-        {
-            return;
-        }
-
+        if (gameManager == null || allCells.Count == 0) return;
         PlayerState playerState = gameManager.GetPlayerState();
         MapCellData currentCell = GetCellById(playerState.currentCellId);
         if (currentCell != null)
@@ -230,11 +190,7 @@ public class MapGridManager : MonoBehaviour
         }
 
         MapCellData startCell = FindCellAt(0, 0);
-        if (startCell == null)
-        {
-            startCell = allCells[0];
-        }
-
+        if (startCell == null) startCell = allCells[0];
         playerState.currentCellId = startCell.id;
         playerState.currentX = startCell.x;
         playerState.currentY = startCell.y;
@@ -244,49 +200,31 @@ public class MapGridManager : MonoBehaviour
     {
         foreach (MapCellData cell in allCells)
         {
-            if (cell.x == x && cell.y == y)
-            {
-                return cell;
-            }
+            if (cell.x == x && cell.y == y) return cell;
         }
-
         return null;
     }
 
     private bool IsInVisibleRange(MapCellData cell, PlayerState playerState)
     {
-        return MapRuleUtility.IsInVisibleRange(
-            playerState.currentX,
-            playerState.currentY,
-            cell.x,
-            cell.y,
-            visibleRange);
+        return MapRuleUtility.IsInVisibleRange(playerState.currentX, playerState.currentY, cell.x, cell.y, visibleRange);
     }
 
     private int CompareCellsForDisplay(MapCellData left, MapCellData right)
     {
         int yCompare = right.y.CompareTo(left.y);
-        if (yCompare != 0)
-        {
-            return yCompare;
-        }
-
+        if (yCompare != 0) return yCompare;
         return left.x.CompareTo(right.x);
     }
 
     private MapBounds CalculateBounds(List<MapCellData> cells)
     {
         MapBounds bounds = new MapBounds();
-        if (cells == null || cells.Count == 0)
-        {
-            return bounds;
-        }
-
+        if (cells == null || cells.Count == 0) return bounds;
         bounds.minX = cells[0].x;
         bounds.maxX = cells[0].x;
         bounds.minY = cells[0].y;
         bounds.maxY = cells[0].y;
-
         foreach (MapCellData cell in cells)
         {
             bounds.minX = Mathf.Min(bounds.minX, cell.x);
@@ -294,46 +232,17 @@ public class MapGridManager : MonoBehaviour
             bounds.minY = Mathf.Min(bounds.minY, cell.y);
             bounds.maxY = Mathf.Max(bounds.maxY, cell.y);
         }
-
         return bounds;
     }
 
-    /// <summary>
-    /// 让可见格子始终留在地图面板内。
-    /// 每次刷新都先尝试把视窗中心恢复到 (0,0)。
-    /// 如果当前可见范围放不下，才把中心夹到能容纳当前可见格子的位置。
-    /// </summary>
     private void UpdateViewportCenterForVisibleCells(List<MapCellData> visibleCells)
     {
-        if (visibleCells == null || visibleCells.Count == 0 || mapPanel == null)
-        {
-            return;
-        }
-
+        if (visibleCells == null || visibleCells.Count == 0 || mapPanel == null) return;
         MapBounds bounds = CalculateBounds(visibleCells);
-
-        float maxOffsetX = Mathf.Max(
-            cellStep.x,
-            mapPanel.rect.width * 0.5f - cellSize.x * 0.5f - edgePadding.x);
-        float maxOffsetY = Mathf.Max(
-            cellStep.y,
-            mapPanel.rect.height * 0.5f - cellSize.y * 0.5f - edgePadding.y);
-
-        // 关键修复：不要沿用上一次移动后的 viewportCenter。
-        // 否则走远再回到村口时，(0,0) 会停留在偏移后的位置。
-        viewportCenterX = ClampViewportCenter(
-            0,
-            bounds.minX,
-            bounds.maxX,
-            maxOffsetX,
-            cellStep.x);
-
-        viewportCenterY = ClampViewportCenter(
-            0,
-            bounds.minY,
-            bounds.maxY,
-            maxOffsetY,
-            cellStep.y);
+        float maxOffsetX = Mathf.Max(cellStep.x, mapPanel.rect.width * 0.5f - cellSize.x * 0.5f - edgePadding.x);
+        float maxOffsetY = Mathf.Max(cellStep.y, mapPanel.rect.height * 0.5f - cellSize.y * 0.5f - edgePadding.y);
+        viewportCenterX = ClampViewportCenter(0, bounds.minX, bounds.maxX, maxOffsetX, cellStep.x);
+        viewportCenterY = ClampViewportCenter(0, bounds.minY, bounds.maxY, maxOffsetY, cellStep.y);
     }
 
     private int ClampViewportCenter(int desiredCenter, int minCell, int maxCell, float maxOffset, float step)
@@ -341,21 +250,13 @@ public class MapGridManager : MonoBehaviour
         float cellsThatFitEachSide = maxOffset / Mathf.Max(1f, step);
         int lowerLimit = Mathf.CeilToInt(maxCell - cellsThatFitEachSide);
         int upperLimit = Mathf.FloorToInt(minCell + cellsThatFitEachSide);
-
-        if (lowerLimit > upperLimit)
-        {
-            // 当前面板确实放不下全部可见格时，退而求其次放到可见范围中点。
-            return Mathf.RoundToInt((minCell + maxCell) * 0.5f);
-        }
-
+        if (lowerLimit > upperLimit) return Mathf.RoundToInt((minCell + maxCell) * 0.5f);
         return Mathf.Clamp(desiredCenter, lowerLimit, upperLimit);
     }
 
     private Vector2 GetCellCenterPosition(MapCellData cell)
     {
-        return new Vector2(
-            (cell.x - viewportCenterX) * cellStep.x,
-            (cell.y - viewportCenterY) * cellStep.y);
+        return new Vector2((cell.x - viewportCenterX) * cellStep.x, (cell.y - viewportCenterY) * cellStep.y);
     }
 
     private void CreateCellButton(MapCellData cell, PlayerState playerState)
@@ -374,13 +275,9 @@ public class MapGridManager : MonoBehaviour
         bool isCurrentCell = cell.id == playerState.currentCellId;
         bool canMove = false;
         string reason;
+        if (!isCurrentCell && playerMapController != null) canMove = playerMapController.CanMoveTo(cell, out reason);
 
-        if (!isCurrentCell && playerMapController != null)
-        {
-            canMove = playerMapController.CanMoveTo(cell, out reason);
-        }
-
-        Color cellColor = GetCellColor(cell, isCurrentCell, canMove);
+        Color cellColor = GetCellColor(cell, playerState, isCurrentCell, canMove);
         image.color = cellColor;
         button.interactable = canMove;
 
@@ -408,23 +305,11 @@ public class MapGridManager : MonoBehaviour
         rect.anchoredPosition = GetCellCenterPosition(cell);
     }
 
-    private Color GetCellColor(MapCellData cell, bool isCurrentCell, bool canMove)
+    private Color GetCellColor(MapCellData cell, PlayerState playerState, bool isCurrentCell, bool canMove)
     {
-        if (isCurrentCell)
-        {
-            return new Color(0.92f, 0.76f, 0.28f, 1f);
-        }
-
-        if (!cell.walkable)
-        {
-            return new Color(0.25f, 0.25f, 0.25f, 1f);
-        }
-
-        if (canMove)
-        {
-            return new Color(0.36f, 0.60f, 0.38f, 1f);
-        }
-
+        if (isCurrentCell) return new Color(0.92f, 0.76f, 0.28f, 1f);
+        if (!cell.walkable || (cell.locked && !IsUnlockedByState(cell, playerState))) return new Color(0.25f, 0.25f, 0.25f, 1f);
+        if (canMove) return new Color(0.36f, 0.60f, 0.38f, 1f);
         return new Color(0.38f, 0.41f, 0.45f, 1f);
     }
 
@@ -432,13 +317,11 @@ public class MapGridManager : MonoBehaviour
     {
         GameObject textObject = new GameObject("CellText", typeof(RectTransform), typeof(Text));
         textObject.transform.SetParent(parent, false);
-
         RectTransform rect = textObject.GetComponent<RectTransform>();
         rect.anchorMin = Vector2.zero;
         rect.anchorMax = Vector2.one;
         rect.offsetMin = new Vector2(4f, 4f);
         rect.offsetMax = new Vector2(-4f, -4f);
-
         Text text = textObject.GetComponent<Text>();
         text.font = GetDefaultFont();
         text.fontSize = 17;
@@ -451,17 +334,9 @@ public class MapGridManager : MonoBehaviour
 
     private Font GetDefaultFont()
     {
-        if (cachedFont != null)
-        {
-            return cachedFont;
-        }
-
+        if (cachedFont != null) return cachedFont;
         cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 16);
-        if (cachedFont != null)
-        {
-            return cachedFont;
-        }
-
+        if (cachedFont != null) return cachedFont;
         cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         return cachedFont;
     }
@@ -470,15 +345,10 @@ public class MapGridManager : MonoBehaviour
     {
         foreach (GameObject buttonObject in createdMapObjects)
         {
-            if (buttonObject == null)
-            {
-                continue;
-            }
-
+            if (buttonObject == null) continue;
             buttonObject.SetActive(false);
             Destroy(buttonObject);
         }
-
         createdMapObjects.Clear();
     }
 
@@ -490,13 +360,8 @@ public class MapGridManager : MonoBehaviour
             cellStep = new Vector2(108f, 70f);
         }
 
-        // MapPanel 之前可能挂过 GridLayoutGroup。
-        // 坐标地图不能交给 GridLayoutGroup 自动排版，否则会变成普通列表。
         LayoutGroup[] layoutGroups = mapPanel.GetComponents<LayoutGroup>();
-        foreach (LayoutGroup layoutGroup in layoutGroups)
-        {
-            layoutGroup.enabled = false;
-        }
+        foreach (LayoutGroup layoutGroup in layoutGroups) layoutGroup.enabled = false;
     }
 
     private struct MapBounds
@@ -515,11 +380,7 @@ public class MapGridManager : MonoBehaviour
             {
                 MapCellData first = visibleCells[i];
                 MapCellData second = visibleCells[j];
-
-                if (MapRuleUtility.ShouldConnectCells(first, second))
-                {
-                    CreateConnectionLine(first, second);
-                }
+                if (MapRuleUtility.ShouldConnectCells(first, second)) CreateConnectionLine(first, second);
             }
         }
     }
@@ -542,18 +403,9 @@ public class MapGridManager : MonoBehaviour
 
         Vector2 firstCenter = GetCellCenterPosition(first);
         Vector2 secondCenter = GetCellCenterPosition(second);
-        Vector2 middle = (firstCenter + secondCenter) * 0.5f;
-
-        rect.anchoredPosition = middle;
+        rect.anchoredPosition = (firstCenter + secondCenter) * 0.5f;
 
         bool horizontal = first.y == second.y;
-        if (horizontal)
-        {
-            rect.sizeDelta = new Vector2(cellStep.x, connectionLineThickness);
-        }
-        else
-        {
-            rect.sizeDelta = new Vector2(connectionLineThickness, cellStep.y);
-        }
+        rect.sizeDelta = horizontal ? new Vector2(cellStep.x, connectionLineThickness) : new Vector2(connectionLineThickness, cellStep.y);
     }
 }
