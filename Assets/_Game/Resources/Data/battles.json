@@ -79,8 +79,8 @@
       "enemyHp": 160,
       "enemyAttack": 22,
       "enemyDefense": 8,
-      "winMessage": "赵霸天轰然倒地，眼中满是不甘。妹妹扑到你身旁，紧紧抓住你的衣袖。你知道，自己终于护住了她。第一章内容暂到此处。",
-      "loseMessage": "你倒在血泊中，赵霸天的笑声越来越远。妹妹的哭喊声像刀一样扎进耳中。第一章内容暂到此处。",
+      "winMessage": "赵霸天轰然倒地，眼中满是不甘。妹妹扑到你身旁，紧紧抓住你的衣袖。你知道，自己终于护住了她。",
+      "loseMessage": "你倒在血泊中，赵霸天的笑声越来越远。妹妹的哭喊声像刀一样扎进耳中。",
       "winFlags": ["defeated_zhao_batian", "protected_sister_chapter_one", "chapter_one_good_end"],
       "loseFlags": ["lost_to_zhao_batian", "failed_to_protect_sister_chapter_one", "chapter_one_bad_end"]
     },
@@ -91,10 +91,34 @@
       "enemyHp": 120,
       "enemyAttack": 19,
       "enemyDefense": 6,
-      "winMessage": "星辰剑光划破夜色，赵霸天终于支撑不住，跪倒在地。赵霸天败退后，青石村短暂恢复平静。林昊望向远处的青云宗山门，心中明白，真正的敌人并不在这小小村落。第一章内容暂到此处。",
-      "loseMessage": "即便有星辰剑在手，你仍旧被赵霸天压制。你意识到，力量还远远不够。林昊护住了妹妹，却也付出了惨痛代价。第一章内容暂到此处。",
+      "winMessage": "星辰剑光划破夜色，赵霸天终于支撑不住，跪倒在地。",
+      "loseMessage": "即便有星辰剑在手，你仍旧被赵霸天压制。你意识到，力量还远远不够。",
       "winFlags": ["defeated_zhao_batian", "protected_sister_chapter_one", "chapter_one_good_end"],
       "loseFlags": ["lost_to_zhao_batian", "failed_to_protect_sister_chapter_one", "chapter_one_bad_end"]
+    },
+    {
+      "id": "battle_day21_zhao_batian_no_sister",
+      "title": "赵霸天上门",
+      "enemyName": "赵霸天",
+      "enemyHp": 160,
+      "enemyAttack": 22,
+      "enemyDefense": 8,
+      "winMessage": "赵霸天轰然倒地，眼中满是不甘。青石村众人看向你的目光中多了几分敬畏。",
+      "loseMessage": "你倒在尘土中，赵霸天冷笑着从你身旁走过。青石村重新归于压抑的沉默。",
+      "winFlags": ["defeated_zhao_batian", "chapter_one_good_end"],
+      "loseFlags": ["lost_to_zhao_batian", "chapter_one_bad_end"]
+    },
+    {
+      "id": "battle_day21_zhao_batian_weakened_no_sister",
+      "title": "星辰剑对赵霸天",
+      "enemyName": "赵霸天",
+      "enemyHp": 120,
+      "enemyAttack": 19,
+      "enemyDefense": 6,
+      "winMessage": "星辰剑光划破夜色，赵霸天终于支撑不住，跪倒在地。",
+      "loseMessage": "即便有星辰剑在手，你仍旧被赵霸天压制。你意识到，力量还远远不够。",
+      "winFlags": ["defeated_zhao_batian", "chapter_one_good_end"],
+      "loseFlags": ["lost_to_zhao_batian", "chapter_one_bad_end"]
     }
   ]
 }
