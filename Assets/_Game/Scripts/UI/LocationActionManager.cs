@@ -75,7 +75,7 @@ public class LocationActionManager : MonoBehaviour
         ClearCurrentButtons();
         EnsureDialogueManager();
 
-        if (RestManager.IsRestingTransition || BattleManager.IsBattleOpen || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return;
+        if (RestManager.IsRestingTransition || BattleManager.IsBattleOpen || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || ChapterOneLocationMechanicsManager.IsChapterOneEventOpen || ChapterOneLateStoryFixManager.IsEndingPlaying) return;
         if (dialogueManager != null && dialogueManager.IsDialogueOpen) return;
         if (mapGridManager == null) return;
 
@@ -161,6 +161,13 @@ public class LocationActionManager : MonoBehaviour
         {
             foreach (string npcId in currentCell.npcIds)
             {
+                // 白发老者只在第 18 天药田出现，并且相助或婉拒后消失。
+                if (npcId == "white_haired_elder")
+                {
+                    ChapterOneLateStoryFixManager lateFix = GetComponent<ChapterOneLateStoryFixManager>();
+                    if (lateFix == null || !lateFix.ShouldShowWhiteHairedElder(currentCell)) continue;
+                }
+
                 string npcName = GetNpcName(npcId);
                 Button button = CreateButton(npcButtonContainer, npcName, 120f);
                 string capturedNpcId = npcId;
@@ -224,7 +231,7 @@ public class LocationActionManager : MonoBehaviour
 
     private void ExecuteAction(LocationActionData actionData)
     {
-        if (RestManager.IsRestingTransition || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || BattleManager.IsBattleOpen || ChapterOneLocationMechanicsManager.IsChapterOneEventOpen)
+        if (RestManager.IsRestingTransition || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || BattleManager.IsBattleOpen || ChapterOneLocationMechanicsManager.IsChapterOneEventOpen || ChapterOneLateStoryFixManager.IsEndingPlaying)
         {
             if (locationUIManager != null) locationUIManager.ShowMessage("请先处理当前事件。");
             return;
