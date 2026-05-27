@@ -84,15 +84,15 @@ public class LocationUIManager : MonoBehaviour
             actionPointText.text = "行动点：" + playerState.actionPoints + "/" + playerState.maxActionPoints;
         }
 
+        // 顶部只保留简洁信息：天数、行动点、灵石。境界和详细属性放到人物状态界面。
         if (realmText != null)
         {
-            realmText.text = "境界：" + playerState.realm;
+            realmText.text = "灵石：" + playerState.spiritStones;
         }
 
         if (cultivationText != null)
         {
-            // 修为显示当前累计总修为，不显示突破需求；突破需求只用于内部判断。
-            cultivationText.text = "修为：" + playerState.cultivation + "    灵石：" + playerState.spiritStones;
+            cultivationText.text = "";
         }
     }
 

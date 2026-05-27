@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 [Serializable]
 public class RealmData
@@ -49,6 +47,8 @@ public class CultivationManager : MonoBehaviour
             locationUIManager.RefreshPlayerStatus(playerState);
             locationUIManager.ShowMessage("你闭关修炼片刻，体内灵气流转，修为提升了 " + amount + " 点。");
         }
+        CharacterStatusUIManager characterStatus = GetComponent<CharacterStatusUIManager>();
+        if (characterStatus != null) characterStatus.RefreshIfOpen();
     }
 }
 
@@ -141,15 +141,12 @@ public class RealmManager : MonoBehaviour
         state.realm = nextRealm.name;
 
         // 修为是累计总修为。突破只检查门槛，不扣除、不清零。
-        state.maxHp += nextRealm.maxHpBonus;
-        state.attack += nextRealm.attackBonus;
-        state.defense += nextRealm.defenseBonus;
-        state.hp = state.maxHp;
-
         RealmData followingRealm = GetNextRealm();
         state.maxCultivation = followingRealm != null ? followingRealm.requiredCultivation : nextRealm.requiredCultivation;
 
-        if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(state);
+        BodyRealmManager bodyRealmManager = GetComponent<BodyRealmManager>();
+        PlayerStatCalculator.RecalculateStats(state, this, bodyRealmManager, true);
+        RefreshUi(state);
         string message = string.IsNullOrEmpty(nextRealm.breakthroughMessage) ? ("你突破到了" + nextRealm.name + "。") : nextRealm.breakthroughMessage;
         ShowMessage(message);
         return true;
@@ -170,7 +167,9 @@ public class RealmManager : MonoBehaviour
         if (next != null) state.maxCultivation = next.requiredCultivation;
         else if (state.maxCultivation <= 0) state.maxCultivation = 150;
 
-        if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(state);
+        BodyRealmManager bodyRealmManager = GetComponent<BodyRealmManager>();
+        PlayerStatCalculator.RecalculateStats(state, this, bodyRealmManager, false);
+        RefreshUi(state);
     }
 
     private PlayerState GetState()
@@ -180,146 +179,17 @@ public class RealmManager : MonoBehaviour
         return gameManager != null ? gameManager.GetPlayerState() : null;
     }
 
+    private void RefreshUi(PlayerState state)
+    {
+        if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(state);
+        CharacterStatusUIManager characterStatus = GetComponent<CharacterStatusUIManager>();
+        if (characterStatus != null) characterStatus.RefreshIfOpen();
+    }
+
     private void ShowMessage(string message)
     {
         if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
         if (locationUIManager != null) locationUIManager.ShowMessage(message);
         else Debug.Log(message);
-    }
-}
-
-/// <summary>
-/// 自动创建“尝试突破”按钮，避免手动改 DemoScene。
-/// </summary>
-public class BreakthroughButtonManager : MonoBehaviour
-{
-    private Button breakthroughButton;
-    private RealmManager realmManager;
-    private Font cachedFont;
-
-    private IEnumerator Start()
-    {
-        yield return null;
-        yield return null;
-        realmManager = GetComponent<RealmManager>();
-        EnsureButton();
-        RefreshButtonStateAndLayout();
-    }
-
-    private void Update()
-    {
-        if (breakthroughButton == null) return;
-        RefreshButtonStateAndLayout();
-    }
-
-    private void EnsureButton()
-    {
-        if (breakthroughButton != null) return;
-        Canvas canvas = FindObjectOfType<Canvas>();
-        if (canvas == null) return;
-
-        GameObject buttonObject = new GameObject("BreakthroughButton", typeof(RectTransform), typeof(Image), typeof(Button));
-        buttonObject.transform.SetParent(canvas.transform, false);
-        RectTransform rect = buttonObject.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(1f, 1f);
-        rect.anchorMax = new Vector2(1f, 1f);
-        rect.pivot = new Vector2(1f, 1f);
-        rect.sizeDelta = new Vector2(120f, 38f);
-        rect.anchoredPosition = new Vector2(-24f, -126f);
-
-        Image image = buttonObject.GetComponent<Image>();
-        image.color = new Color(0.20f, 0.26f, 0.32f, 1f);
-        breakthroughButton = buttonObject.GetComponent<Button>();
-        breakthroughButton.targetGraphic = image;
-        breakthroughButton.onClick.AddListener(OnBreakthroughClicked);
-
-        GameObject textObject = new GameObject("Text", typeof(RectTransform), typeof(Text));
-        textObject.transform.SetParent(buttonObject.transform, false);
-        RectTransform textRect = textObject.GetComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
-        Text label = textObject.GetComponent<Text>();
-        label.text = "尝试突破";
-        label.font = GetDefaultFont();
-        label.fontSize = 18;
-        label.color = Color.white;
-        label.alignment = TextAnchor.MiddleCenter;
-    }
-
-    private void RefreshButtonStateAndLayout()
-    {
-        if (breakthroughButton == null) return;
-        bool blocked = IsUiBlockedForBreakthrough();
-        breakthroughButton.gameObject.SetActive(!blocked);
-        if (blocked) return;
-        LayoutBelowRestButton();
-    }
-
-    private bool IsUiBlockedForBreakthrough()
-    {
-        if (RestManager.IsRestingTransition) return true;
-        if (BattleManager.IsBattleOpen) return true;
-        if (OpeningStoryManager.IsOpeningActive) return true;
-        if (ChapterTitleManager.IsChapterTitleActive) return true;
-        if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return true;
-        if (ChapterOneLateStoryFixManager.IsEndingPlaying) return true;
-        return false;
-    }
-
-    private void LayoutBelowRestButton()
-    {
-        RectTransform rect = breakthroughButton.GetComponent<RectTransform>();
-        if (rect == null) return;
-
-        GameObject endDayObject = GameObject.Find("EndDayButton");
-        RectTransform endRect = endDayObject != null ? endDayObject.GetComponent<RectTransform>() : null;
-        if (endRect == null)
-        {
-            rect.anchorMin = new Vector2(1f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(1f, 1f);
-            rect.sizeDelta = new Vector2(120f, 38f);
-            rect.anchoredPosition = new Vector2(-24f, -126f);
-            return;
-        }
-
-        rect.anchorMin = endRect.anchorMin;
-        rect.anchorMax = endRect.anchorMax;
-        rect.pivot = endRect.pivot;
-        rect.sizeDelta = new Vector2(Mathf.Max(120f, endRect.sizeDelta.x), 38f);
-
-        float gap = 10f;
-        float endHeight = endRect.rect.height > 0f ? endRect.rect.height : endRect.sizeDelta.y;
-        if (endRect.pivot.y >= 0.5f)
-        {
-            rect.anchoredPosition = new Vector2(endRect.anchoredPosition.x, endRect.anchoredPosition.y - endHeight - gap);
-        }
-        else
-        {
-            rect.anchoredPosition = new Vector2(endRect.anchoredPosition.x, endRect.anchoredPosition.y - rect.sizeDelta.y - gap);
-        }
-    }
-
-    private void OnBreakthroughClicked()
-    {
-        if (IsUiBlockedForBreakthrough())
-        {
-            LocationUIManager ui = GetComponent<LocationUIManager>();
-            if (ui != null) ui.ShowMessage("请先处理当前事件。");
-            return;
-        }
-        if (realmManager == null) realmManager = GetComponent<RealmManager>();
-        if (realmManager != null) realmManager.TryBreakthrough();
-    }
-
-    private Font GetDefaultFont()
-    {
-        if (cachedFont != null) return cachedFont;
-        cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 16);
-        if (cachedFont != null) return cachedFont;
-        cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        return cachedFont;
     }
 }

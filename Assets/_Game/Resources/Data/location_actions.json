@@ -9,6 +9,18 @@
       "message": "你闭关修炼片刻，体内灵气流转，修为提升了 10 点。"
     },
     {
+      "id": "body_training",
+      "name": "锻体修炼",
+      "description": "按照锻体法门打熬筋骨，凝练气血。",
+      "costActionPoint": 1,
+      "cultivationGain": 0,
+      "bodyCultivationGain": 10,
+      "message": "你打熬筋骨，气血逐渐凝实。",
+      "condition": {
+        "requireSkills": ["skill_body_tempering_basic"]
+      }
+    },
+    {
       "id": "gather_herbs",
       "name": "采集灵草",
       "description": "在药田中寻找可用的灵草。",

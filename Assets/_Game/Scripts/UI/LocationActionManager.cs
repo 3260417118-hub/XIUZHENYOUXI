@@ -96,8 +96,6 @@ public class LocationActionManager : MonoBehaviour
     {
         EnsureDialogueManager();
         EnsureEventManager();
-
-        // 如果当前有剧情/对话/战斗正在显示，不重新生成普通地点按钮，避免按钮混在一起。
         if (IsNormalLocationUiBlocked()) return;
 
         ClearCurrentButtons();
@@ -275,14 +273,19 @@ public class LocationActionManager : MonoBehaviour
         ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
         if (chapterOne != null && chapterOne.TryExecuteSpecialAction(actionData, currentCell)) return;
 
+        PlayerState playerState = gameManager.GetPlayerState();
+        if (actionData.id == "body_training" && (playerState == null || !playerState.HasSkill("skill_body_tempering_basic")))
+        {
+            if (locationUIManager != null) locationUIManager.ShowMessage("你尚未掌握锻体法门，只能胡乱打熬身体，收效甚微。");
+            return;
+        }
+
         if (actionPointManager == null) return;
         if (!actionPointManager.TrySpendActionPoints(actionData.costActionPoint))
         {
             RefreshCurrentLocation();
             return;
         }
-
-        PlayerState playerState = gameManager.GetPlayerState();
 
         if (actionData.id == "cultivate")
         {
@@ -294,13 +297,27 @@ public class LocationActionManager : MonoBehaviour
                 if (locationUIManager != null) locationUIManager.ShowMessage("你闭关修炼片刻，体内灵气流转，修为提升了 10 点。");
             }
         }
+        else if (actionData.id == "body_training")
+        {
+            BodyCultivationManager bodyCultivationManager = GetComponent<BodyCultivationManager>();
+            int gain = actionData.bodyCultivationGain > 0 ? actionData.bodyCultivationGain : 10;
+            if (bodyCultivationManager != null) bodyCultivationManager.AddBodyCultivation(gain);
+            else
+            {
+                playerState.bodyCultivation += gain;
+                if (locationUIManager != null) locationUIManager.ShowMessage("你按照《锻体入门》打熬筋骨，气血渐渐凝实。锻体进度 +" + gain + "。");
+            }
+        }
         else
         {
             if (actionData.cultivationGain > 0) playerState.cultivation += actionData.cultivationGain;
+            if (actionData.bodyCultivationGain > 0) playerState.bodyCultivation += actionData.bodyCultivationGain;
             if (locationUIManager != null) locationUIManager.ShowMessage(actionData.message);
         }
 
         if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(playerState);
+        CharacterStatusUIManager characterStatus = GetComponent<CharacterStatusUIManager>();
+        if (characterStatus != null) characterStatus.RefreshIfOpen();
         RefreshCurrentLocation();
     }
 

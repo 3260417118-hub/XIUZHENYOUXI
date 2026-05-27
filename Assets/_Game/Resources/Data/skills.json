@@ -15,8 +15,13 @@
     {
       "id": "skill_body_tempering_basic",
       "name": "锻体入门",
-      "description": "江鹤传下的锻体法门，可增强体魄。",
-      "type": "cultivation"
+      "description": "江鹤传下的锻体法门，可打磨筋骨，凝练气血，是踏入肉身修炼的基础。",
+      "type": "body_method",
+      "bodyCultivationBonus": 10,
+      "unlocksBodyCultivation": true,
+      "maxHpBonus": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0
     }
   ]
 }

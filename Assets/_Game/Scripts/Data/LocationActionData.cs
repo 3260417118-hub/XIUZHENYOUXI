@@ -31,6 +31,7 @@ public class LocationActionData
     public string description;
     public int costActionPoint;
     public int cultivationGain;
+    public int bodyCultivationGain;
     public string message;
 
     /// <summary>行为显示条件。为空时默认显示。</summary>

@@ -26,6 +26,11 @@ public class SkillData
     public string name;
     public string description;
     public string type;
+    public int maxHpBonus;
+    public int attackBonus;
+    public int defenseBonus;
+    public int bodyCultivationBonus;
+    public bool unlocksBodyCultivation;
 }
 
 [Serializable]
@@ -218,14 +223,32 @@ public class SkillManager : MonoBehaviour
     {
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null || string.IsNullOrEmpty(skillId)) return;
+        bool alreadyKnown = playerState.HasSkill(skillId);
         playerState.LearnSkill(skillId);
-        if (locationUIManager != null) locationUIManager.ShowMessage("学会功法：" + GetSkillName(skillId));
+        SkillData data = GetSkillData(skillId);
+        string extra = "";
+        if (skillId == "skill_body_tempering_basic")
+        {
+            if (string.IsNullOrEmpty(playerState.equippedBodyMethodId)) playerState.equippedBodyMethodId = skillId;
+            extra = "\n已开始修行锻体法门。";
+        }
+        if (locationUIManager != null && !alreadyKnown) locationUIManager.ShowMessage("学会功法：" + GetSkillName(skillId) + extra);
+        CharacterStatusUIManager characterStatus = GetComponent<CharacterStatusUIManager>();
+        if (characterStatus != null) characterStatus.RefreshIfOpen();
     }
 
     public bool HasSkill(string skillId)
     {
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         return playerState != null && playerState.HasSkill(skillId);
+    }
+
+    public SkillData GetSkillData(string skillId)
+    {
+        if (skillById.Count == 0) LoadSkills();
+        SkillData skill;
+        if (!string.IsNullOrEmpty(skillId) && skillById.TryGetValue(skillId, out skill)) return skill;
+        return null;
     }
 
     public string GetSkillName(string skillId)
@@ -378,26 +401,10 @@ public class NightEventManager : MonoBehaviour
 
         if (data.reward != null)
         {
-            if (!string.IsNullOrEmpty(data.reward.addItem))
-            {
-                playerState.AddItem(data.reward.addItem);
-            }
-
-            if (!string.IsNullOrEmpty(data.reward.setFlag))
-            {
-                playerState.AddFlag(data.reward.setFlag);
-            }
-
-            if (!string.IsNullOrEmpty(data.reward.learnSkill))
-            {
-                playerState.LearnSkill(data.reward.learnSkill);
-            }
-
-            if (data.reward.cultivationGain != 0)
-            {
-                playerState.cultivation += data.reward.cultivationGain;
-            }
-
+            if (!string.IsNullOrEmpty(data.reward.addItem)) playerState.AddItem(data.reward.addItem);
+            if (!string.IsNullOrEmpty(data.reward.setFlag)) playerState.AddFlag(data.reward.setFlag);
+            if (!string.IsNullOrEmpty(data.reward.learnSkill)) playerState.LearnSkill(data.reward.learnSkill);
+            if (data.reward.cultivationGain != 0) playerState.cultivation += data.reward.cultivationGain;
             if (data.reward.spiritStoneGain != 0)
             {
                 playerState.spiritStones += data.reward.spiritStoneGain;
@@ -512,29 +519,21 @@ public class RestManager : MonoBehaviour
             {
                 yield return ShowCenterText(data.title + "\n\n" + data.text);
                 string rewardMessage = nightEventManager.ApplyNightEvent(eventId);
-                if (!string.IsNullOrEmpty(rewardMessage))
-                {
-                    yield return ShowCenterText(rewardMessage);
-                }
+                if (!string.IsNullOrEmpty(rewardMessage)) yield return ShowCenterText(rewardMessage);
             }
         }
 
         playerState.pendingNightEvents.Clear();
         playerState.dailyActionRecords.Clear();
         playerState.day += 1;
-        playerState.actionPoints = Mathf.Max(1, playerState.maxActionPoints);
-
-        if (locationUIManager != null)
-        {
-            locationUIManager.RefreshPlayerStatus(playerState);
-        }
-
+        playerState.actionPoints = playerState.maxActionPoints;
         yield return ShowCenterText("第 " + playerState.day + " 天");
         yield return FadePanel(1f, 0f, fadeFromBlackDuration);
 
         if (panelObject != null) panelObject.SetActive(false);
         IsRestingTransition = false;
 
+        if (mapGridManager != null) mapGridManager.RefreshMap();
         MapCellData currentCell = mapGridManager != null ? mapGridManager.GetCurrentCell() : null;
         if (locationUIManager != null)
         {
@@ -542,13 +541,21 @@ public class RestManager : MonoBehaviour
             locationUIManager.ShowMessage("新的一天开始了。");
         }
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
-        if (blockingEncounterManager != null) blockingEncounterManager.CheckTodayEncounter();
+        ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
+        if (chapterOne != null) chapterOne.HandleDailyStoryTrigger();
+        ChapterOneLateStoryFixManager lateFix = GetComponent<ChapterOneLateStoryFixManager>();
+        if (lateFix != null) lateFix.CheckDayStartBlockingEncounter();
+        BlockingEncounterManager encounter = GetComponent<BlockingEncounterManager>();
+        if (encounter != null) encounter.CheckDayStartEncounter();
     }
 
-    private IEnumerator ShowCenterText(string content)
+    private IEnumerator ShowCenterText(string text)
     {
-        if (transitionText == null) yield break;
-        transitionText.text = content;
+        if (transitionText != null)
+        {
+            transitionText.text = text;
+            transitionText.color = new Color(1f, 1f, 1f, 0f);
+        }
         yield return FadeText(0f, 1f, textFadeInDuration);
         yield return new WaitForSeconds(textHoldDuration);
         yield return FadeText(1f, 0f, textFadeOutDuration);
@@ -556,30 +563,32 @@ public class RestManager : MonoBehaviour
 
     private IEnumerator FadePanel(float from, float to, float duration)
     {
-        float timer = 0f;
-        float safeDuration = Mathf.Max(0.01f, duration);
-        while (timer < safeDuration)
+        if (canvasGroup == null) yield break;
+        float elapsed = 0f;
+        while (elapsed < duration)
         {
-            timer += Time.deltaTime;
-            float t = Mathf.Clamp01(timer / safeDuration);
-            if (canvasGroup != null) canvasGroup.alpha = Mathf.Lerp(from, to, t);
+            elapsed += Time.deltaTime;
+            canvasGroup.alpha = Mathf.Lerp(from, to, duration <= 0f ? 1f : elapsed / duration);
             yield return null;
         }
-        if (canvasGroup != null) canvasGroup.alpha = to;
+        canvasGroup.alpha = to;
     }
 
     private IEnumerator FadeText(float from, float to, float duration)
     {
-        float timer = 0f;
-        float safeDuration = Mathf.Max(0.01f, duration);
-        while (timer < safeDuration)
+        if (transitionText == null) yield break;
+        float elapsed = 0f;
+        while (elapsed < duration)
         {
-            timer += Time.deltaTime;
-            float t = Mathf.Clamp01(timer / safeDuration);
-            if (transitionText != null) transitionText.color = new Color(1f, 1f, 1f, Mathf.Lerp(from, to, t));
+            elapsed += Time.deltaTime;
+            Color color = transitionText.color;
+            color.a = Mathf.Lerp(from, to, duration <= 0f ? 1f : elapsed / duration);
+            transitionText.color = color;
             yield return null;
         }
-        if (transitionText != null) transitionText.color = new Color(1f, 1f, 1f, to);
+        Color finalColor = transitionText.color;
+        finalColor.a = to;
+        transitionText.color = finalColor;
     }
 
     private void EnsurePanel()
@@ -587,7 +596,7 @@ public class RestManager : MonoBehaviour
         if (panelObject != null) return;
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
-        panelObject = new GameObject("RestTransitionPanel", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+        panelObject = new GameObject("RestTransitionPanel", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
         panelObject.transform.SetParent(canvas.transform, false);
         RectTransform panelRect = panelObject.GetComponent<RectTransform>();
         panelRect.anchorMin = Vector2.zero;
@@ -596,33 +605,30 @@ public class RestManager : MonoBehaviour
         panelRect.offsetMax = Vector2.zero;
         Image image = panelObject.GetComponent<Image>();
         image.color = Color.black;
-        image.raycastTarget = true;
         canvasGroup = panelObject.GetComponent<CanvasGroup>();
         canvasGroup.alpha = 0f;
         canvasGroup.blocksRaycasts = true;
-        canvasGroup.interactable = true;
-
         GameObject textObject = new GameObject("RestTransitionText", typeof(RectTransform), typeof(Text));
         textObject.transform.SetParent(panelObject.transform, false);
-        RectTransform textRect = textObject.GetComponent<RectTransform>();
-        textRect.anchorMin = new Vector2(0.15f, 0.35f);
-        textRect.anchorMax = new Vector2(0.85f, 0.65f);
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
         transitionText = textObject.GetComponent<Text>();
         transitionText.font = GetDefaultFont();
         transitionText.fontSize = 28;
         transitionText.alignment = TextAnchor.MiddleCenter;
-        transitionText.color = new Color(1f, 1f, 1f, 0f);
+        transitionText.color = Color.white;
         transitionText.horizontalOverflow = HorizontalWrapMode.Wrap;
         transitionText.verticalOverflow = VerticalWrapMode.Overflow;
+        RectTransform textRect = transitionText.rectTransform;
+        textRect.anchorMin = new Vector2(0.2f, 0.35f);
+        textRect.anchorMax = new Vector2(0.8f, 0.65f);
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
         panelObject.SetActive(false);
     }
 
     private Font GetDefaultFont()
     {
         if (cachedFont != null) return cachedFont;
-        cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 24);
+        cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 16);
         if (cachedFont != null) return cachedFont;
         cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         return cachedFont;
