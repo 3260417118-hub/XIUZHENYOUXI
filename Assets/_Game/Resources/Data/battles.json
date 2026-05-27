@@ -1,30 +1,6 @@
 {
   "battles": [
     {
-      "id": "battle_day7_thugs",
-      "title": "村口斗殴",
-      "enemyName": "小混混",
-      "enemyHp": 35,
-      "enemyAttack": 8,
-      "enemyDefense": 1,
-      "winMessage": "你喘着粗气站在原地，小混混捂着伤口狼狈逃走。村民们看向你的眼神多了几分惊讶。",
-      "loseMessage": "你被小混混打倒在地，胸口隐隐作痛。对方冷笑几声后扬长而去。",
-      "winFlags": ["defeated_day7_thugs"],
-      "loseFlags": ["lost_to_day7_thugs"]
-    },
-    {
-      "id": "battle_day9_bully_helpers",
-      "title": "恶霸帮手",
-      "enemyName": "恶霸帮手",
-      "enemyHp": 50,
-      "enemyAttack": 10,
-      "enemyDefense": 2,
-      "winMessage": "你拼尽全力击退了恶霸的帮手。恶霸脸色阴沉地盯着你，似乎记住了你的样子。",
-      "loseMessage": "你被恶霸帮手打倒，眼前一阵发黑。等你再醒来时，周围只剩下凌乱脚印。",
-      "winFlags": ["defeated_bully_helpers_day9"],
-      "loseFlags": ["lost_to_bully_helpers_day9"]
-    },
-    {
       "id": "battle_forest_demon",
       "title": "山洞妖怪",
       "enemyName": "山林妖怪",
@@ -47,6 +23,30 @@
       "loseMessage": "你被骸骨击退，狼狈逃出洞府。",
       "winFlags": ["obtained_qiankun_fragment"],
       "loseFlags": ["lost_to_cave_skeleton"]
+    },
+    {
+      "id": "battle_day4_thug",
+      "title": "小混混拦路",
+      "enemyName": "小混混",
+      "enemyHp": 40,
+      "enemyAttack": 8,
+      "enemyDefense": 2,
+      "winMessage": "你一拳将小混混打翻在地。他捂着脸狼狈逃走，嘴里却喊着：“你等着，赵爷不会放过你的！”",
+      "loseMessage": "你被小混混打倒在地。小混混冷笑几声，转身跑向村中。",
+      "winFlags": ["defeated_day4_thug", "thug_reported_sister"],
+      "loseFlags": ["lost_to_day4_thug", "thug_reported_sister"]
+    },
+    {
+      "id": "battle_day7_bully_helpers",
+      "title": "恶霸帮手围堵",
+      "enemyName": "恶霸帮手",
+      "enemyHp": 70,
+      "enemyAttack": 13,
+      "enemyDefense": 4,
+      "winMessage": "你拼尽全力击退两名帮手。他们狼狈离去，却丢下一句狠话：“赵爷第二十一日亲自来，到时候你跪下也没用！”",
+      "loseMessage": "你被打倒在地，喉头一甜。帮手们冷笑离去，扬言第二十一日赵霸天会亲自上门。",
+      "winFlags": ["defeated_bully_helpers_day7", "zhao_batian_day21_threat"],
+      "loseFlags": ["lost_to_bully_helpers_day7", "zhao_batian_day21_threat"]
     }
   ]
 }
