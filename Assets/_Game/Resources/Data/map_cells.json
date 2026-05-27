@@ -50,7 +50,7 @@
     { "id": "road_east_shop_02", "name": "青石路", "x": 8, "y": 0, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_east_shop_03", "name": "青石路", "x": 9, "y": 0, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "shop", "name": "商店", "x": 10, "y": 0, "description": "这是一间老旧商铺，柜台后站着老板，旁边的店小二正在擦拭货架。", "walkable": true, "npcIds": ["shop_owner", "shop_assistant"], "actionIds": [], "firstEnterEventId": "" },
-    { "id": "herb_field", "name": "药田", "x": 2, "y": -1, "description": "药田中灵草稀疏，偶尔能见到几株带着微光的灵药。", "walkable": true, "npcIds": [], "actionIds": ["cultivate", "gather_herbs", "observe"], "firstEnterEventId": "event_herb_field_glow" },
+    { "id": "herb_field", "name": "药田", "x": 2, "y": -1, "description": "药田中灵草稀疏，偶尔能见到几株带着微光的灵药。", "walkable": true, "npcIds": ["white_haired_elder"], "actionIds": ["cultivate", "gather_herbs", "observe"], "firstEnterEventId": "event_herb_field_glow" },
     { "id": "road_village_forest_01", "name": "荒草路", "x": 0, "y": -1, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_village_forest_02", "name": "荒草路", "x": 0, "y": -2, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_village_forest_03", "name": "荒草路", "x": 0, "y": -3, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
