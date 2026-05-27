@@ -42,6 +42,13 @@ public class GameManager : MonoBehaviour
         EnsureComponent<BlockingEncounterManager>();
         EnsureComponent<DayEventManager>();
         EnsureComponent<BattleManager>();
+        EnsureComponent<InventoryLiteManager>();
+        EnsureComponent<SkillManager>();
+        EnsureComponent<DailyLimitManager>();
+        EnsureComponent<CounterManager>();
+        EnsureComponent<MapUnlockManager>();
+        EnsureComponent<NightEventManager>();
+        EnsureComponent<RestManager>();
         EnsureComponent<TutorialManager>();
         EnsureComponent<SaveButtonOverrideManager>();
     }
@@ -72,6 +79,7 @@ public class GameManager : MonoBehaviour
         playerState.spiritStones = 0;
         playerState.hasSeenOpening = false;
         playerState.activeBlockingEncounterId = "";
+        playerState.currentRestLocationId = "ruined_hut";
         playerState.maxHp = 100;
         playerState.hp = 100;
         playerState.attack = 15;
