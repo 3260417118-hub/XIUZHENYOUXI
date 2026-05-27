@@ -91,7 +91,8 @@ public class LocationUIManager : MonoBehaviour
 
         if (cultivationText != null)
         {
-            cultivationText.text = "修为：" + playerState.cultivation + "/" + playerState.maxCultivation + "    灵石：" + playerState.spiritStones;
+            // 修为显示当前累计总修为，不显示突破需求；突破需求只用于内部判断。
+            cultivationText.text = "修为：" + playerState.cultivation + "    灵石：" + playerState.spiritStones;
         }
     }
 
