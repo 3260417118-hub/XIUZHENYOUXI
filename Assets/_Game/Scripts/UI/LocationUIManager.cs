@@ -98,7 +98,7 @@ public class LocationUIManager : MonoBehaviour
     {
         if (messageText != null)
         {
-            messageText.text = "提示：" + message;
+            messageText.text = "提示：" + NormalizeInlineText(message);
         }
     }
 
@@ -106,7 +106,7 @@ public class LocationUIManager : MonoBehaviour
     {
         if (messageText != null)
         {
-            messageText.text = "【" + speaker + "】" + text;
+            messageText.text = "【" + speaker + "】 " + NormalizeInlineText(text);
         }
     }
 
@@ -114,7 +114,20 @@ public class LocationUIManager : MonoBehaviour
     {
         if (messageText != null)
         {
-            messageText.text = "【" + title + "】" + text;
+            // 下方提示栏高度较矮，如果文本开头是换行，只会看到标题。
+            // 这里把剧情文本压成同一行开头显示，避免“只有【标题】没有内容”的问题。
+            messageText.text = "【" + title + "】 " + NormalizeInlineText(text);
         }
+    }
+
+    private string NormalizeInlineText(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        string result = text.Replace("\r", " ").Replace("\n", " ").Trim();
+        while (result.Contains("  "))
+        {
+            result = result.Replace("  ", " ");
+        }
+        return result;
     }
 }
