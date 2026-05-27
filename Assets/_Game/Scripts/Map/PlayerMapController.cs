@@ -2,8 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 负责判断和执行玩家在格子地图上的移动。
-/// 第一版只允许上下左右移动一格，移动不消耗行动点。
-/// 事件、对话、开场、阻塞 NPC 事件或战斗打开时，禁止移动。
+/// 第一版只允许当前 mapId 内上下左右移动一格，移动不消耗行动点。
 /// </summary>
 public class PlayerMapController : MonoBehaviour
 {
@@ -58,9 +57,7 @@ public class PlayerMapController : MonoBehaviour
             return true;
         }
 
-        BlockingEncounterManager blockingEncounterManager = BlockingEncounterManager.Instance != null
-            ? BlockingEncounterManager.Instance
-            : GetComponent<BlockingEncounterManager>();
+        BlockingEncounterManager blockingEncounterManager = BlockingEncounterManager.Instance != null ? BlockingEncounterManager.Instance : GetComponent<BlockingEncounterManager>();
         if (blockingEncounterManager != null && blockingEncounterManager.HasActiveBlockingEncounter())
         {
             message = blockingEncounterManager.GetBlockMoveMessageOrDefault();
@@ -91,15 +88,12 @@ public class PlayerMapController : MonoBehaviour
     public bool CanMoveTo(MapCellData targetCell, out string message)
     {
         message = "";
-
         if (gameManager == null)
         {
             message = "缺少 GameManager。";
             return false;
         }
-
         if (IsInteractionBlockingMovement(out message)) return false;
-
         if (targetCell == null)
         {
             message = "目标地点不存在。";
@@ -107,30 +101,31 @@ public class PlayerMapController : MonoBehaviour
         }
 
         PlayerState playerState = gameManager.GetPlayerState();
+        if (targetCell.GetMapId() != playerState.currentMapId)
+        {
+            message = "这里不在当前地图。";
+            return false;
+        }
         if (!IsCellVisibleOrUnlocked(targetCell, playerState))
         {
             message = "这里暂时还没有发现。";
             return false;
         }
-
         if (targetCell.locked && !IsCellUnlockedByState(targetCell, playerState))
         {
             message = "这里暂时无法进入。";
             return false;
         }
-
         if (!targetCell.walkable)
         {
             message = "这里暂时不能进入。";
             return false;
         }
-
         if (!MapRuleUtility.IsOrthogonalNeighbor(playerState.currentX, playerState.currentY, targetCell.x, targetCell.y))
         {
             message = "只能移动到上下左右相邻的格子。";
             return false;
         }
-
         return true;
     }
 
@@ -148,15 +143,14 @@ public class PlayerMapController : MonoBehaviour
         playerState.currentCellId = targetCell.id;
         playerState.currentX = targetCell.x;
         playerState.currentY = targetCell.y;
+        playerState.currentMapId = targetCell.GetMapId();
 
         if (mapGridManager != null) mapGridManager.RefreshMap();
-
         if (locationUIManager != null)
         {
             locationUIManager.RefreshLocation(targetCell, playerState);
             locationUIManager.ShowMessage("你来到了：" + targetCell.name);
         }
-
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
 
         EnsureManagers();
@@ -170,6 +164,7 @@ public class PlayerMapController : MonoBehaviour
     {
         if (cell == null || playerState == null) return false;
         playerState.EnsureLists();
+        if (cell.GetMapId() != playerState.currentMapId) return false;
         if (!cell.hiddenUntilUnlocked) return true;
         return IsCellUnlockedByState(cell, playerState);
     }
