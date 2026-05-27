@@ -75,7 +75,7 @@ public class LocationActionManager : MonoBehaviour
         ClearCurrentButtons();
         EnsureDialogueManager();
 
-        if (RestManager.IsRestingTransition || BattleManager.IsBattleOpen || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive) return;
+        if (RestManager.IsRestingTransition || BattleManager.IsBattleOpen || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return;
         if (dialogueManager != null && dialogueManager.IsDialogueOpen) return;
         if (mapGridManager == null) return;
 
@@ -202,7 +202,7 @@ public class LocationActionManager : MonoBehaviour
 
     private void ExecuteAction(LocationActionData actionData)
     {
-        if (RestManager.IsRestingTransition || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || BattleManager.IsBattleOpen)
+        if (RestManager.IsRestingTransition || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || BattleManager.IsBattleOpen || ChapterOneLocationMechanicsManager.IsChapterOneEventOpen)
         {
             if (locationUIManager != null) locationUIManager.ShowMessage("请先处理当前事件。");
             return;
@@ -217,6 +217,10 @@ public class LocationActionManager : MonoBehaviour
             else if (locationUIManager != null) locationUIManager.ShowMessage("休息系统未初始化。");
             return;
         }
+
+        MapCellData currentCell = mapGridManager != null ? mapGridManager.GetCurrentCell() : null;
+        ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
+        if (chapterOne != null && chapterOne.TryExecuteSpecialAction(actionData, currentCell)) return;
 
         if (actionPointManager == null) return;
         if (!actionPointManager.TrySpendActionPoints(actionData.costActionPoint))

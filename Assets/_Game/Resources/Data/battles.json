@@ -23,6 +23,30 @@
       "loseMessage": "你被恶霸帮手打倒，眼前一阵发黑。等你再醒来时，周围只剩下凌乱脚印。",
       "winFlags": ["defeated_bully_helpers_day9"],
       "loseFlags": ["lost_to_bully_helpers_day9"]
+    },
+    {
+      "id": "battle_forest_demon",
+      "title": "山洞妖怪",
+      "enemyName": "山林妖怪",
+      "enemyHp": 60,
+      "enemyAttack": 12,
+      "enemyDefense": 3,
+      "winMessage": "你拼尽全力击退妖怪，将妹妹护在身后。山洞中腥风渐散，只剩妹妹低低的啜泣声。",
+      "loseMessage": "妖怪利爪扫来，你重重撞在石壁上，眼前一黑。",
+      "winFlags": ["rescued_sister"],
+      "loseFlags": ["failed_rescue_sister"]
+    },
+    {
+      "id": "battle_cave_skeleton",
+      "title": "洞府骸骨",
+      "enemyName": "死去的骸骨",
+      "enemyHp": 45,
+      "enemyAttack": 9,
+      "enemyDefense": 4,
+      "winMessage": "骸骨轰然散落，洞府重新归于寂静。",
+      "loseMessage": "你被骸骨击退，狼狈逃出洞府。",
+      "winFlags": ["obtained_qiankun_fragment"],
+      "loseFlags": ["lost_to_cave_skeleton"]
     }
   ]
 }

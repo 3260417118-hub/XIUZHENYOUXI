@@ -22,7 +22,15 @@
       "description": "仔细观察周围环境。",
       "costActionPoint": 1,
       "cultivationGain": 0,
-      "message": "你仔细观察四周，发现远处山雾翻涌，似乎隐藏着什么。"
+      "message": "你仔细观察四周，没有发现明显异常。"
+    },
+    {
+      "id": "enter_black_forest",
+      "name": "进入黑风林",
+      "description": "尝试深入黑风林。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你踏入黑风林。"
     },
     {
       "id": "read_books",
@@ -30,7 +38,7 @@
       "description": "翻看阁楼中积灰的旧书。",
       "costActionPoint": 1,
       "cultivationGain": 0,
-      "message": "你翻开几本旧书，发现其中记载着一些修真界常识。书籍系统暂未开放，暂时只显示提示。"
+      "message": "你翻开几本旧书，发现其中记载着一些修真界常识。"
     },
     {
       "id": "look_around_attic",
@@ -62,7 +70,35 @@
       "description": "在杂役院完成今日杂务。",
       "costActionPoint": 1,
       "cultivationGain": 0,
-      "message": "你完成了一些杂役活计，虽然疲惫，却对宗门规矩多了几分了解。"
+      "message": "你完成了一些杂役活计。"
+    },
+    {
+      "id": "look_around_servant_yard",
+      "name": "四处看看",
+      "description": "在杂役院四处查看。",
+      "costActionPoint": 1,
+      "cultivationGain": 0,
+      "message": "你在杂役院四处看了看。"
+    },
+    {
+      "id": "burn_incense",
+      "name": "上香",
+      "description": "在破庙神像前上一炷香。",
+      "costActionPoint": 1,
+      "cultivationGain": 0,
+      "message": "你在神像前上了一炷香。"
+    },
+    {
+      "id": "repair_temple",
+      "name": "修缮破庙",
+      "description": "花费 50 灵石简单修缮破庙。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你修缮了破庙。",
+      "condition": {
+        "requireFlags": ["temple_incense_5"],
+        "excludeFlags": ["temple_repaired"]
+      }
     },
     {
       "id": "rest_at_ruined_hut",
