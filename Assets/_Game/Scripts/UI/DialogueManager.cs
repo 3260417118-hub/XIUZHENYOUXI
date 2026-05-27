@@ -181,15 +181,19 @@ public class DialogueManager : MonoBehaviour
         if (option == null) return;
         if (RestManager.IsRestingTransition) return;
 
+        ApplyDialogueOptionEffects(option);
+
         if (option.action == "close")
         {
-            CloseDialogue();
+            if (!string.IsNullOrEmpty(option.message) && locationUIManager != null) locationUIManager.ShowMessage(option.message);
+            CloseDialogueWithoutDefaultMessage();
             return;
         }
 
         if (option.action == "message")
         {
             if (locationUIManager != null) locationUIManager.ShowMessage(option.message);
+            if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
             return;
         }
 
@@ -202,11 +206,44 @@ public class DialogueManager : MonoBehaviour
         if (locationUIManager != null) locationUIManager.ShowMessage("未知对话选项动作：" + option.action);
     }
 
+    private void ApplyDialogueOptionEffects(DialogueOptionData option)
+    {
+        PlayerState playerState = GameManager.Instance != null ? GameManager.Instance.GetPlayerState() : null;
+        if (playerState == null || option == null) return;
+
+        if (option.setFlags != null)
+        {
+            foreach (string flag in option.setFlags) playerState.AddFlag(flag);
+        }
+        if (option.addItems != null)
+        {
+            foreach (string item in option.addItems) playerState.AddItem(item);
+        }
+        if (option.removeItems != null)
+        {
+            foreach (string item in option.removeItems) playerState.RemoveItem(item);
+        }
+        if (option.learnSkills != null)
+        {
+            foreach (string skill in option.learnSkills) playerState.LearnSkill(skill);
+        }
+        if (option.cultivationGain != 0) playerState.cultivation += option.cultivationGain;
+        if (option.spiritStoneGain != 0) playerState.spiritStones += option.spiritStoneGain;
+        if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(playerState);
+    }
+
     private void CloseDialogue()
     {
         isDialogueOpen = false;
         ClearDialogueOnly();
         if (locationUIManager != null) locationUIManager.ShowMessage("对话已结束。");
+        if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
+    }
+
+    private void CloseDialogueWithoutDefaultMessage()
+    {
+        isDialogueOpen = false;
+        ClearDialogueOnly();
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
     }
 
