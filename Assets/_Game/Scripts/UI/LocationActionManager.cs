@@ -21,13 +21,7 @@ public class LocationActionManager : MonoBehaviour
     private readonly List<GameObject> createdButtons = new List<GameObject>();
     private Font cachedFont;
 
-    public void SetReferences(
-        GameManager game,
-        MapGridManager mapGrid,
-        ActionPointManager actionPoint,
-        LocationUIManager locationUI,
-        RectTransform actionContainer,
-        RectTransform npcContainer)
+    public void SetReferences(GameManager game, MapGridManager mapGrid, ActionPointManager actionPoint, LocationUIManager locationUI, RectTransform actionContainer, RectTransform npcContainer)
     {
         gameManager = game;
         mapGridManager = mapGrid;
@@ -81,11 +75,7 @@ public class LocationActionManager : MonoBehaviour
         ClearCurrentButtons();
         EnsureDialogueManager();
 
-        if (RestManager.IsRestingTransition || BattleManager.IsBattleOpen || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive)
-        {
-            return;
-        }
-
+        if (RestManager.IsRestingTransition || BattleManager.IsBattleOpen || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive) return;
         if (dialogueManager != null && dialogueManager.IsDialogueOpen) return;
         if (mapGridManager == null) return;
 
@@ -113,12 +103,10 @@ public class LocationActionManager : MonoBehaviour
             return;
         }
 
-        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         bool createdAny = false;
         foreach (BlockingEncounterOptionData option in options)
         {
             if (option == null) continue;
-            if (!IsBlockingEncounterOptionVisible(option, playerState)) continue;
             BlockingEncounterOptionData captured = option;
             Button button = CreateButton(actionButtonContainer, option.text, 140f);
             button.onClick.AddListener(delegate
@@ -130,22 +118,6 @@ public class LocationActionManager : MonoBehaviour
         }
 
         if (!createdAny) CreateLabel(actionButtonContainer, "无");
-    }
-
-    private bool IsBlockingEncounterOptionVisible(BlockingEncounterOptionData option, PlayerState playerState)
-    {
-        if (option == null) return false;
-        return ConditionUtility.IsMet(
-            playerState,
-            option.requireFlags,
-            option.excludeFlags,
-            option.requireItems,
-            option.excludeItems,
-            option.requireSkills,
-            option.excludeSkills,
-            option.minCultivation,
-            option.minDay,
-            option.maxDay);
     }
 
     private void CreateActionButtons(MapCellData currentCell)
@@ -166,7 +138,6 @@ public class LocationActionManager : MonoBehaviour
             LocationActionData actionData;
             if (!actionById.TryGetValue(actionId, out actionData)) continue;
             if (!ConditionUtility.IsMet(playerState, actionData.condition)) continue;
-
             Button button = CreateButton(actionButtonContainer, actionData.name, 120f);
             LocationActionData capturedAction = actionData;
             button.onClick.AddListener(delegate { ExecuteAction(capturedAction); });
@@ -271,7 +242,6 @@ public class LocationActionManager : MonoBehaviour
         if (button == null || actionData == null || actionPointManager == null) return;
         bool hasEnough = actionData.id == "rest_at_ruined_hut" || actionPointManager.HasEnoughActionPoints(actionData.costActionPoint);
         button.interactable = true;
-
         Color normalColor = hasEnough ? new Color(0.30f, 0.34f, 0.38f, 1f) : new Color(0.18f, 0.19f, 0.21f, 1f);
         ColorBlock colors = button.colors;
         colors.normalColor = normalColor;
@@ -279,7 +249,6 @@ public class LocationActionManager : MonoBehaviour
         colors.pressedColor = hasEnough ? new Color(0.22f, 0.25f, 0.28f, 1f) : new Color(0.16f, 0.16f, 0.18f, 1f);
         colors.disabledColor = new Color(0.18f, 0.19f, 0.21f, 1f);
         button.colors = colors;
-
         Image image = button.targetGraphic as Image;
         if (image != null) image.color = normalColor;
     }
@@ -300,25 +269,21 @@ public class LocationActionManager : MonoBehaviour
         GameObject buttonObject = new GameObject(text + "Button", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
         buttonObject.transform.SetParent(parent, false);
         createdButtons.Add(buttonObject);
-
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(preferredWidth, 30f);
         LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
         layout.preferredWidth = preferredWidth;
         layout.preferredHeight = 30f;
-
         Image image = buttonObject.GetComponent<Image>();
         image.color = new Color(0.30f, 0.34f, 0.38f, 1f);
         Button button = buttonObject.GetComponent<Button>();
         button.targetGraphic = image;
-
         ColorBlock colors = button.colors;
         colors.normalColor = image.color;
         colors.highlightedColor = new Color(0.40f, 0.46f, 0.50f, 1f);
         colors.pressedColor = new Color(0.22f, 0.25f, 0.28f, 1f);
         colors.disabledColor = new Color(0.18f, 0.19f, 0.21f, 1f);
         button.colors = colors;
-
         Text label = CreateText(buttonObject.transform, "Text", text, 18, TextAnchor.MiddleCenter, Color.white);
         StretchToParent(label.rectTransform);
         return button;
@@ -329,14 +294,12 @@ public class LocationActionManager : MonoBehaviour
         GameObject labelObject = new GameObject(text + "Label", typeof(RectTransform), typeof(Text), typeof(LayoutElement));
         labelObject.transform.SetParent(parent, false);
         createdButtons.Add(labelObject);
-
         Text label = labelObject.GetComponent<Text>();
         label.text = text;
         label.font = GetDefaultFont();
         label.fontSize = 18;
         label.color = new Color(0.88f, 0.88f, 0.88f, 1f);
         label.alignment = TextAnchor.MiddleLeft;
-
         LayoutElement layout = labelObject.GetComponent<LayoutElement>();
         layout.preferredWidth = text == "无" ? 36f : 78f;
         layout.preferredHeight = 30f;
