@@ -47,6 +47,54 @@
       "loseMessage": "你被打倒在地，喉头一甜。帮手们冷笑离去，扬言第二十一日赵霸天会亲自上门。",
       "winFlags": ["defeated_bully_helpers_day7", "zhao_batian_day21_threat"],
       "loseFlags": ["lost_to_bully_helpers_day7", "zhao_batian_day21_threat"]
+    },
+    {
+      "id": "battle_day13_help_righteous",
+      "title": "村口争斗",
+      "enemyName": "邪派打手",
+      "enemyHp": 80,
+      "enemyAttack": 14,
+      "enemyDefense": 5,
+      "winMessage": "你出手后，局势短暂平息。有人看向你的目光中多了几分拉拢之意。",
+      "loseMessage": "你被混乱中的打手击退，村口争斗仍在继续。",
+      "winFlags": ["day13_faction_attention"],
+      "loseFlags": ["lost_day13_faction_fight"]
+    },
+    {
+      "id": "battle_day13_help_evil",
+      "title": "村口争斗",
+      "enemyName": "正派武人",
+      "enemyHp": 80,
+      "enemyAttack": 14,
+      "enemyDefense": 5,
+      "winMessage": "你出手后，局势短暂平息。有人看向你的目光中多了几分拉拢之意。",
+      "loseMessage": "你被混乱中的武人击退，村口争斗仍在继续。",
+      "winFlags": ["day13_faction_attention"],
+      "loseFlags": ["lost_day13_faction_fight"]
+    },
+    {
+      "id": "battle_day21_zhao_batian",
+      "title": "赵霸天上门",
+      "enemyName": "赵霸天",
+      "enemyHp": 160,
+      "enemyAttack": 22,
+      "enemyDefense": 8,
+      "winMessage": "赵霸天轰然倒地，眼中满是不甘。妹妹扑到你身旁，紧紧抓住你的衣袖。你知道，自己终于护住了她。第一章内容暂到此处。",
+      "loseMessage": "你倒在血泊中，赵霸天的笑声越来越远。妹妹的哭喊声像刀一样扎进耳中。第一章内容暂到此处。",
+      "winFlags": ["defeated_zhao_batian", "protected_sister_chapter_one", "chapter_one_good_end"],
+      "loseFlags": ["lost_to_zhao_batian", "failed_to_protect_sister_chapter_one", "chapter_one_bad_end"]
+    },
+    {
+      "id": "battle_day21_zhao_batian_weakened",
+      "title": "星辰剑对赵霸天",
+      "enemyName": "赵霸天",
+      "enemyHp": 120,
+      "enemyAttack": 19,
+      "enemyDefense": 6,
+      "winMessage": "星辰剑光划破夜色，赵霸天终于支撑不住，跪倒在地。赵霸天败退后，青石村短暂恢复平静。林昊望向远处的青云宗山门，心中明白，真正的敌人并不在这小小村落。第一章内容暂到此处。",
+      "loseMessage": "即便有星辰剑在手，你仍旧被赵霸天压制。你意识到，力量还远远不够。林昊护住了妹妹，却也付出了惨痛代价。第一章内容暂到此处。",
+      "winFlags": ["defeated_zhao_batian", "protected_sister_chapter_one", "chapter_one_good_end"],
+      "loseFlags": ["lost_to_zhao_batian", "failed_to_protect_sister_chapter_one", "chapter_one_bad_end"]
     }
   ]
 }
