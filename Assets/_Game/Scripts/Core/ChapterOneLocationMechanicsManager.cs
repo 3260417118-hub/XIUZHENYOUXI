@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 第一章地点与早期剧情机制。
-/// 只做轻量剧情/奖励/地图切换，不做完整背包 UI、队友系统、商店系统。
+/// 只做轻量剧情、奖励、地图切换，不做完整背包 UI、队友系统、商店系统。
 /// </summary>
 public class ChapterOneLocationMechanicsManager : MonoBehaviour
 {
@@ -25,6 +25,8 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     private Text storyText;
     private Font cachedFont;
 
+    private const int SisterActionPointBonusLimit = 10;
+    private const string SisterBonusCounterId = "sister_action_point_bonus_total";
     private const string CaveStoryText = "【山洞中的哭声】\n\n你拨开藤蔓，洞中传来微弱的哭声。一个小女孩蜷缩在石壁旁，衣衫凌乱，手腕上还留着绳痕。她抬头看见你，眼中先是恐惧，随后像是认出了什么，颤声喊道：“哥哥……”";
 
     private void Start()
@@ -63,9 +65,8 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
 
         if (npcId == "passing_farmer")
         {
-            if (currentCell.id != "village_gate") return false;
-            if (playerState.day != 1) return false;
-            return !(playerState.HasFlag("heard_qingshi_village_info") && playerState.HasFlag("heard_zhao_batian_warning"));
+            // 农民第 1 天一直留在村口，直到玩家点击“道谢离开”。
+            return currentCell.id == "village_gate" && playerState.day == 1 && !playerState.HasFlag("passing_farmer_left");
         }
 
         if (npcId == "sister")
@@ -92,7 +93,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     public void StartChapterOneNpcDialogue(string npcId)
     {
         BindReferences();
-        if (npcId == "passing_farmer") ShowPassingFarmerDialogue();
+        if (npcId == "passing_farmer") ShowPassingFarmerDialogue("");
         else if (npcId == "sister") ShowSisterDialogue();
         else if (npcId == "jianghe") ShowJiangheDialogue();
     }
@@ -203,50 +204,65 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         }
     }
 
-    private void ShowPassingFarmerDialogue()
+    private void ShowPassingFarmerDialogue(string lastAnswer)
     {
-        OpenEvent(
-            "陌生村人",
-            "一个扛着锄头的农民路过村口，见你衣衫破损，忍不住停下脚步：“小兄弟，你这是从哪儿来的？这里是青石村，往东是山路，往北有破庙，往南是后山。只是你若想在这儿落脚，记住一句话，莫要招惹赵霸天的人。”",
-            new List<BlockingEncounterOptionData>
+        PlayerState playerState = GetState();
+        if (playerState == null) return;
+
+        List<BlockingEncounterOptionData> options = new List<BlockingEncounterOptionData>();
+        if (!playerState.HasFlag("heard_qingshi_village_info"))
+        {
+            options.Add(new BlockingEncounterOptionData { text = "询问青石村", closeOnly = true });
+        }
+        if (!playerState.HasFlag("heard_zhao_batian_warning"))
+        {
+            options.Add(new BlockingEncounterOptionData { text = "询问赵霸天", closeOnly = true });
+        }
+        if (playerState.HasFlag("heard_qingshi_village_info") && playerState.HasFlag("heard_zhao_batian_warning"))
+        {
+            options.Add(new BlockingEncounterOptionData { text = "道谢离开", closeOnly = true });
+        }
+
+        string body = "一个扛着锄头的农民路过村口，见你衣衫破损，忍不住停下脚步：“小兄弟，你这是从哪儿来的？这里是青石村，往东是山路，往北有破庙，往南是后山。只是你若想在这儿落脚，记住一句话，莫要招惹赵霸天的人。”";
+        if (!string.IsNullOrEmpty(lastAnswer)) body += "\n\n" + lastAnswer;
+
+        OpenEvent("陌生村人", body, options, delegate(BlockingEncounterOptionData option)
+        {
+            PlayerState state = GetState();
+            if (state == null) return;
+
+            if (option.text == "询问青石村")
             {
-                new BlockingEncounterOptionData { text = "询问青石村", closeOnly = true },
-                new BlockingEncounterOptionData { text = "询问赵霸天", closeOnly = true },
-                new BlockingEncounterOptionData { text = "道谢离开", closeOnly = true }
-            },
-            delegate(BlockingEncounterOptionData option)
+                state.AddFlag("heard_qingshi_village_info");
+                ShowPassingFarmerDialogue("农民说道：“青石村不大，靠山吃山。村里有药田、商铺，也有些给青云宗打杂的人。”");
+            }
+            else if (option.text == "询问赵霸天")
             {
-                PlayerState playerState = GetState();
-                if (option.text == "询问青石村")
-                {
-                    playerState.AddFlag("heard_qingshi_village_info");
-                    CloseEvent("农民说道：“青石村不大，靠山吃山。村里有药田、商铺，也有些给青云宗打杂的人。”");
-                }
-                else if (option.text == "询问赵霸天")
-                {
-                    playerState.AddFlag("heard_zhao_batian_warning");
-                    CloseEvent("农民压低声音：“赵霸天是村里一霸，手下养着不少打手。你这外乡人，最好离他远点。”");
-                }
-                else
-                {
-                    CloseEvent("农民摆摆手，扛起锄头继续往村里走去。");
-                }
-            });
+                state.AddFlag("heard_zhao_batian_warning");
+                ShowPassingFarmerDialogue("农民压低声音：“赵霸天是村里一霸，手下养着不少打手。你这外乡人，最好离他远点。”");
+            }
+            else
+            {
+                state.AddFlag("passing_farmer_left");
+                CloseEvent("农民摆摆手，扛起锄头继续往村里走去。");
+            }
+        });
     }
 
     private void ShowSisterDialogue()
     {
         PlayerState playerState = GetState();
-        int count = GetSisterTalkCountToday(playerState);
-        if (count >= 2)
-        {
-            OpenEvent("妹妹", "妹妹已经很疲惫了，靠在干草堆旁沉沉睡去。你不忍再打扰她。", new List<BlockingEncounterOptionData> { new BlockingEncounterOptionData { text = "离开", closeOnly = true } }, delegate(BlockingEncounterOptionData option) { CloseEvent(""); });
-            return;
-        }
+        if (playerState == null) return;
 
-        string text = count == 0
+        int bonusTotal = playerState.GetCounter(SisterBonusCounterId);
+        string text = bonusTotal <= 0
             ? "妹妹坐在破败小屋的干草堆旁，双手紧紧攥着衣角。见你回来，她抬起头，小声喊道：“哥哥……”"
             : GetRandomSisterLine();
+
+        if (bonusTotal >= SisterActionPointBonusLimit)
+        {
+            text += "\n\n她已经从最初的恐惧中缓过来一些。你们仍可以说话，只是那份支撑已经不会再额外化作行动点。";
+        }
 
         OpenEvent(
             "妹妹",
@@ -254,18 +270,23 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             new List<BlockingEncounterOptionData>
             {
                 new BlockingEncounterOptionData { text = "安慰她", closeOnly = true },
-                new BlockingEncounterOptionData { text = "询问她还记得什么", closeOnly = true }
+                new BlockingEncounterOptionData { text = "询问她还记得什么", closeOnly = true },
+                new BlockingEncounterOptionData { text = "陪她坐一会儿", closeOnly = true }
             },
             delegate(BlockingEncounterOptionData option)
             {
                 if (option.text == "询问她还记得什么")
                 {
                     playerState.AddFlag("asked_sister_memory");
-                    ApplySisterTalkReward("妹妹努力回想，却只记得黑暗、绳索和山洞里的腥气。她的声音发颤，你没有继续追问。行动点 +1。");
+                    ApplySisterTalkReward("妹妹努力回想，却只记得黑暗、绳索和山洞里的腥气。她的声音发颤，你没有继续追问。");
+                }
+                else if (option.text == "陪她坐一会儿")
+                {
+                    ApplySisterTalkReward("你陪妹妹在干草堆旁安静坐了一会儿。她慢慢放松下来，靠着墙低声说：“哥哥，我会努力不拖累你。”");
                 }
                 else
                 {
-                    ApplySisterTalkReward("你轻声安慰了妹妹几句。她的情绪似乎平稳了一些，你心中也多了几分继续撑下去的力量。行动点 +1。");
+                    ApplySisterTalkReward("你轻声安慰了妹妹几句。她的情绪似乎平稳了一些，你心中也多了几分继续撑下去的力量。");
                 }
             });
     }
@@ -278,28 +299,28 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         return "妹妹靠在墙边，似乎终于能安心睡一会儿了。";
     }
 
-    private int GetSisterTalkCountToday(PlayerState playerState)
-    {
-        if (playerState == null) return 0;
-        string prefix = "sister_talk_day_" + playerState.day + "_";
-        int count = 0;
-        foreach (string record in playerState.dailyActionRecords)
-        {
-            if (!string.IsNullOrEmpty(record) && record.StartsWith(prefix)) count++;
-        }
-        return count;
-    }
-
-    private void ApplySisterTalkReward(string message)
+    private void ApplySisterTalkReward(string baseMessage)
     {
         PlayerState playerState = GetState();
         if (playerState == null) return;
-        int next = GetSisterTalkCountToday(playerState) + 1;
-        playerState.MarkDoneToday("sister_talk_day_" + playerState.day + "_" + next);
-        playerState.actionPoints += 1;
+
+        int bonusTotal = playerState.GetCounter(SisterBonusCounterId);
+        string finalMessage = baseMessage;
+        if (bonusTotal < SisterActionPointBonusLimit)
+        {
+            bonusTotal += 1;
+            playerState.SetCounter(SisterBonusCounterId, bonusTotal);
+            playerState.actionPoints += 1;
+            finalMessage += " 行动点 +1。（妹妹支撑 " + bonusTotal + "/" + SisterActionPointBonusLimit + "）";
+        }
+        else
+        {
+            finalMessage += " 你已经获得过妹妹带来的全部精神支撑，本次不再增加行动点。";
+        }
+
         IsChapterOneEventOpen = false;
         RefreshAll();
-        ShowMessage(message);
+        ShowMessage(finalMessage);
     }
 
     private void ShowJiangheDialogue()
@@ -345,7 +366,6 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             ShowMessage("黑风林中妖气森森，你现在毫无修炼根基，贸然进入恐怕有去无回。");
             return;
         }
-
         playerState.AddFlag("entered_black_forest");
         playerState.returnMainCellId = "black_wind_forest_entrance";
         SwitchToCell("forest_woods", "black_forest", "你踏入黑风林，四周雾气渐浓。");
@@ -494,6 +514,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             OpenEvent("悬崖下的呼唤", "你来到后山，忽然感觉悬崖下方有什么东西在呼唤自己。那种感觉一闪而逝，像是幻觉。", new List<BlockingEncounterOptionData> { new BlockingEncounterOptionData { text = "离开", closeOnly = true } }, delegate(BlockingEncounterOptionData option) { CloseEvent("你将那一瞬间的异样压在心底。"); });
             return;
         }
+
         int firstDay = playerState.GetCounter("cliff_call_first_day");
         if (firstDay > 0 && playerState.day > firstDay && !playerState.HasFlag("resolved_cliff_choice") && !playerState.HasFlag("jumped_down_cliff"))
         {
