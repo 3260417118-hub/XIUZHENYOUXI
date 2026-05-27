@@ -5,24 +5,9 @@
       "speaker": "老板",
       "text": "客官，要买些丹药，还是打听消息？",
       "options": [
-        {
-          "text": "购买丹药",
-          "action": "message",
-          "target": "",
-          "message": "商店系统暂未开放。"
-        },
-        {
-          "text": "打听修仙界",
-          "action": "dialogue",
-          "target": "shop_owner_qingyun_info",
-          "message": ""
-        },
-        {
-          "text": "离开",
-          "action": "close",
-          "target": "",
-          "message": ""
-        }
+        { "text": "购买丹药", "action": "message", "target": "", "message": "商店系统暂未开放。" },
+        { "text": "打听修仙界", "action": "dialogue", "target": "shop_owner_qingyun_info", "message": "" },
+        { "text": "离开", "action": "close", "target": "", "message": "" }
       ]
     },
     {
@@ -30,18 +15,8 @@
       "speaker": "老板",
       "text": "青云宗就在东边山上，外门弟子常下山采买。若你有灵根，也许能去山门碰碰运气。",
       "options": [
-        {
-          "text": "返回",
-          "action": "dialogue",
-          "target": "shop_owner_start",
-          "message": ""
-        },
-        {
-          "text": "离开",
-          "action": "close",
-          "target": "",
-          "message": ""
-        }
+        { "text": "返回", "action": "dialogue", "target": "shop_owner_start", "message": "" },
+        { "text": "离开", "action": "close", "target": "", "message": "" }
       ]
     },
     {
@@ -49,18 +24,58 @@
       "speaker": "小二",
       "text": "最近黑风林不太平，听说有妖兽伤人。",
       "options": [
+        { "text": "追问详情", "action": "message", "target": "", "message": "小二压低声音：听说受伤的是几个采药人，他们都说林子里有黑影一闪而过。" },
+        { "text": "离开", "action": "close", "target": "", "message": "" }
+      ]
+    },
+    {
+      "id": "white_haired_elder_start",
+      "speaker": "白发老者",
+      "text": "药田中站着一名白发老者，正低头查看几株枯萎灵草。见你靠近，他缓缓开口：“此地灵气紊乱，需有练气根基之人助我稳住药性。小友，可愿一试？”",
+      "options": [
         {
-          "text": "追问详情",
-          "action": "message",
-          "target": "",
-          "message": "小二压低声音：听说受伤的是几个采药人，他们都说林子里有黑影一闪而过。"
-        },
-        {
-          "text": "离开",
+          "text": "出手相助",
           "action": "close",
           "target": "",
-          "message": ""
-        }
+          "message": "老者满意地点头，递给你一枚丹药：“此丹可助你精进修为。” 获得物品：修为丹。",
+          "requireSkills": ["skill_qi_training_basic"],
+          "minDay": 18,
+          "maxDay": 18,
+          "excludeFlags": ["helped_white_haired_elder"],
+          "addItems": ["cultivation_pill"],
+          "setFlags": ["helped_white_haired_elder"]
+        },
+        {
+          "text": "出手相助",
+          "action": "close",
+          "target": "",
+          "message": "老者满意地点头，递给你一枚丹药：“此丹可助你精进修为。” 获得物品：修为丹。",
+          "minCultivation": 50,
+          "minDay": 18,
+          "maxDay": 18,
+          "excludeFlags": ["helped_white_haired_elder"],
+          "addItems": ["cultivation_pill"],
+          "setFlags": ["helped_white_haired_elder"]
+        },
+        {
+          "text": "询问老者身份",
+          "action": "message",
+          "target": "",
+          "message": "老者笑而不答：“山野闲人罢了。你若能活过赵霸天那一关，或许还有再见之日。”",
+          "minDay": 18,
+          "maxDay": 18,
+          "setFlags": ["met_white_haired_elder"]
+        },
+        {
+          "text": "婉拒",
+          "action": "close",
+          "target": "",
+          "message": "老者叹道：“机缘当前，错过便是错过。”",
+          "minDay": 18,
+          "maxDay": 18,
+          "setFlags": ["refused_white_haired_elder"]
+        },
+        { "text": "离开", "action": "close", "target": "", "message": "" }
       ]
     }
   ]
