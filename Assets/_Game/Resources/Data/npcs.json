@@ -11,6 +11,12 @@
       "name": "小二",
       "description": "商店小二，消息灵通，常听路过客人闲聊。",
       "dialogueId": "shop_assistant_start"
+    },
+    {
+      "id": "white_haired_elder",
+      "name": "白发老者",
+      "description": "一名正在药田中查看灵草的白发老者。",
+      "dialogueId": "white_haired_elder_start"
     }
   ]
 }
