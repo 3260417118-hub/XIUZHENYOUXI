@@ -25,21 +25,27 @@ public class ChapterOneLateStoryFixManager : MonoBehaviour
     private Text endingText;
     private Font cachedFont;
     private bool playedEndingThisRun;
+    private string lastCellId = "";
+    private int lastDay = -1;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void AutoAttach()
     {
-        GameObject managerObject = GameObject.Find("GameManager");
-        if (managerObject == null) return;
-        if (managerObject.GetComponent<ChapterOneLateStoryFixManager>() == null)
+        GameManager manager = FindObjectOfType<GameManager>();
+        if (manager == null) return;
+        if (manager.GetComponent<ChapterOneLateStoryFixManager>() == null)
         {
-            managerObject.AddComponent<ChapterOneLateStoryFixManager>();
+            manager.gameObject.AddComponent<ChapterOneLateStoryFixManager>();
         }
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
         BindReferences();
+        yield return null;
+        BindReferences();
+        if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
+        TryTriggerImmediatelyAfterAttach();
     }
 
     private void Update()
@@ -47,10 +53,41 @@ public class ChapterOneLateStoryFixManager : MonoBehaviour
         BindReferences();
         PlayerState state = GetState();
         if (state == null) return;
+        state.EnsureLists();
+
         if (OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || BattleManager.IsBattleOpen || IsEndingPlaying) return;
 
-        CheckLateLocationTriggeredEncounters(state);
+        // 位置或天数发生变化后立刻检查一次，避免只在“新一天开始”时检查导致玩家走到村口不触发。
+        string currentCellId = GetCurrentCellId();
+        if (state.day != lastDay || currentCellId != lastCellId)
+        {
+            lastDay = state.day;
+            lastCellId = currentCellId;
+            CheckLateLocationTriggeredEncounters(state);
+            if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
+        }
+        else
+        {
+            CheckLateLocationTriggeredEncounters(state);
+        }
+
         CheckChapterOneEnding(state);
+    }
+
+    private void TryTriggerImmediatelyAfterAttach()
+    {
+        PlayerState state = GetState();
+        if (state == null) return;
+        state.EnsureLists();
+        lastDay = -999;
+        lastCellId = "__force__";
+        CheckLateLocationTriggeredEncounters(state);
+    }
+
+    private string GetCurrentCellId()
+    {
+        MapCellData cell = mapGridManager != null ? mapGridManager.GetCurrentCell() : null;
+        return cell != null ? cell.id : "";
     }
 
     private void BindReferences()
@@ -79,11 +116,11 @@ public class ChapterOneLateStoryFixManager : MonoBehaviour
         if (state.day == 13 && currentCell.id == "village_gate" && !state.HasTriggeredDayEvent("encounter_day13_faction_fight"))
         {
             state.activeBlockingEncounterId = "encounter_day13_faction_fight";
-            RefreshEncounterUI("村口两伙人马已经成一团，你暂时无法离开这片混乱。");
+            RefreshEncounterUI("村口两伙人马已经打成一团，你暂时无法离开这片混乱。");
             return;
         }
 
-        // 第 21 天：赵霸天可以在当前地点堵住玩家，但文本根据是否救出妹妹区分。
+        // 第 21 天：赵霸天在当天开始堵住玩家，但文本根据是否救出妹妹区分。
         if (state.day == 21 && !state.HasTriggeredDayEvent("encounter_day21_zhao_batian") && !state.HasTriggeredDayEvent("encounter_day21_zhao_batian_no_sister"))
         {
             bool hasSister = state.HasFlag("rescued_sister") || state.HasFlag("sister_at_ruined_hut");
@@ -103,6 +140,7 @@ public class ChapterOneLateStoryFixManager : MonoBehaviour
     {
         PlayerState state = GetState();
         if (state == null || currentCell == null) return false;
+        state.EnsureLists();
         if (currentCell.id != "herb_field") return false;
         if (state.day != 18) return false;
         if (state.HasFlag("helped_white_haired_elder")) return false;
@@ -119,7 +157,7 @@ public class ChapterOneLateStoryFixManager : MonoBehaviour
         {
             playedEndingThisRun = true;
             state.AddFlag("chapter_one_ending_played");
-            StartCoroutine(PlayEndingRoutine(GetGoodEndingText()));
+            StartCoroutine(PlayEndingRoutine(GetGoodEndingText(state)));
         }
         else if (state.HasFlag("chapter_one_bad_end"))
         {
@@ -129,9 +167,14 @@ public class ChapterOneLateStoryFixManager : MonoBehaviour
         }
     }
 
-    private string GetGoodEndingText()
+    private string GetGoodEndingText(PlayerState state)
     {
-        return "赵霸天败退后，青石村短暂恢复平静。\n\n林昊望向远处的青云宗山门，心中明白，真正的敌人并不在这小小村落。\n\n父亲的残卷、妹妹的遭遇、林家的血夜，都指向更深的修真世界。";
+        bool hasSister = state != null && (state.HasFlag("rescued_sister") || state.HasFlag("sister_at_ruined_hut"));
+        if (hasSister)
+        {
+            return "赵霸天败退后，青石村短暂恢复平静。\n\n林昊望向远处的青云宗山门，心中明白，真正的敌人并不在这小小村落。\n\n父亲的残卷、妹妹的遭遇、林家的血夜，都指向更深的修真世界。";
+        }
+        return "赵霸天败退后，青石村短暂恢复平静。\n\n林昊站在村口，心中却没有半分轻松。\n\n妹妹的下落、父亲的残卷、林家的血夜，仍像雾一样压在前方。";
     }
 
     private string GetBadEndingText(PlayerState state)
