@@ -27,10 +27,18 @@
     {
       "id": "enter_black_forest",
       "name": "进入黑风林",
-      "description": "尝试深入黑风林。",
+      "description": "进入黑风林专属地图。",
       "costActionPoint": 0,
       "cultivationGain": 0,
       "message": "你踏入黑风林。"
+    },
+    {
+      "id": "return_from_black_forest",
+      "name": "返回",
+      "description": "从黑风林返回主地图入口。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你离开黑风林。"
     },
     {
       "id": "read_books",
