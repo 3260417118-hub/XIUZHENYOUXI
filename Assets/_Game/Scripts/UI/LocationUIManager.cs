@@ -72,6 +72,7 @@ public class LocationUIManager : MonoBehaviour
         {
             return;
         }
+        playerState.EnsureLists();
 
         if (dayText != null)
         {
@@ -90,7 +91,7 @@ public class LocationUIManager : MonoBehaviour
 
         if (cultivationText != null)
         {
-            cultivationText.text = "修为：" + playerState.cultivation;
+            cultivationText.text = "修为：" + playerState.cultivation + "/" + playerState.maxCultivation + "    灵石：" + playerState.spiritStones;
         }
     }
 
