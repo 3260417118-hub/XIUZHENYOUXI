@@ -72,6 +72,8 @@ public class GameManager : MonoBehaviour
         playerState.currentCellId = "village_gate";
         playerState.currentX = 0;
         playerState.currentY = 0;
+        playerState.currentMapId = "main";
+        playerState.returnMainCellId = "";
         playerState.day = 1;
         playerState.maxActionPoints = 3;
         playerState.actionPoints = 3;

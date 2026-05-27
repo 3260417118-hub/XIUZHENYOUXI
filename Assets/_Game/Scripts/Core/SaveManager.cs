@@ -72,13 +72,11 @@ public class SaveManager : MonoBehaviour
             saveGameButton.onClick.RemoveListener(SaveGame);
             saveGameButton.onClick.AddListener(SaveGame);
         }
-
         if (loadGameButton != null)
         {
             loadGameButton.onClick.RemoveListener(LoadGame);
             loadGameButton.onClick.AddListener(LoadGame);
         }
-
         if (newGameButton != null)
         {
             newGameButton.onClick.RemoveListener(NewGame);
@@ -93,13 +91,11 @@ public class SaveManager : MonoBehaviour
             ShowMessage("正在休息过夜，暂时不能保存。");
             return;
         }
-
         if (gameManager == null)
         {
             ShowMessage("保存失败：缺少 GameManager。");
             return;
         }
-
         try
         {
             PlayerState playerState = gameManager.GetPlayerState();
@@ -127,19 +123,16 @@ public class SaveManager : MonoBehaviour
             ShowMessage("正在休息过夜，暂时不能读取。");
             return;
         }
-
         if (!HasSave())
         {
             ShowMessage("暂无存档");
             return;
         }
-
         if (gameManager == null)
         {
             ShowMessage("读取失败：缺少 GameManager。");
             return;
         }
-
         try
         {
             string json = File.ReadAllText(SaveFilePath);
@@ -149,14 +142,11 @@ public class SaveManager : MonoBehaviour
                 ShowMessage("存档数据无效。");
                 return;
             }
-
             loadedState.EnsureLists();
             CopyPlayerState(loadedState, gameManager.GetPlayerState());
             RefreshAfterStateChanged("读取存档成功。");
-
             OpeningStoryManager openingStory = GetComponent<OpeningStoryManager>();
             if (openingStory != null) openingStory.CheckOpeningAfterLoad();
-
             BlockingEncounterManager blockingEncounterManager = GetComponent<BlockingEncounterManager>();
             if (blockingEncounterManager != null) blockingEncounterManager.RestoreActiveEncounterUI();
         }
@@ -174,16 +164,13 @@ public class SaveManager : MonoBehaviour
             ShowMessage("正在休息过夜，暂时不能新游戏。");
             return;
         }
-
         if (gameManager == null)
         {
             ShowMessage("新游戏失败：缺少 GameManager。");
             return;
         }
-
         gameManager.InitNewGame();
         RefreshAfterStateChanged("新游戏开始。旧存档不会自动删除。 ");
-
         OpeningStoryManager openingStory = GetComponent<OpeningStoryManager>();
         if (openingStory != null) openingStory.PlayOpeningIfNeeded();
     }
@@ -193,10 +180,11 @@ public class SaveManager : MonoBehaviour
         if (source == null || target == null) return;
         source.EnsureLists();
         target.EnsureLists();
-
         target.currentCellId = source.currentCellId;
         target.currentX = source.currentX;
         target.currentY = source.currentY;
+        target.currentMapId = string.IsNullOrEmpty(source.currentMapId) ? "main" : source.currentMapId;
+        target.returnMainCellId = string.IsNullOrEmpty(source.returnMainCellId) ? "" : source.returnMainCellId;
         target.day = source.day;
         target.actionPoints = source.actionPoints;
         target.maxActionPoints = source.maxActionPoints <= 0 ? 3 : source.maxActionPoints;
@@ -229,34 +217,28 @@ public class SaveManager : MonoBehaviour
     private void RefreshAfterStateChanged(string message)
     {
         FindMissingReferences();
-
         if (dialogueManager != null) dialogueManager.CloseDialogueSilently();
         if (eventManager != null) eventManager.CloseEventSilently();
-
         DayEventManager dayEventManager = GetComponent<DayEventManager>();
         if (dayEventManager != null) dayEventManager.CloseDayEventSilently();
-
         BattleManager battleManager = GetComponent<BattleManager>();
         if (battleManager != null) battleManager.CloseBattleSilently();
-
         ChapterTitleManager chapterTitle = GetComponent<ChapterTitleManager>();
         if (chapterTitle != null) chapterTitle.HideImmediately();
-
+        ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
+        if (chapterOne != null) chapterOne.CloseChapterOneEventSilently();
         if (mapGridManager != null)
         {
             mapGridManager.SyncPlayerPositionToCurrentCell();
             mapGridManager.RefreshMap();
         }
-
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         MapCellData currentCell = mapGridManager != null ? mapGridManager.GetCurrentCell() : null;
-
         if (locationUIManager != null)
         {
             locationUIManager.RefreshLocation(currentCell, playerState);
             locationUIManager.ShowMessage(message);
         }
-
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
     }
 
@@ -271,7 +253,6 @@ public class SaveManager : MonoBehaviour
         if (saveGameButton == null) saveGameButton = FindButton("SaveGameButton");
         if (loadGameButton == null) loadGameButton = FindButton("LoadGameButton");
         if (newGameButton == null) newGameButton = FindButton("NewGameButton");
-
         Transform parent = null;
         Button endDayButton = FindButton("EndDayButton");
         if (endDayButton != null) parent = endDayButton.transform.parent;
@@ -280,9 +261,7 @@ public class SaveManager : MonoBehaviour
             Canvas canvas = FindObjectOfType<Canvas>();
             if (canvas != null) parent = canvas.transform;
         }
-
         if (parent == null) return;
-
         if (newGameButton == null) newGameButton = CreateSaveButton(parent, "NewGameButton", "新游戏");
         if (loadGameButton == null) loadGameButton = CreateSaveButton(parent, "LoadGameButton", "读取游戏");
         if (saveGameButton == null) saveGameButton = CreateSaveButton(parent, "SaveGameButton", "保存游戏");

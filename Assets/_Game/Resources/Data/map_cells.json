@@ -30,7 +30,6 @@
     { "id": "road_attic_village_03", "name": "青石路", "x": 0, "y": 3, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_attic_village_04", "name": "青石路", "x": 0, "y": 4, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "village_gate", "name": "村口", "x": 0, "y": 0, "description": "村口立着一块旧木牌，远处山路蜿蜒向上。这里是你今日行程的起点。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
-    { "id": "road_village_ruined_hut_00", "name": "荒草路", "x": -1, "y": 0, "description": "脚下是一段通往旧屋的荒草小路，碎石间生着细密野草。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_village_ruined_hut_01", "name": "荒草路", "x": -2, "y": 0, "description": "脚下是一段通往旧屋的荒草小路，碎石间生着细密野草。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "ruined_hut", "name": "破败小屋", "x": -2, "y": -1, "description": "这是一间废弃许久的小屋，屋顶漏风，墙角堆着干草。虽然简陋，却勉强能遮风避雨。林昊可以在这里暂时休息，熬过漫长夜色。", "walkable": true, "npcIds": [], "actionIds": ["rest_at_ruined_hut"], "firstEnterEventId": "" },
     { "id": "mountain_path", "name": "山路", "x": 1, "y": 0, "description": "青石山路沿着山势延伸，路旁有风吹过竹林的声音。", "walkable": true, "npcIds": [], "actionIds": ["observe"], "firstEnterEventId": "" },
@@ -58,8 +57,8 @@
     { "id": "road_village_forest_04", "name": "荒草路", "x": 0, "y": -4, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_village_forest_05", "name": "荒草路", "x": 0, "y": -5, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "black_wind_forest_entrance", "name": "黑风林入口", "x": 0, "y": -6, "description": "林中黑雾缭绕，树影像是张牙舞爪的怪物。再往前走，便少有人烟。", "walkable": true, "npcIds": [], "actionIds": ["observe", "enter_black_forest", "search_forest"], "firstEnterEventId": "" },
-    { "id": "forest_woods", "name": "树林", "x": 0, "y": -7, "description": "林中树影重重，雾气在枝叶间缓缓流动。", "walkable": true, "npcIds": [], "actionIds": ["observe"], "firstEnterEventId": "", "hiddenUntilUnlocked": true },
-    { "id": "forest_bushes", "name": "灌木丛", "x": 1, "y": -7, "description": "灌木枝条杂乱，有些枝叶上沾着暗红色痕迹。", "walkable": true, "npcIds": [], "actionIds": ["observe"], "firstEnterEventId": "", "hiddenUntilUnlocked": true },
-    { "id": "forest_cave", "name": "山洞", "x": 2, "y": -7, "description": "一处隐蔽山洞藏在藤蔓之后，洞口隐约传来腥气。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "", "hiddenUntilUnlocked": true }
+    { "id": "forest_woods", "mapId": "black_forest", "name": "树林", "x": 0, "y": 0, "description": "林中树影重重，雾气在枝叶间缓缓流动。", "walkable": true, "npcIds": [], "actionIds": ["return_from_black_forest"], "firstEnterEventId": "" },
+    { "id": "forest_bushes", "mapId": "black_forest", "name": "灌木丛", "x": 1, "y": 0, "description": "灌木枝条杂乱，有些枝叶上沾着暗红色痕迹。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
+    { "id": "forest_cave", "mapId": "black_forest", "name": "山洞", "x": 2, "y": 0, "description": "一处隐蔽山洞藏在藤蔓之后，洞口隐约传来腥气。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" }
   ]
 }

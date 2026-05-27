@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 负责加载地图 JSON，并在 MapPanel 里按 x,y 坐标生成格子按钮。
-/// 第一章地图使用“世界坐标固定显示”：村口 (0,0) 默认显示在地图面板中心。
+/// 支持 mapId：main 是主地图，black_forest 是黑风林专属小地图。
 /// </summary>
 public class MapGridManager : MonoBehaviour
 {
@@ -29,12 +29,7 @@ public class MapGridManager : MonoBehaviour
     private int viewportCenterX;
     private int viewportCenterY;
 
-    public void SetReferences(
-        GameManager game,
-        PlayerMapController mapController,
-        LocationUIManager locationUI,
-        LocationActionManager actionManager,
-        RectTransform panel)
+    public void SetReferences(GameManager game, PlayerMapController mapController, LocationUIManager locationUI, LocationActionManager actionManager, RectTransform panel)
     {
         gameManager = game;
         playerMapController = mapController;
@@ -65,10 +60,7 @@ public class MapGridManager : MonoBehaviour
             locationUIManager.ShowMessage("点击相邻格子开始移动。");
         }
 
-        if (locationActionManager != null)
-        {
-            locationActionManager.RefreshCurrentLocation();
-        }
+        if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
     }
 
     private void ApplyChapterOneMapLayoutDefaults()
@@ -131,6 +123,7 @@ public class MapGridManager : MonoBehaviour
         if (currentCell == null) return;
         playerState.currentX = currentCell.x;
         playerState.currentY = currentCell.y;
+        playerState.currentMapId = currentCell.GetMapId();
     }
 
     public void RefreshMap()
@@ -163,6 +156,7 @@ public class MapGridManager : MonoBehaviour
     {
         if (cell == null || playerState == null) return false;
         playerState.EnsureLists();
+        if (cell.GetMapId() != playerState.currentMapId) return false;
         if (!cell.hiddenUntilUnlocked) return true;
         return IsUnlockedByState(cell, playerState);
     }
@@ -186,21 +180,23 @@ public class MapGridManager : MonoBehaviour
         {
             playerState.currentX = currentCell.x;
             playerState.currentY = currentCell.y;
+            playerState.currentMapId = currentCell.GetMapId();
             return;
         }
 
-        MapCellData startCell = FindCellAt(0, 0);
+        MapCellData startCell = FindCellAt("main", 0, 0);
         if (startCell == null) startCell = allCells[0];
         playerState.currentCellId = startCell.id;
         playerState.currentX = startCell.x;
         playerState.currentY = startCell.y;
+        playerState.currentMapId = startCell.GetMapId();
     }
 
-    private MapCellData FindCellAt(int x, int y)
+    private MapCellData FindCellAt(string mapId, int x, int y)
     {
         foreach (MapCellData cell in allCells)
         {
-            if (cell.x == x && cell.y == y) return cell;
+            if (cell.GetMapId() == mapId && cell.x == x && cell.y == y) return cell;
         }
         return null;
     }
