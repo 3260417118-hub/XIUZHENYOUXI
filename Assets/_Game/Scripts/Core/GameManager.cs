@@ -49,6 +49,7 @@ public class GameManager : MonoBehaviour
         EnsureComponent<MapUnlockManager>();
         EnsureComponent<NightEventManager>();
         EnsureComponent<RestManager>();
+        EnsureComponent<ChapterOneLocationMechanicsManager>();
         EnsureComponent<TutorialManager>();
         EnsureComponent<SaveButtonOverrideManager>();
     }
@@ -85,6 +86,7 @@ public class GameManager : MonoBehaviour
         playerState.attack = 15;
         playerState.defense = 3;
         playerState.EnsureLists();
+        playerState.SetCounter("labor_level", 1);
     }
 
     public PlayerState GetPlayerState()
