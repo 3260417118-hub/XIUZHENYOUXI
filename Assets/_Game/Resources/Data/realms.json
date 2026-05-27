@@ -1,0 +1,54 @@
+{
+  "realms": [
+    {
+      "id": "mortal",
+      "name": "凡人",
+      "level": 0,
+      "requiredCultivation": 0,
+      "maxHpBonus": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0,
+      "breakthroughMessage": "你仍是凡人之躯，身体极其脆弱。"
+    },
+    {
+      "id": "qi_1",
+      "name": "炼气一层",
+      "level": 1,
+      "requiredCultivation": 150,
+      "maxHpBonus": 20,
+      "attackBonus": 5,
+      "defenseBonus": 2,
+      "breakthroughMessage": "一缕灵气在经脉中游走，你终于踏入炼气一层。"
+    },
+    {
+      "id": "qi_2",
+      "name": "炼气二层",
+      "level": 2,
+      "requiredCultivation": 250,
+      "maxHpBonus": 35,
+      "attackBonus": 8,
+      "defenseBonus": 3,
+      "breakthroughMessage": "你吐纳之间更为顺畅，灵气在体内逐渐凝实。"
+    },
+    {
+      "id": "qi_3",
+      "name": "炼气三层",
+      "level": 3,
+      "requiredCultivation": 350,
+      "maxHpBonus": 50,
+      "attackBonus": 12,
+      "defenseBonus": 5,
+      "breakthroughMessage": "你体内灵气流转不息，举手投足间已有几分修士气象。"
+    },
+    {
+      "id": "qi_4",
+      "name": "炼气四层",
+      "level": 4,
+      "requiredCultivation": 450,
+      "maxHpBonus": 70,
+      "attackBonus": 16,
+      "defenseBonus": 7,
+      "breakthroughMessage": "灵气贯通四肢百骸，你的实力又进一步。"
+    }
+  ]
+}
