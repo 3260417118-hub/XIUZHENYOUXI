@@ -29,8 +29,18 @@ public class PlayerState
     public int actionPoints;
     public int maxActionPoints;
 
+    /// <summary>当前修为。</summary>
     public int cultivation;
+
+    /// <summary>当前境界名称，例如：凡人、炼气一层。</summary>
     public string realm;
+
+    /// <summary>当前境界等级数字，用于判断突破。</summary>
+    public int realmLevel;
+
+    /// <summary>当前距离下一次突破所需修为。</summary>
+    public int maxCultivation;
+
     public int spiritStones;
 
     public bool hasSeenOpening;
@@ -72,7 +82,7 @@ public class PlayerState
     public string currentRestLocationId;
 
     /// <summary>
-    /// 兼容旧存档：旧存档里没有列表或战斗属性时，读取后要补默认值。
+    /// 兼容旧存档：旧存档里没有列表或战斗/境界属性时，读取后要补默认值。
     /// </summary>
     public void EnsureLists()
     {
@@ -91,10 +101,14 @@ public class PlayerState
         if (activeBlockingEncounterId == null) activeBlockingEncounterId = "";
         if (string.IsNullOrEmpty(currentRestLocationId)) currentRestLocationId = "ruined_hut";
 
-        if (maxHp <= 0) maxHp = 100;
+        if (string.IsNullOrEmpty(realm)) realm = "凡人";
+        if (realmLevel < 0) realmLevel = 0;
+        if (maxCultivation <= 0) maxCultivation = 150;
+
+        if (maxHp <= 0) maxHp = 50;
         if (hp <= 0) hp = maxHp;
-        if (attack <= 0) attack = 15;
-        if (defense <= 0) defense = 3;
+        if (attack <= 0) attack = 10;
+        if (defense < 0) defense = 0;
         if (maxActionPoints <= 0) maxActionPoints = 3;
     }
 
