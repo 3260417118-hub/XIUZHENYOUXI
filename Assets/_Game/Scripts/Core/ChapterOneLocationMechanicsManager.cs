@@ -25,7 +25,8 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     private Text storyText;
     private Font cachedFont;
 
-    private const int SisterActionPointBonusLimit = 10;
+    private const int SisterDailyActionPointBonusLimit = 2;
+    private const int SisterActionPointBonusTotalLimit = 10;
     private const string SisterBonusCounterId = "sister_action_point_bonus_total";
     private const string CaveStoryText = "【山洞中的哭声】\n\n你拨开藤蔓，洞中传来微弱的哭声。一个小女孩蜷缩在石壁旁，衣衫凌乱，手腕上还留着绳痕。她抬头看见你，眼中先是恐惧，随后像是认出了什么，颤声喊道：“哥哥……”";
 
@@ -204,7 +205,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         }
     }
 
-    private void ShowPassingFarmerDialogue(string lastAnswer)
+    private void ShowPassingFarmerDialogue(string currentText)
     {
         PlayerState playerState = GetState();
         if (playerState == null) return;
@@ -223,10 +224,12 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             options.Add(new BlockingEncounterOptionData { text = "道谢离开", closeOnly = true });
         }
 
-        string body = "一个扛着锄头的农民路过村口，见你衣衫破损，忍不住停下脚步：“小兄弟，你这是从哪儿来的？这里是青石村，往东是山路，往北有破庙，往南是后山。只是你若想在这儿落脚，记住一句话，莫要招惹赵霸天的人。”";
-        if (!string.IsNullOrEmpty(lastAnswer)) body += "\n\n" + lastAnswer;
+        if (string.IsNullOrEmpty(currentText))
+        {
+            currentText = "一个扛着锄头的农民路过村口，见你衣衫破损，忍不住停下脚步：“小兄弟，你这是从哪儿来的？这里是青石村，往东是山路，往北有破庙，往南是后山。只是你若想在这儿落脚，记住一句话，莫要招惹赵霸天的人。”";
+        }
 
-        OpenEvent("陌生村人", body, options, delegate(BlockingEncounterOptionData option)
+        OpenEvent("陌生村人", currentText, options, delegate(BlockingEncounterOptionData option)
         {
             PlayerState state = GetState();
             if (state == null) return;
@@ -255,13 +258,22 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         if (playerState == null) return;
 
         int bonusTotal = playerState.GetCounter(SisterBonusCounterId);
+        int dailyBonusCount = GetSisterTalkCountToday(playerState);
         string text = bonusTotal <= 0
             ? "妹妹坐在破败小屋的干草堆旁，双手紧紧攥着衣角。见你回来，她抬起头，小声喊道：“哥哥……”"
             : GetRandomSisterLine();
 
-        if (bonusTotal >= SisterActionPointBonusLimit)
+        if (bonusTotal >= SisterActionPointBonusTotalLimit)
         {
             text += "\n\n她已经从最初的恐惧中缓过来一些。你们仍可以说话，只是那份支撑已经不会再额外化作行动点。";
+        }
+        else if (dailyBonusCount >= SisterDailyActionPointBonusLimit)
+        {
+            text += "\n\n今天你已经从妹妹这里获得了足够的支撑。继续对话不会再增加行动点，明天休息后会重置。";
+        }
+        else
+        {
+            text += "\n\n今日妹妹行动点支撑：" + dailyBonusCount + "/" + SisterDailyActionPointBonusLimit + "，累计：" + bonusTotal + "/" + SisterActionPointBonusTotalLimit + "。";
         }
 
         OpenEvent(
@@ -299,23 +311,43 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         return "妹妹靠在墙边，似乎终于能安心睡一会儿了。";
     }
 
+    private int GetSisterTalkCountToday(PlayerState playerState)
+    {
+        if (playerState == null) return 0;
+        string prefix = "sister_ap_bonus_day_" + playerState.day + "_";
+        int count = 0;
+        foreach (string record in playerState.dailyActionRecords)
+        {
+            if (!string.IsNullOrEmpty(record) && record.StartsWith(prefix)) count++;
+        }
+        return count;
+    }
+
     private void ApplySisterTalkReward(string baseMessage)
     {
         PlayerState playerState = GetState();
         if (playerState == null) return;
 
         int bonusTotal = playerState.GetCounter(SisterBonusCounterId);
+        int dailyBonusCount = GetSisterTalkCountToday(playerState);
         string finalMessage = baseMessage;
-        if (bonusTotal < SisterActionPointBonusLimit)
+
+        if (bonusTotal < SisterActionPointBonusTotalLimit && dailyBonusCount < SisterDailyActionPointBonusLimit)
         {
             bonusTotal += 1;
+            dailyBonusCount += 1;
             playerState.SetCounter(SisterBonusCounterId, bonusTotal);
+            playerState.MarkDoneToday("sister_ap_bonus_day_" + playerState.day + "_" + dailyBonusCount);
             playerState.actionPoints += 1;
-            finalMessage += " 行动点 +1。（妹妹支撑 " + bonusTotal + "/" + SisterActionPointBonusLimit + "）";
+            finalMessage += " 行动点 +1。（今日 " + dailyBonusCount + "/" + SisterDailyActionPointBonusLimit + "，累计 " + bonusTotal + "/" + SisterActionPointBonusTotalLimit + "）";
+        }
+        else if (bonusTotal >= SisterActionPointBonusTotalLimit)
+        {
+            finalMessage += " 你已经获得过妹妹带来的全部精神支撑，本次不再增加行动点。";
         }
         else
         {
-            finalMessage += " 你已经获得过妹妹带来的全部精神支撑，本次不再增加行动点。";
+            finalMessage += " 今天已经从妹妹这里获得 2 次行动点支撑，本次不再增加行动点。";
         }
 
         IsChapterOneEventOpen = false;
