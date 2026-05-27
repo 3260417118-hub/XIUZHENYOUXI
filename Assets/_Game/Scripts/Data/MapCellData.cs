@@ -9,6 +9,13 @@ using System.Collections.Generic;
 public class MapCellData
 {
     public string id;
+
+    /// <summary>
+    /// 所属地图区域。为空时默认是主地图 main。
+    /// 例如：main、black_forest。
+    /// </summary>
+    public string mapId;
+
     public string name;
     public int x;
     public int y;
@@ -37,6 +44,11 @@ public class MapCellData
 
     /// <summary>为 true 时，未满足解锁条件前不在地图上显示。</summary>
     public bool hiddenUntilUnlocked;
+
+    public string GetMapId()
+    {
+        return string.IsNullOrEmpty(mapId) ? "main" : mapId;
+    }
 }
 
 /// <summary>
