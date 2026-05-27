@@ -47,23 +47,14 @@ public class LocationActionManager : MonoBehaviour
 
     private void EnsureDialogueManager()
     {
-        if (dialogueManager == null)
-        {
-            dialogueManager = GetComponent<DialogueManager>();
-        }
-
-        if (dialogueManager == null)
-        {
-            dialogueManager = gameObject.AddComponent<DialogueManager>();
-        }
-
+        if (dialogueManager == null) dialogueManager = GetComponent<DialogueManager>();
+        if (dialogueManager == null) dialogueManager = gameObject.AddComponent<DialogueManager>();
         dialogueManager.SetReferences(locationUIManager, this, actionButtonContainer, npcButtonContainer);
     }
 
     public void LoadActions()
     {
         actionById.Clear();
-
         TextAsset jsonAsset = Resources.Load<TextAsset>(actionDataResourcePath);
         if (jsonAsset == null)
         {
@@ -80,11 +71,7 @@ public class LocationActionManager : MonoBehaviour
 
         foreach (LocationActionData action in dataList.actions)
         {
-            if (action == null || string.IsNullOrEmpty(action.id))
-            {
-                continue;
-            }
-
+            if (action == null || string.IsNullOrEmpty(action.id)) continue;
             actionById[action.id] = action;
         }
     }
@@ -94,21 +81,16 @@ public class LocationActionManager : MonoBehaviour
         ClearCurrentButtons();
         EnsureDialogueManager();
 
-        if (dialogueManager != null && dialogueManager.IsDialogueOpen)
+        if (RestManager.IsRestingTransition || BattleManager.IsBattleOpen || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive)
         {
             return;
         }
 
-        if (mapGridManager == null)
-        {
-            return;
-        }
+        if (dialogueManager != null && dialogueManager.IsDialogueOpen) return;
+        if (mapGridManager == null) return;
 
         MapCellData currentCell = mapGridManager.GetCurrentCell();
-        if (currentCell == null)
-        {
-            return;
-        }
+        if (currentCell == null) return;
 
         CreateActionButtons(currentCell);
         CreateNpcButtons(currentCell);
@@ -119,19 +101,10 @@ public class LocationActionManager : MonoBehaviour
         ClearButtons();
     }
 
-    /// <summary>
-    /// 给阻塞式事件创建底部选项按钮。
-    /// 这些按钮复用“可执行”区域，但不消耗行动点。
-    /// </summary>
     public void CreateEncounterOptionButtons(List<BlockingEncounterOptionData> options, System.Action<BlockingEncounterOptionData> onOptionClicked)
     {
         ClearCurrentButtons();
-
-        if (actionButtonContainer == null)
-        {
-            return;
-        }
-
+        if (actionButtonContainer == null) return;
         CreateLabel(actionButtonContainer, "选项：");
 
         if (options == null || options.Count == 0)
@@ -140,27 +113,44 @@ public class LocationActionManager : MonoBehaviour
             return;
         }
 
+        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
+        bool createdAny = false;
         foreach (BlockingEncounterOptionData option in options)
         {
+            if (option == null) continue;
+            if (!IsBlockingEncounterOptionVisible(option, playerState)) continue;
             BlockingEncounterOptionData captured = option;
             Button button = CreateButton(actionButtonContainer, option.text, 140f);
             button.onClick.AddListener(delegate
             {
-                if (onOptionClicked != null)
-                {
-                    onOptionClicked(captured);
-                }
+                if (RestManager.IsRestingTransition) return;
+                if (onOptionClicked != null) onOptionClicked(captured);
             });
+            createdAny = true;
         }
+
+        if (!createdAny) CreateLabel(actionButtonContainer, "无");
+    }
+
+    private bool IsBlockingEncounterOptionVisible(BlockingEncounterOptionData option, PlayerState playerState)
+    {
+        if (option == null) return false;
+        return ConditionUtility.IsMet(
+            playerState,
+            option.requireFlags,
+            option.excludeFlags,
+            option.requireItems,
+            option.excludeItems,
+            option.requireSkills,
+            option.excludeSkills,
+            option.minCultivation,
+            option.minDay,
+            option.maxDay);
     }
 
     private void CreateActionButtons(MapCellData currentCell)
     {
-        if (actionButtonContainer == null)
-        {
-            return;
-        }
-
+        if (actionButtonContainer == null) return;
         CreateLabel(actionButtonContainer, "可执行：");
 
         if (currentCell.actionIds == null || currentCell.actionIds.Length == 0)
@@ -169,30 +159,28 @@ public class LocationActionManager : MonoBehaviour
             return;
         }
 
+        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
+        bool createdAny = false;
         foreach (string actionId in currentCell.actionIds)
         {
             LocationActionData actionData;
-            if (!actionById.TryGetValue(actionId, out actionData))
-            {
-                continue;
-            }
+            if (!actionById.TryGetValue(actionId, out actionData)) continue;
+            if (!ConditionUtility.IsMet(playerState, actionData.condition)) continue;
 
             Button button = CreateButton(actionButtonContainer, actionData.name, 120f);
             LocationActionData capturedAction = actionData;
             button.onClick.AddListener(delegate { ExecuteAction(capturedAction); });
             RefreshActionButtonInteractable(button, actionData);
+            createdAny = true;
         }
+
+        if (!createdAny) CreateLabel(actionButtonContainer, "无");
     }
 
     private void CreateNpcButtons(MapCellData currentCell)
     {
-        if (npcButtonContainer == null)
-        {
-            return;
-        }
-
+        if (npcButtonContainer == null) return;
         CreateLabel(npcButtonContainer, "人物：");
-
         bool hasAnyNpc = false;
 
         if (currentCell.npcIds != null)
@@ -202,7 +190,11 @@ public class LocationActionManager : MonoBehaviour
                 string npcName = GetNpcName(npcId);
                 Button button = CreateButton(npcButtonContainer, npcName, 120f);
                 string capturedNpcId = npcId;
-                button.onClick.AddListener(delegate { StartNpcDialogue(capturedNpcId); });
+                button.onClick.AddListener(delegate
+                {
+                    if (RestManager.IsRestingTransition) return;
+                    StartNpcDialogue(capturedNpcId);
+                });
                 hasAnyNpc = true;
             }
         }
@@ -214,51 +206,48 @@ public class LocationActionManager : MonoBehaviour
             if (!string.IsNullOrEmpty(encounterNpcName))
             {
                 Button button = CreateButton(npcButtonContainer, encounterNpcName, 120f);
-                button.onClick.AddListener(blockingEncounterManager.StartActiveEncounterDialogue);
+                button.onClick.AddListener(delegate
+                {
+                    if (RestManager.IsRestingTransition) return;
+                    blockingEncounterManager.StartActiveEncounterDialogue();
+                });
                 hasAnyNpc = true;
             }
         }
 
-        if (!hasAnyNpc)
-        {
-            CreateLabel(npcButtonContainer, "无");
-        }
+        if (!hasAnyNpc) CreateLabel(npcButtonContainer, "无");
     }
 
     private void StartNpcDialogue(string npcId)
     {
         EnsureDialogueManager();
-
         if (dialogueManager == null)
         {
-            if (locationUIManager != null)
-            {
-                locationUIManager.ShowMessage("对话系统未初始化。");
-            }
-
+            if (locationUIManager != null) locationUIManager.ShowMessage("对话系统未初始化。");
             return;
         }
-
         dialogueManager.StartDialogueByNpcId(npcId);
     }
 
     private void ExecuteAction(LocationActionData actionData)
     {
-        if (OpeningStoryManager.IsOpeningActive || BattleManager.IsBattleOpen)
+        if (RestManager.IsRestingTransition || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || BattleManager.IsBattleOpen)
         {
-            if (locationUIManager != null)
-            {
-                locationUIManager.ShowMessage("请先处理当前事件。");
-            }
-
+            if (locationUIManager != null) locationUIManager.ShowMessage("请先处理当前事件。");
             return;
         }
 
-        if (actionData == null || gameManager == null || actionPointManager == null)
+        if (actionData == null || gameManager == null) return;
+
+        if (actionData.id == "rest_at_ruined_hut")
         {
+            RestManager restManager = GetComponent<RestManager>();
+            if (restManager != null) restManager.SleepUntilNextDay();
+            else if (locationUIManager != null) locationUIManager.ShowMessage("休息系统未初始化。");
             return;
         }
 
+        if (actionPointManager == null) return;
         if (!actionPointManager.TrySpendActionPoints(actionData.costActionPoint))
         {
             RefreshCurrentLocation();
@@ -266,10 +255,7 @@ public class LocationActionManager : MonoBehaviour
         }
 
         PlayerState playerState = gameManager.GetPlayerState();
-        if (actionData.cultivationGain > 0)
-        {
-            playerState.cultivation += actionData.cultivationGain;
-        }
+        if (actionData.cultivationGain > 0) playerState.cultivation += actionData.cultivationGain;
 
         if (locationUIManager != null)
         {
@@ -282,49 +268,30 @@ public class LocationActionManager : MonoBehaviour
 
     private void RefreshActionButtonInteractable(Button button, LocationActionData actionData)
     {
-        if (button == null || actionData == null || actionPointManager == null)
-        {
-            return;
-        }
-
-        bool hasEnough = actionPointManager.HasEnoughActionPoints(actionData.costActionPoint);
+        if (button == null || actionData == null || actionPointManager == null) return;
+        bool hasEnough = actionData.id == "rest_at_ruined_hut" || actionPointManager.HasEnoughActionPoints(actionData.costActionPoint);
         button.interactable = true;
 
-        Color normalColor = hasEnough
-            ? new Color(0.30f, 0.34f, 0.38f, 1f)
-            : new Color(0.18f, 0.19f, 0.21f, 1f);
-
+        Color normalColor = hasEnough ? new Color(0.30f, 0.34f, 0.38f, 1f) : new Color(0.18f, 0.19f, 0.21f, 1f);
         ColorBlock colors = button.colors;
         colors.normalColor = normalColor;
-        colors.highlightedColor = hasEnough
-            ? new Color(0.40f, 0.46f, 0.50f, 1f)
-            : new Color(0.22f, 0.23f, 0.25f, 1f);
-        colors.pressedColor = hasEnough
-            ? new Color(0.22f, 0.25f, 0.28f, 1f)
-            : new Color(0.16f, 0.16f, 0.18f, 1f);
+        colors.highlightedColor = hasEnough ? new Color(0.40f, 0.46f, 0.50f, 1f) : new Color(0.22f, 0.23f, 0.25f, 1f);
+        colors.pressedColor = hasEnough ? new Color(0.22f, 0.25f, 0.28f, 1f) : new Color(0.16f, 0.16f, 0.18f, 1f);
         colors.disabledColor = new Color(0.18f, 0.19f, 0.21f, 1f);
         button.colors = colors;
 
         Image image = button.targetGraphic as Image;
-        if (image != null)
-        {
-            image.color = normalColor;
-        }
+        if (image != null) image.color = normalColor;
     }
 
     private string GetNpcName(string npcId)
     {
         EnsureDialogueManager();
-
         if (dialogueManager != null)
         {
             string npcName = dialogueManager.GetNpcName(npcId);
-            if (!string.IsNullOrEmpty(npcName))
-            {
-                return npcName;
-            }
+            if (!string.IsNullOrEmpty(npcName)) return npcName;
         }
-
         return npcId;
     }
 
@@ -336,14 +303,12 @@ public class LocationActionManager : MonoBehaviour
 
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(preferredWidth, 30f);
-
         LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
         layout.preferredWidth = preferredWidth;
         layout.preferredHeight = 30f;
 
         Image image = buttonObject.GetComponent<Image>();
         image.color = new Color(0.30f, 0.34f, 0.38f, 1f);
-
         Button button = buttonObject.GetComponent<Button>();
         button.targetGraphic = image;
 
@@ -356,7 +321,6 @@ public class LocationActionManager : MonoBehaviour
 
         Text label = CreateText(buttonObject.transform, "Text", text, 18, TextAnchor.MiddleCenter, Color.white);
         StretchToParent(label.rectTransform);
-
         return button;
     }
 
@@ -382,7 +346,6 @@ public class LocationActionManager : MonoBehaviour
     {
         GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
         textObject.transform.SetParent(parent, false);
-
         Text label = textObject.GetComponent<Text>();
         label.text = text;
         label.font = GetDefaultFont();
@@ -391,23 +354,14 @@ public class LocationActionManager : MonoBehaviour
         label.color = color;
         label.horizontalOverflow = HorizontalWrapMode.Wrap;
         label.verticalOverflow = VerticalWrapMode.Truncate;
-
         return label;
     }
 
     private Font GetDefaultFont()
     {
-        if (cachedFont != null)
-        {
-            return cachedFont;
-        }
-
+        if (cachedFont != null) return cachedFont;
         cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 16);
-        if (cachedFont != null)
-        {
-            return cachedFont;
-        }
-
+        if (cachedFont != null) return cachedFont;
         cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         return cachedFont;
     }
@@ -424,15 +378,10 @@ public class LocationActionManager : MonoBehaviour
     {
         foreach (GameObject buttonObject in createdButtons)
         {
-            if (buttonObject == null)
-            {
-                continue;
-            }
-
+            if (buttonObject == null) continue;
             buttonObject.SetActive(false);
             Destroy(buttonObject);
         }
-
         createdButtons.Clear();
     }
 }
