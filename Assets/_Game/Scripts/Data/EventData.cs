@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 /// <summary>
 /// 剧情事件选项数据。
-/// 第一版只支持：显示提示、设置 Flag、增加修为、增加/减少灵石、跳转下一个事件、关闭事件。
+/// 第一版支持：显示提示、设置 Flag、增加修为、增加/减少灵石、跳转下一个事件、关闭事件。
+/// 并支持轻量条件显示。
 /// </summary>
 [Serializable]
 public class EventOptionData
@@ -15,6 +16,17 @@ public class EventOptionData
     public int spiritStoneGain;
     public string nextEventId;
     public bool closeEvent;
+
+    public ConditionData condition;
+    public string[] requireFlags;
+    public string[] excludeFlags;
+    public string[] requireItems;
+    public string[] excludeItems;
+    public string[] requireSkills;
+    public string[] excludeSkills;
+    public int minCultivation;
+    public int minDay;
+    public int maxDay;
 }
 
 /// <summary>

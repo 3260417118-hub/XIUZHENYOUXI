@@ -88,6 +88,12 @@ public class SaveManager : MonoBehaviour
 
     public void SaveGame()
     {
+        if (RestManager.IsRestingTransition)
+        {
+            ShowMessage("正在休息过夜，暂时不能保存。");
+            return;
+        }
+
         if (gameManager == null)
         {
             ShowMessage("保存失败：缺少 GameManager。");
@@ -116,6 +122,12 @@ public class SaveManager : MonoBehaviour
 
     public void LoadGame()
     {
+        if (RestManager.IsRestingTransition)
+        {
+            ShowMessage("正在休息过夜，暂时不能读取。");
+            return;
+        }
+
         if (!HasSave())
         {
             ShowMessage("暂无存档");
@@ -157,6 +169,12 @@ public class SaveManager : MonoBehaviour
 
     public void NewGame()
     {
+        if (RestManager.IsRestingTransition)
+        {
+            ShowMessage("正在休息过夜，暂时不能新游戏。");
+            return;
+        }
+
         if (gameManager == null)
         {
             ShowMessage("新游戏失败：缺少 GameManager。");
@@ -187,6 +205,7 @@ public class SaveManager : MonoBehaviour
         target.spiritStones = source.spiritStones;
         target.hasSeenOpening = source.hasSeenOpening;
         target.activeBlockingEncounterId = source.activeBlockingEncounterId;
+        target.currentRestLocationId = string.IsNullOrEmpty(source.currentRestLocationId) ? "ruined_hut" : source.currentRestLocationId;
         target.hp = source.hp <= 0 ? 100 : source.hp;
         target.maxHp = source.maxHp <= 0 ? 100 : source.maxHp;
         target.attack = source.attack <= 0 ? 15 : source.attack;
@@ -194,6 +213,16 @@ public class SaveManager : MonoBehaviour
         target.flags = new List<string>(source.flags);
         target.visitedCellIds = new List<string>(source.visitedCellIds);
         target.dayEventsTriggered = new List<string>(source.dayEventsTriggered);
+        target.items = new List<string>(source.items);
+        target.learnedSkills = new List<string>(source.learnedSkills);
+        target.unlockedCellIds = new List<string>(source.unlockedCellIds);
+        target.dailyActionRecords = new List<string>(source.dailyActionRecords);
+        target.pendingNightEvents = new List<string>(source.pendingNightEvents);
+        target.counters = new List<CounterRecord>();
+        foreach (CounterRecord record in source.counters)
+        {
+            if (record != null) target.counters.Add(new CounterRecord { id = record.id, value = record.value });
+        }
         target.EnsureLists();
     }
 
@@ -209,6 +238,9 @@ public class SaveManager : MonoBehaviour
 
         BattleManager battleManager = GetComponent<BattleManager>();
         if (battleManager != null) battleManager.CloseBattleSilently();
+
+        ChapterTitleManager chapterTitle = GetComponent<ChapterTitleManager>();
+        if (chapterTitle != null) chapterTitle.HideImmediately();
 
         if (mapGridManager != null)
         {

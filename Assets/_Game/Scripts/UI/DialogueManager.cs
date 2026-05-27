@@ -27,11 +27,7 @@ public class DialogueManager : MonoBehaviour
         get { return isDialogueOpen; }
     }
 
-    public void SetReferences(
-        LocationUIManager locationUI,
-        LocationActionManager actionManager,
-        RectTransform optionContainer,
-        RectTransform npcContainer)
+    public void SetReferences(LocationUIManager locationUI, LocationActionManager actionManager, RectTransform optionContainer, RectTransform npcContainer)
     {
         locationUIManager = locationUI;
         locationActionManager = actionManager;
@@ -48,7 +44,6 @@ public class DialogueManager : MonoBehaviour
     public void LoadNpcData()
     {
         npcById.Clear();
-
         TextAsset jsonAsset = Resources.Load<TextAsset>(npcDataResourcePath);
         if (jsonAsset == null)
         {
@@ -65,11 +60,7 @@ public class DialogueManager : MonoBehaviour
 
         foreach (NPCData npc in dataList.npcs)
         {
-            if (npc == null || string.IsNullOrEmpty(npc.id))
-            {
-                continue;
-            }
-
+            if (npc == null || string.IsNullOrEmpty(npc.id)) continue;
             npcById[npc.id] = npc;
         }
     }
@@ -77,7 +68,6 @@ public class DialogueManager : MonoBehaviour
     public void LoadDialogueData()
     {
         dialogueById.Clear();
-
         TextAsset jsonAsset = Resources.Load<TextAsset>(dialogueDataResourcePath);
         if (jsonAsset == null)
         {
@@ -94,11 +84,7 @@ public class DialogueManager : MonoBehaviour
 
         foreach (DialogueData dialogue in dataList.dialogues)
         {
-            if (dialogue == null || string.IsNullOrEmpty(dialogue.id))
-            {
-                continue;
-            }
-
+            if (dialogue == null || string.IsNullOrEmpty(dialogue.id)) continue;
             dialogueById[dialogue.id] = dialogue;
         }
     }
@@ -106,34 +92,20 @@ public class DialogueManager : MonoBehaviour
     public string GetNpcName(string npcId)
     {
         NPCData npc;
-        if (!string.IsNullOrEmpty(npcId) && npcById.TryGetValue(npcId, out npc))
-        {
-            return npc.name;
-        }
-
+        if (!string.IsNullOrEmpty(npcId) && npcById.TryGetValue(npcId, out npc)) return npc.name;
         return npcId;
     }
 
     public void StartDialogueByNpcId(string npcId)
     {
-        if (npcById.Count == 0)
-        {
-            LoadNpcData();
-        }
-
-        if (dialogueById.Count == 0)
-        {
-            LoadDialogueData();
-        }
+        if (RestManager.IsRestingTransition) return;
+        if (npcById.Count == 0) LoadNpcData();
+        if (dialogueById.Count == 0) LoadDialogueData();
 
         NPCData npc;
         if (!npcById.TryGetValue(npcId, out npc))
         {
-            if (locationUIManager != null)
-            {
-                locationUIManager.ShowMessage("找不到 NPC 数据：" + npcId);
-            }
-
+            if (locationUIManager != null) locationUIManager.ShowMessage("找不到 NPC 数据：" + npcId);
             return;
         }
 
@@ -145,38 +117,20 @@ public class DialogueManager : MonoBehaviour
         DialogueData dialogue;
         if (string.IsNullOrEmpty(dialogueId) || !dialogueById.TryGetValue(dialogueId, out dialogue))
         {
-            if (locationUIManager != null)
-            {
-                locationUIManager.ShowMessage("找不到对话数据：" + dialogueId);
-            }
-
+            if (locationUIManager != null) locationUIManager.ShowMessage("找不到对话数据：" + dialogueId);
             return;
         }
 
         isDialogueOpen = true;
-
-        if (locationActionManager != null)
-        {
-            locationActionManager.ClearCurrentButtons();
-        }
-
+        if (locationActionManager != null) locationActionManager.ClearCurrentButtons();
         ClearDialogueOnly();
-
-        if (locationUIManager != null)
-        {
-            locationUIManager.ShowDialogue(dialogue.speaker, dialogue.text);
-        }
-
+        if (locationUIManager != null) locationUIManager.ShowDialogue(dialogue.speaker, dialogue.text);
         CreateDialogueOptionButtons(dialogue);
     }
 
     private void CreateDialogueOptionButtons(DialogueData dialogue)
     {
-        if (optionButtonContainer == null)
-        {
-            return;
-        }
-
+        if (optionButtonContainer == null) return;
         CreateLabel(optionButtonContainer, "选项：");
 
         if (dialogue.options == null || dialogue.options.Count == 0)
@@ -186,25 +140,46 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
+        PlayerState playerState = GameManager.Instance != null ? GameManager.Instance.GetPlayerState() : null;
+        bool createdAny = false;
         foreach (DialogueOptionData option in dialogue.options)
         {
-            if (option == null)
-            {
-                continue;
-            }
-
+            if (option == null) continue;
+            if (!IsOptionVisible(option, playerState)) continue;
             Button button = CreateButton(optionButtonContainer, option.text);
             DialogueOptionData capturedOption = option;
             button.onClick.AddListener(delegate { ExecuteOption(capturedOption); });
+            createdAny = true;
         }
+
+        if (!createdAny)
+        {
+            Button closeButton = CreateButton(optionButtonContainer, "离开");
+            closeButton.onClick.AddListener(CloseDialogue);
+        }
+    }
+
+    private bool IsOptionVisible(DialogueOptionData option, PlayerState playerState)
+    {
+        if (option == null) return false;
+        if (!ConditionUtility.IsMet(playerState, option.condition)) return false;
+        return ConditionUtility.IsMet(
+            playerState,
+            option.requireFlags,
+            option.excludeFlags,
+            option.requireItems,
+            option.excludeItems,
+            option.requireSkills,
+            option.excludeSkills,
+            option.minCultivation,
+            option.minDay,
+            option.maxDay);
     }
 
     private void ExecuteOption(DialogueOptionData option)
     {
-        if (option == null)
-        {
-            return;
-        }
+        if (option == null) return;
+        if (RestManager.IsRestingTransition) return;
 
         if (option.action == "close")
         {
@@ -214,11 +189,7 @@ public class DialogueManager : MonoBehaviour
 
         if (option.action == "message")
         {
-            if (locationUIManager != null)
-            {
-                locationUIManager.ShowMessage(option.message);
-            }
-
+            if (locationUIManager != null) locationUIManager.ShowMessage(option.message);
             return;
         }
 
@@ -228,31 +199,17 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
-        if (locationUIManager != null)
-        {
-            locationUIManager.ShowMessage("未知对话选项动作：" + option.action);
-        }
+        if (locationUIManager != null) locationUIManager.ShowMessage("未知对话选项动作：" + option.action);
     }
 
     private void CloseDialogue()
     {
         isDialogueOpen = false;
         ClearDialogueOnly();
-
-        if (locationUIManager != null)
-        {
-            locationUIManager.ShowMessage("对话已结束。");
-        }
-
-        if (locationActionManager != null)
-        {
-            locationActionManager.RefreshCurrentLocation();
-        }
+        if (locationUIManager != null) locationUIManager.ShowMessage("对话已结束。");
+        if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
     }
 
-    /// <summary>
-    /// 存档读取或新游戏时使用：只关闭对话 UI，不显示“对话已结束”。
-    /// </summary>
     public void CloseDialogueSilently()
     {
         isDialogueOpen = false;
@@ -263,15 +220,10 @@ public class DialogueManager : MonoBehaviour
     {
         foreach (GameObject dialogueObject in createdDialogueObjects)
         {
-            if (dialogueObject == null)
-            {
-                continue;
-            }
-
+            if (dialogueObject == null) continue;
             dialogueObject.SetActive(false);
             Destroy(dialogueObject);
         }
-
         createdDialogueObjects.Clear();
     }
 
@@ -280,25 +232,19 @@ public class DialogueManager : MonoBehaviour
         GameObject buttonObject = new GameObject(text + "DialogueButton", typeof(RectTransform), typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(parent, false);
         createdDialogueObjects.Add(buttonObject);
-
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
         rect.sizeDelta = new Vector2(150f, 30f);
-
         Image image = buttonObject.GetComponent<Image>();
         image.color = new Color(0.30f, 0.34f, 0.38f, 1f);
-
         Button button = buttonObject.GetComponent<Button>();
         button.targetGraphic = image;
-
         ColorBlock colors = button.colors;
         colors.normalColor = image.color;
         colors.highlightedColor = new Color(0.40f, 0.46f, 0.50f, 1f);
         colors.pressedColor = new Color(0.22f, 0.25f, 0.28f, 1f);
         button.colors = colors;
-
         Text label = CreateText(buttonObject.transform, "Text", text, 18, TextAnchor.MiddleCenter, Color.white);
         StretchToParent(label.rectTransform);
-
         return button;
     }
 
@@ -307,14 +253,12 @@ public class DialogueManager : MonoBehaviour
         GameObject labelObject = new GameObject(text + "DialogueLabel", typeof(RectTransform), typeof(Text), typeof(LayoutElement));
         labelObject.transform.SetParent(parent, false);
         createdDialogueObjects.Add(labelObject);
-
         Text label = labelObject.GetComponent<Text>();
         label.text = text;
         label.font = GetDefaultFont();
         label.fontSize = 18;
         label.color = new Color(0.88f, 0.88f, 0.88f, 1f);
         label.alignment = TextAnchor.MiddleLeft;
-
         LayoutElement layout = labelObject.GetComponent<LayoutElement>();
         layout.preferredWidth = 78f;
         layout.preferredHeight = 30f;
@@ -324,7 +268,6 @@ public class DialogueManager : MonoBehaviour
     {
         GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
         textObject.transform.SetParent(parent, false);
-
         Text label = textObject.GetComponent<Text>();
         label.text = text;
         label.font = GetDefaultFont();
@@ -333,23 +276,14 @@ public class DialogueManager : MonoBehaviour
         label.color = color;
         label.horizontalOverflow = HorizontalWrapMode.Wrap;
         label.verticalOverflow = VerticalWrapMode.Truncate;
-
         return label;
     }
 
     private Font GetDefaultFont()
     {
-        if (cachedFont != null)
-        {
-            return cachedFont;
-        }
-
+        if (cachedFont != null) return cachedFont;
         cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 16);
-        if (cachedFont != null)
-        {
-            return cachedFont;
-        }
-
+        if (cachedFont != null) return cachedFont;
         cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         return cachedFont;
     }

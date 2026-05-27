@@ -1,0 +1,17 @@
+{
+  "nightEvents": [
+    {
+      "id": "night_temple_god_reward",
+      "title": "星光入梦",
+      "text": "夜半时分，你梦见破庙神像睁开双眼。天际星光垂落，一柄长剑静静悬在你身前。",
+      "reward": {
+        "addItem": "star_sword",
+        "setFlag": "received_star_sword",
+        "learnSkill": "",
+        "cultivationGain": 0,
+        "spiritStoneGain": 0
+      },
+      "message": "你获得了星辰剑。"
+    }
+  ]
+}

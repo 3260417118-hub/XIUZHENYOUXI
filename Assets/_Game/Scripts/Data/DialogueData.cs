@@ -4,6 +4,7 @@ using System.Collections.Generic;
 /// <summary>
 /// 单个对话选项数据。
 /// action 支持：close、message、dialogue。
+/// 并支持轻量条件显示。
 /// </summary>
 [Serializable]
 public class DialogueOptionData
@@ -12,6 +13,17 @@ public class DialogueOptionData
     public string action;
     public string target;
     public string message;
+
+    public ConditionData condition;
+    public string[] requireFlags;
+    public string[] excludeFlags;
+    public string[] requireItems;
+    public string[] excludeItems;
+    public string[] requireSkills;
+    public string[] excludeSkills;
+    public int minCultivation;
+    public int minDay;
+    public int maxDay;
 }
 
 /// <summary>
