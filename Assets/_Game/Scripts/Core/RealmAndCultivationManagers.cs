@@ -139,7 +139,8 @@ public class RealmManager : MonoBehaviour
 
         state.realmLevel = nextRealm.level;
         state.realm = nextRealm.name;
-        state.cultivation = 0;
+
+        // 修为是累计总修为。突破只检查门槛，不扣除、不清零。
         state.maxHp += nextRealm.maxHpBonus;
         state.attack += nextRealm.attackBonus;
         state.defense += nextRealm.defenseBonus;
@@ -198,9 +199,17 @@ public class BreakthroughButtonManager : MonoBehaviour
 
     private IEnumerator Start()
     {
-        yield return new WaitForSeconds(0.1f);
+        yield return null;
+        yield return null;
         realmManager = GetComponent<RealmManager>();
         EnsureButton();
+        RefreshButtonStateAndLayout();
+    }
+
+    private void Update()
+    {
+        if (breakthroughButton == null) return;
+        RefreshButtonStateAndLayout();
     }
 
     private void EnsureButton()
@@ -216,7 +225,7 @@ public class BreakthroughButtonManager : MonoBehaviour
         rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(1f, 1f);
         rect.sizeDelta = new Vector2(120f, 38f);
-        rect.anchoredPosition = new Vector2(-24f, -72f);
+        rect.anchoredPosition = new Vector2(-24f, -126f);
 
         Image image = buttonObject.GetComponent<Image>();
         image.color = new Color(0.20f, 0.26f, 0.32f, 1f);
@@ -239,9 +248,63 @@ public class BreakthroughButtonManager : MonoBehaviour
         label.alignment = TextAnchor.MiddleCenter;
     }
 
+    private void RefreshButtonStateAndLayout()
+    {
+        if (breakthroughButton == null) return;
+        bool blocked = IsUiBlockedForBreakthrough();
+        breakthroughButton.gameObject.SetActive(!blocked);
+        if (blocked) return;
+        LayoutBelowRestButton();
+    }
+
+    private bool IsUiBlockedForBreakthrough()
+    {
+        if (RestManager.IsRestingTransition) return true;
+        if (BattleManager.IsBattleOpen) return true;
+        if (OpeningStoryManager.IsOpeningActive) return true;
+        if (ChapterTitleManager.IsChapterTitleActive) return true;
+        if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return true;
+        if (ChapterOneLateStoryFixManager.IsEndingPlaying) return true;
+        return false;
+    }
+
+    private void LayoutBelowRestButton()
+    {
+        RectTransform rect = breakthroughButton.GetComponent<RectTransform>();
+        if (rect == null) return;
+
+        GameObject endDayObject = GameObject.Find("EndDayButton");
+        RectTransform endRect = endDayObject != null ? endDayObject.GetComponent<RectTransform>() : null;
+        if (endRect == null)
+        {
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.sizeDelta = new Vector2(120f, 38f);
+            rect.anchoredPosition = new Vector2(-24f, -126f);
+            return;
+        }
+
+        rect.anchorMin = endRect.anchorMin;
+        rect.anchorMax = endRect.anchorMax;
+        rect.pivot = endRect.pivot;
+        rect.sizeDelta = new Vector2(Mathf.Max(120f, endRect.sizeDelta.x), 38f);
+
+        float gap = 10f;
+        float endHeight = endRect.rect.height > 0f ? endRect.rect.height : endRect.sizeDelta.y;
+        if (endRect.pivot.y >= 0.5f)
+        {
+            rect.anchoredPosition = new Vector2(endRect.anchoredPosition.x, endRect.anchoredPosition.y - endHeight - gap);
+        }
+        else
+        {
+            rect.anchoredPosition = new Vector2(endRect.anchoredPosition.x, endRect.anchoredPosition.y - rect.sizeDelta.y - gap);
+        }
+    }
+
     private void OnBreakthroughClicked()
     {
-        if (RestManager.IsRestingTransition || BattleManager.IsBattleOpen || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || ChapterOneLocationMechanicsManager.IsChapterOneEventOpen || ChapterOneLateStoryFixManager.IsEndingPlaying)
+        if (IsUiBlockedForBreakthrough())
         {
             LocationUIManager ui = GetComponent<LocationUIManager>();
             if (ui != null) ui.ShowMessage("请先处理当前事件。");
