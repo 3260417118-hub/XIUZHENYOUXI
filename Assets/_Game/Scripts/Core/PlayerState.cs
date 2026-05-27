@@ -19,6 +19,12 @@ public class PlayerState
     public int currentX;
     public int currentY;
 
+    /// <summary>当前所在地图区域。main 是主地图，black_forest 是黑风林专属地图。</summary>
+    public string currentMapId;
+
+    /// <summary>进入副地图前所在的主地图格子，用于返回。</summary>
+    public string returnMainCellId;
+
     public int day;
     public int actionPoints;
     public int maxActionPoints;
@@ -80,6 +86,8 @@ public class PlayerState
         if (counters == null) counters = new List<CounterRecord>();
         if (pendingNightEvents == null) pendingNightEvents = new List<string>();
 
+        if (string.IsNullOrEmpty(currentMapId)) currentMapId = "main";
+        if (returnMainCellId == null) returnMainCellId = "";
         if (activeBlockingEncounterId == null) activeBlockingEncounterId = "";
         if (string.IsNullOrEmpty(currentRestLocationId)) currentRestLocationId = "ruined_hut";
 
