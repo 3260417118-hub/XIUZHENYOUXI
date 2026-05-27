@@ -144,8 +144,7 @@ public class SaveManager : MonoBehaviour
             }
             loadedState.EnsureLists();
             CopyPlayerState(loadedState, gameManager.GetPlayerState());
-            RealmManager realmManager = GetComponent<RealmManager>();
-            if (realmManager != null) realmManager.NormalizePlayerRealm();
+            NormalizeProgressionAndStats();
             RefreshAfterStateChanged("读取存档成功。");
             OpeningStoryManager openingStory = GetComponent<OpeningStoryManager>();
             if (openingStory != null) openingStory.CheckOpeningAfterLoad();
@@ -172,8 +171,7 @@ public class SaveManager : MonoBehaviour
             return;
         }
         gameManager.InitNewGame();
-        RealmManager realmManager = GetComponent<RealmManager>();
-        if (realmManager != null) realmManager.NormalizePlayerRealm();
+        NormalizeProgressionAndStats();
         RefreshAfterStateChanged("新游戏开始。旧存档不会自动删除。 ");
         OpeningStoryManager openingStory = GetComponent<OpeningStoryManager>();
         if (openingStory != null) openingStory.PlayOpeningIfNeeded();
@@ -184,6 +182,8 @@ public class SaveManager : MonoBehaviour
         if (source == null || target == null) return;
         source.EnsureLists();
         target.EnsureLists();
+
+        target.playerName = string.IsNullOrEmpty(source.playerName) ? "林昊" : source.playerName;
         target.currentCellId = source.currentCellId;
         target.currentX = source.currentX;
         target.currentY = source.currentY;
@@ -192,18 +192,34 @@ public class SaveManager : MonoBehaviour
         target.day = source.day;
         target.actionPoints = source.actionPoints;
         target.maxActionPoints = source.maxActionPoints <= 0 ? 3 : source.maxActionPoints;
+
         target.cultivation = source.cultivation;
         target.realm = string.IsNullOrEmpty(source.realm) ? "凡人" : source.realm;
         target.realmLevel = source.realmLevel < 0 ? 0 : source.realmLevel;
         target.maxCultivation = source.maxCultivation <= 0 ? 150 : source.maxCultivation;
+
+        target.bodyCultivation = source.bodyCultivation < 0 ? 0 : source.bodyCultivation;
+        target.bodyRealm = string.IsNullOrEmpty(source.bodyRealm) ? "凡体" : source.bodyRealm;
+        target.bodyRealmLevel = source.bodyRealmLevel < 0 ? 0 : source.bodyRealmLevel;
+        target.maxBodyCultivation = source.maxBodyCultivation <= 0 ? 150 : source.maxBodyCultivation;
+
+        target.equippedCultivationSkillId = source.equippedCultivationSkillId == null ? "" : source.equippedCultivationSkillId;
+        target.equippedBodyMethodId = source.equippedBodyMethodId == null ? "" : source.equippedBodyMethodId;
+        target.equippedSpellSkillId = source.equippedSpellSkillId == null ? "" : source.equippedSpellSkillId;
+
         target.spiritStones = source.spiritStones;
         target.hasSeenOpening = source.hasSeenOpening;
         target.activeBlockingEncounterId = source.activeBlockingEncounterId;
         target.currentRestLocationId = string.IsNullOrEmpty(source.currentRestLocationId) ? "ruined_hut" : source.currentRestLocationId;
-        target.hp = source.hp <= 0 ? 50 : source.hp;
-        target.maxHp = source.maxHp <= 0 ? 50 : source.maxHp;
-        target.attack = source.attack <= 0 ? 10 : source.attack;
-        target.defense = source.defense < 0 ? 0 : source.defense;
+
+        target.baseMaxHp = source.baseMaxHp <= 0 ? 50 : source.baseMaxHp;
+        target.baseAttack = source.baseAttack <= 0 ? 10 : source.baseAttack;
+        target.baseDefense = source.baseDefense < 0 ? 0 : source.baseDefense;
+        target.hp = source.hp <= 0 ? target.baseMaxHp : source.hp;
+        target.maxHp = source.maxHp <= 0 ? target.baseMaxHp : source.maxHp;
+        target.attack = source.attack <= 0 ? target.baseAttack : source.attack;
+        target.defense = source.defense < 0 ? target.baseDefense : source.defense;
+
         target.flags = new List<string>(source.flags);
         target.visitedCellIds = new List<string>(source.visitedCellIds);
         target.dayEventsTriggered = new List<string>(source.dayEventsTriggered);
@@ -220,6 +236,14 @@ public class SaveManager : MonoBehaviour
         target.EnsureLists();
     }
 
+    private void NormalizeProgressionAndStats()
+    {
+        RealmManager realmManager = GetComponent<RealmManager>();
+        if (realmManager != null) realmManager.NormalizePlayerRealm();
+        BodyRealmManager bodyRealmManager = GetComponent<BodyRealmManager>();
+        if (bodyRealmManager != null) bodyRealmManager.NormalizeBodyRealm();
+    }
+
     private void RefreshAfterStateChanged(string message)
     {
         FindMissingReferences();
@@ -233,8 +257,7 @@ public class SaveManager : MonoBehaviour
         if (chapterTitle != null) chapterTitle.HideImmediately();
         ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
         if (chapterOne != null) chapterOne.CloseChapterOneEventSilently();
-        RealmManager realmManager = GetComponent<RealmManager>();
-        if (realmManager != null) realmManager.NormalizePlayerRealm();
+        NormalizeProgressionAndStats();
         if (mapGridManager != null)
         {
             mapGridManager.SyncPlayerPositionToCurrentCell();
@@ -248,6 +271,8 @@ public class SaveManager : MonoBehaviour
             locationUIManager.ShowMessage(message);
         }
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
+        CharacterStatusUIManager statusUI = GetComponent<CharacterStatusUIManager>();
+        if (statusUI != null) statusUI.RefreshIfOpen();
     }
 
     private void ShowMessage(string message)
