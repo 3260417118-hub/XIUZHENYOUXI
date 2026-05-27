@@ -1,0 +1,54 @@
+{
+  "bodyRealms": [
+    {
+      "id": "body_mortal",
+      "name": "凡体",
+      "level": 0,
+      "requiredBodyCultivation": 0,
+      "maxHpBonus": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0,
+      "breakthroughMessage": "你仍是凡人肉身，气血尚未真正凝练。"
+    },
+    {
+      "id": "body_1",
+      "name": "锻体一层",
+      "level": 1,
+      "requiredBodyCultivation": 150,
+      "maxHpBonus": 25,
+      "attackBonus": 3,
+      "defenseBonus": 2,
+      "breakthroughMessage": "你气血微微沸腾，筋骨比从前坚韧了许多。你突破到了锻体一层。"
+    },
+    {
+      "id": "body_2",
+      "name": "锻体二层",
+      "level": 2,
+      "requiredBodyCultivation": 250,
+      "maxHpBonus": 45,
+      "attackBonus": 5,
+      "defenseBonus": 4,
+      "breakthroughMessage": "你浑身筋骨齐鸣，拳脚之间隐隐带起劲风。你突破到了锻体二层。"
+    },
+    {
+      "id": "body_3",
+      "name": "锻体三层",
+      "level": 3,
+      "requiredBodyCultivation": 350,
+      "maxHpBonus": 70,
+      "attackBonus": 8,
+      "defenseBonus": 6,
+      "breakthroughMessage": "你的气血如炉，寻常拳脚已经难以伤到根本。你突破到了锻体三层。"
+    },
+    {
+      "id": "body_4",
+      "name": "锻体四层",
+      "level": 4,
+      "requiredBodyCultivation": 450,
+      "maxHpBonus": 100,
+      "attackBonus": 12,
+      "defenseBonus": 9,
+      "breakthroughMessage": "你肉身体魄大幅增强，举手投足间已有压迫之感。你突破到了锻体四层。"
+    }
+  ]
+}
