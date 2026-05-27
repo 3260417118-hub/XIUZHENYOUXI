@@ -34,7 +34,7 @@
     },
     {
       "id": "encounter_day13_faction_fight",
-      "triggerDay": 13,
+      "triggerDay": 0,
       "npcName": "争斗人群",
       "title": "村口争斗",
       "text": "第十三日，村口聚满了人。两伙人马剑拔弩张，一方自称要维持青石村规矩，另一方则斥责赵霸天横行乡里。争吵很快演变成械斗。",
@@ -49,7 +49,7 @@
     },
     {
       "id": "encounter_day21_zhao_batian",
-      "triggerDay": 21,
+      "triggerDay": 0,
       "npcName": "赵霸天",
       "title": "赵霸天上门",
       "text": "第二十一日，青石村口尘土飞扬。赵霸天亲自带人而来，脸上带着毫不掩饰的杀意。“小子，我给过你机会。今日，你死，她跟我走。”",
@@ -59,6 +59,22 @@
         { "text": "拿出星辰剑", "message": "星辰剑出鞘，剑光如夜空流星。赵霸天脸色骤变：“你从哪得来的这等兵器？”", "setFlags": ["revealed_star_sword_to_zhao"], "startBattleId": "battle_day21_zhao_batian_weakened", "resolveEncounter": true, "closeOnly": false, "requireItems": ["star_sword"] },
         { "text": "以锻体入门硬抗", "message": "你气血翻涌，双臂筋骨齐鸣，已不再是当初那个任人欺凌的少年。", "setFlags": ["used_body_tempering_against_zhao"], "startBattleId": "battle_day21_zhao_batian", "resolveEncounter": true, "closeOnly": false, "requireSkills": ["skill_body_tempering_basic"] },
         { "text": "求饶", "message": "赵霸天放声大笑：“现在知道怕了？晚了。”", "setFlags": ["begged_zhao_batian"], "startBattleId": "battle_day21_zhao_batian", "resolveEncounter": true, "closeOnly": false }
+      ],
+      "resolvedFlags": [],
+      "spawnAtPlayerCurrentCell": true
+    },
+    {
+      "id": "encounter_day21_zhao_batian_no_sister",
+      "triggerDay": 0,
+      "npcName": "赵霸天",
+      "title": "赵霸天上门",
+      "text": "第二十一日，青石村口尘土飞扬。赵霸天亲自带人而来，脸上带着毫不掩饰的杀意。“小子，我给过你机会。今日，你若还想在青石村站着，就先过我这一关。”",
+      "blockMoveMessage": "赵霸天的人围住四周，根本不给你离开的机会。",
+      "options": [
+        { "text": "拔身而战", "message": "", "setFlags": ["fought_zhao_batian"], "startBattleId": "battle_day21_zhao_batian_no_sister", "resolveEncounter": true, "closeOnly": false },
+        { "text": "拿出星辰剑", "message": "星辰剑出鞘，剑光如夜空流星。赵霸天脸色骤变：“你从哪得来的这等兵器？”", "setFlags": ["revealed_star_sword_to_zhao"], "startBattleId": "battle_day21_zhao_batian_weakened_no_sister", "resolveEncounter": true, "closeOnly": false, "requireItems": ["star_sword"] },
+        { "text": "以锻体入门硬抗", "message": "你气血翻涌，双臂筋骨齐鸣，已不再是当初那个任人欺凌的少年。", "setFlags": ["used_body_tempering_against_zhao"], "startBattleId": "battle_day21_zhao_batian_no_sister", "resolveEncounter": true, "closeOnly": false, "requireSkills": ["skill_body_tempering_basic"] },
+        { "text": "求饶", "message": "赵霸天放声大笑：“现在知道怕了？晚了。”", "setFlags": ["begged_zhao_batian"], "startBattleId": "battle_day21_zhao_batian_no_sister", "resolveEncounter": true, "closeOnly": false }
       ],
       "resolvedFlags": [],
       "spawnAtPlayerCurrentCell": true
