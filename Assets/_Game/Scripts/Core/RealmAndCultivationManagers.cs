@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -195,7 +196,7 @@ public class BreakthroughButtonManager : MonoBehaviour
     private RealmManager realmManager;
     private Font cachedFont;
 
-    private IEnumerator<WaitForSeconds> Start()
+    private IEnumerator Start()
     {
         yield return new WaitForSeconds(0.1f);
         realmManager = GetComponent<RealmManager>();
