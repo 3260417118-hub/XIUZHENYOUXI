@@ -52,6 +52,12 @@ public class PlayerMapController : MonoBehaviour
             return true;
         }
 
+        if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen)
+        {
+            message = "请先处理当前事件。";
+            return true;
+        }
+
         BlockingEncounterManager blockingEncounterManager = BlockingEncounterManager.Instance != null
             ? BlockingEncounterManager.Instance
             : GetComponent<BlockingEncounterManager>();
@@ -154,7 +160,9 @@ public class PlayerMapController : MonoBehaviour
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
 
         EnsureManagers();
-        if (eventManager != null) eventManager.TryShowFirstEnterEvent(targetCell);
+        ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();
+        if (chapterOne != null) chapterOne.HandleEnterCell(targetCell);
+        if (eventManager != null && !ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) eventManager.TryShowFirstEnterEvent(targetCell);
         return true;
     }
 
