@@ -19,6 +19,7 @@ public class LocationActionManager : MonoBehaviour
 
     private readonly Dictionary<string, LocationActionData> actionById = new Dictionary<string, LocationActionData>();
     private readonly List<GameObject> createdButtons = new List<GameObject>();
+    private EventManager eventManager;
     private Font cachedFont;
 
     public void SetReferences(GameManager game, MapGridManager mapGrid, ActionPointManager actionPoint, LocationUIManager locationUI, RectTransform actionContainer, RectTransform npcContainer)
@@ -30,12 +31,14 @@ public class LocationActionManager : MonoBehaviour
         actionButtonContainer = actionContainer;
         npcButtonContainer = npcContainer;
         EnsureDialogueManager();
+        EnsureEventManager();
     }
 
     private void Start()
     {
         LoadActions();
         EnsureDialogueManager();
+        EnsureEventManager();
         RefreshCurrentLocation();
     }
 
@@ -44,6 +47,25 @@ public class LocationActionManager : MonoBehaviour
         if (dialogueManager == null) dialogueManager = GetComponent<DialogueManager>();
         if (dialogueManager == null) dialogueManager = gameObject.AddComponent<DialogueManager>();
         dialogueManager.SetReferences(locationUIManager, this, actionButtonContainer, npcButtonContainer);
+    }
+
+    private void EnsureEventManager()
+    {
+        if (eventManager == null) eventManager = GetComponent<EventManager>();
+    }
+
+    private bool IsNormalLocationUiBlocked()
+    {
+        EnsureEventManager();
+        if (eventManager != null && eventManager.IsEventOpen) return true;
+        if (RestManager.IsRestingTransition) return true;
+        if (BattleManager.IsBattleOpen) return true;
+        if (OpeningStoryManager.IsOpeningActive) return true;
+        if (ChapterTitleManager.IsChapterTitleActive) return true;
+        if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return true;
+        if (ChapterOneLateStoryFixManager.IsEndingPlaying) return true;
+        if (dialogueManager != null && dialogueManager.IsDialogueOpen) return true;
+        return false;
     }
 
     public void LoadActions()
@@ -72,11 +94,15 @@ public class LocationActionManager : MonoBehaviour
 
     public void RefreshCurrentLocation()
     {
-        ClearCurrentButtons();
         EnsureDialogueManager();
+        EnsureEventManager();
 
-        if (RestManager.IsRestingTransition || BattleManager.IsBattleOpen || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || ChapterOneLocationMechanicsManager.IsChapterOneEventOpen || ChapterOneLateStoryFixManager.IsEndingPlaying) return;
-        if (dialogueManager != null && dialogueManager.IsDialogueOpen) return;
+        // 关键修复：如果当前有“首次进入事件 / 剧情事件 / 对话 / 战斗”等正在显示，
+        // 不要清掉事件按钮，也不要重新生成普通地点行为按钮。
+        // 否则会出现“事件：翻开竹简”和“可执行：查看书籍”叠在一起。
+        if (IsNormalLocationUiBlocked()) return;
+
+        ClearCurrentButtons();
         if (mapGridManager == null) return;
 
         MapCellData currentCell = mapGridManager.GetCurrentCell();
@@ -231,7 +257,8 @@ public class LocationActionManager : MonoBehaviour
 
     private void ExecuteAction(LocationActionData actionData)
     {
-        if (RestManager.IsRestingTransition || OpeningStoryManager.IsOpeningActive || ChapterTitleManager.IsChapterTitleActive || BattleManager.IsBattleOpen || ChapterOneLocationMechanicsManager.IsChapterOneEventOpen || ChapterOneLateStoryFixManager.IsEndingPlaying)
+        EnsureEventManager();
+        if (IsNormalLocationUiBlocked())
         {
             if (locationUIManager != null) locationUIManager.ShowMessage("请先处理当前事件。");
             return;
