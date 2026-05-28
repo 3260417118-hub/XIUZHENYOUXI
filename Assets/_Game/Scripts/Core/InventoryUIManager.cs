@@ -328,7 +328,6 @@ public class InventoryUIManager : MonoBehaviour
         if (ChapterTitleManager.IsChapterTitleActive) return true;
         if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return true;
         if (ChapterOneLateStoryFixManager.IsEndingPlaying) return true;
-        if (IsOtherWindowOpen()) return true;
         return false;
     }
 
