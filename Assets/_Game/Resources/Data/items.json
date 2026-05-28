@@ -4,37 +4,79 @@
       "id": "shovel",
       "name": "铲子",
       "description": "一把旧铲子，似乎可以用来挖掘泥土。",
-      "type": "tool"
+      "type": "tool",
+      "usable": false,
+      "consumable": false,
+      "cultivationGain": 0,
+      "hpGain": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0,
+      "maxHpBonus": 0
     },
     {
       "id": "sister_ribbon",
       "name": "妹妹的发带",
       "description": "一截浅色发带，让林昊想起了妹妹。",
-      "type": "clue"
+      "type": "clue",
+      "usable": false,
+      "consumable": false,
+      "cultivationGain": 0,
+      "hpGain": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0,
+      "maxHpBonus": 0
     },
     {
       "id": "qiankun_body_scroll_fragment",
       "name": "乾坤锻体诀（残卷）",
-      "description": "一页残破卷纸，上面记载着残缺的锻体法门。",
-      "type": "scroll"
+      "description": "一页残破卷纸，上面记载着残缺的锻体法门。似乎有人会对它感兴趣。",
+      "type": "scroll",
+      "usable": false,
+      "consumable": false,
+      "cultivationGain": 0,
+      "hpGain": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0,
+      "maxHpBonus": 0
     },
     {
       "id": "cultivation_pill",
       "name": "修为丹",
       "description": "服下后可提升少量修为。",
-      "type": "consumable"
+      "type": "consumable",
+      "usable": true,
+      "consumable": true,
+      "cultivationGain": 150,
+      "hpGain": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0,
+      "maxHpBonus": 0
     },
     {
       "id": "broom",
       "name": "扫帚",
       "description": "杂役院常见的扫帚，也能勉强当作武器。",
-      "type": "weapon"
+      "type": "weapon",
+      "usable": false,
+      "consumable": false,
+      "cultivationGain": 0,
+      "hpGain": 0,
+      "attackBonus": 2,
+      "defenseBonus": 0,
+      "maxHpBonus": 0
     },
     {
       "id": "star_sword",
       "name": "星辰剑",
       "description": "神灵赐下的长剑，剑身隐约有星光流转。",
-      "type": "weapon"
+      "type": "weapon",
+      "usable": false,
+      "consumable": false,
+      "cultivationGain": 0,
+      "hpGain": 0,
+      "attackBonus": 20,
+      "defenseBonus": 0,
+      "maxHpBonus": 0
     }
   ]
 }

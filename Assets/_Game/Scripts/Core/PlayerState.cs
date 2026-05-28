@@ -8,6 +8,13 @@ public class CounterRecord
     public int value;
 }
 
+[Serializable]
+public class InventoryItemRecord
+{
+    public string id;
+    public int count;
+}
+
 /// <summary>
 /// 玩家当前状态。
 /// 这个类只保存数据，不负责复杂玩法逻辑，方便存档。
@@ -59,6 +66,9 @@ public class PlayerState
     public string equippedBodyMethodId;
     public string equippedSpellSkillId;
 
+    /// <summary>当前装备的武器。第一版只有一个武器槽。</summary>
+    public string equippedWeaponId;
+
     public int spiritStones;
 
     public bool hasSeenOpening;
@@ -69,7 +79,7 @@ public class PlayerState
     /// </summary>
     public string activeBlockingEncounterId;
 
-    /// <summary>基础属性。最终属性由基础属性 + 修炼境界加成 + 锻体境界加成计算。</summary>
+    /// <summary>基础属性。最终属性由基础属性 + 修炼境界加成 + 锻体境界加成 + 装备加成计算。</summary>
     public int baseMaxHp;
     public int baseAttack;
     public int baseDefense;
@@ -84,8 +94,11 @@ public class PlayerState
     public List<string> visitedCellIds = new List<string>();
     public List<string> dayEventsTriggered = new List<string>();
 
-    /// <summary>轻量物品记录：只记 id，不做背包 UI。</summary>
+    /// <summary>兼容旧存档：旧物品记录只记 id。</summary>
     public List<string> items = new List<string>();
+
+    /// <summary>新版背包：记录物品 id 和数量。</summary>
+    public List<InventoryItemRecord> inventoryItems = new List<InventoryItemRecord>();
 
     /// <summary>轻量功法记录：只记 id，不做功法 UI。</summary>
     public List<string> learnedSkills = new List<string>();
@@ -114,16 +127,27 @@ public class PlayerState
         if (visitedCellIds == null) visitedCellIds = new List<string>();
         if (dayEventsTriggered == null) dayEventsTriggered = new List<string>();
         if (items == null) items = new List<string>();
+        if (inventoryItems == null) inventoryItems = new List<InventoryItemRecord>();
         if (learnedSkills == null) learnedSkills = new List<string>();
         if (unlockedCellIds == null) unlockedCellIds = new List<string>();
         if (dailyActionRecords == null) dailyActionRecords = new List<string>();
         if (counters == null) counters = new List<CounterRecord>();
         if (pendingNightEvents == null) pendingNightEvents = new List<string>();
 
+        // 旧存档兼容：如果新版背包为空，但旧 items 里有物品，就迁移成数量记录。
+        if (inventoryItems.Count == 0 && items.Count > 0)
+        {
+            foreach (string oldItemId in items)
+            {
+                AddInventoryItemInternal(oldItemId, 1, false);
+            }
+        }
+
         if (string.IsNullOrEmpty(playerName)) playerName = "林昊";
         if (string.IsNullOrEmpty(currentMapId)) currentMapId = "main";
         if (returnMainCellId == null) returnMainCellId = "";
         if (activeBlockingEncounterId == null) activeBlockingEncounterId = "";
+        if (equippedWeaponId == null) equippedWeaponId = "";
         if (string.IsNullOrEmpty(currentRestLocationId)) currentRestLocationId = "ruined_hut";
 
         if (string.IsNullOrEmpty(realm)) realm = "凡人";
@@ -216,23 +240,89 @@ public class PlayerState
 
     public bool HasItem(string itemId)
     {
+        return HasItem(itemId, 1);
+    }
+
+    public bool HasItem(string itemId, int count)
+    {
         if (string.IsNullOrEmpty(itemId)) return false;
         EnsureLists();
-        return items.Contains(itemId);
+        return GetItemCount(itemId) >= Math.Max(1, count);
+    }
+
+    public int GetItemCount(string itemId)
+    {
+        if (string.IsNullOrEmpty(itemId)) return 0;
+        if (inventoryItems == null) inventoryItems = new List<InventoryItemRecord>();
+        foreach (InventoryItemRecord record in inventoryItems)
+        {
+            if (record != null && record.id == itemId) return Math.Max(0, record.count);
+        }
+        return 0;
     }
 
     public void AddItem(string itemId)
     {
-        if (string.IsNullOrEmpty(itemId)) return;
-        EnsureLists();
-        if (!items.Contains(itemId)) items.Add(itemId);
+        AddItem(itemId, 1);
+    }
+
+    public void AddItem(string itemId, int count)
+    {
+        AddInventoryItemInternal(itemId, count, true);
+    }
+
+    private void AddInventoryItemInternal(string itemId, int count, bool syncOldItems)
+    {
+        if (string.IsNullOrEmpty(itemId) || count <= 0) return;
+        if (inventoryItems == null) inventoryItems = new List<InventoryItemRecord>();
+        InventoryItemRecord target = null;
+        foreach (InventoryItemRecord record in inventoryItems)
+        {
+            if (record != null && record.id == itemId)
+            {
+                target = record;
+                break;
+            }
+        }
+
+        if (target == null)
+        {
+            inventoryItems.Add(new InventoryItemRecord { id = itemId, count = count });
+        }
+        else
+        {
+            target.count += count;
+        }
+
+        if (syncOldItems)
+        {
+            if (items == null) items = new List<string>();
+            if (!items.Contains(itemId)) items.Add(itemId);
+        }
     }
 
     public void RemoveItem(string itemId)
     {
-        if (string.IsNullOrEmpty(itemId)) return;
+        RemoveItem(itemId, 1);
+    }
+
+    public void RemoveItem(string itemId, int count)
+    {
+        if (string.IsNullOrEmpty(itemId) || count <= 0) return;
         EnsureLists();
-        items.Remove(itemId);
+        for (int i = inventoryItems.Count - 1; i >= 0; i--)
+        {
+            InventoryItemRecord record = inventoryItems[i];
+            if (record == null || record.id != itemId) continue;
+            record.count -= count;
+            if (record.count <= 0)
+            {
+                inventoryItems.RemoveAt(i);
+                if (items != null) items.Remove(itemId);
+                if (equippedWeaponId == itemId) equippedWeaponId = "";
+            }
+            return;
+        }
     }
 
     public bool HasSkill(string skillId)

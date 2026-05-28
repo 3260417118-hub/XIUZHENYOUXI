@@ -43,6 +43,8 @@ public class GameManager : MonoBehaviour
         EnsureComponent<DayEventManager>();
         EnsureComponent<BattleManager>();
         EnsureComponent<InventoryLiteManager>();
+        EnsureComponent<InventoryManager>();
+        EnsureComponent<InventoryUIManager>();
         EnsureComponent<SkillManager>();
         EnsureComponent<DailyLimitManager>();
         EnsureComponent<CounterManager>();
@@ -94,6 +96,7 @@ public class GameManager : MonoBehaviour
         playerState.equippedCultivationSkillId = "";
         playerState.equippedBodyMethodId = "";
         playerState.equippedSpellSkillId = "";
+        playerState.equippedWeaponId = "";
         playerState.spiritStones = 0;
         playerState.hasSeenOpening = false;
         playerState.activeBlockingEncounterId = "";
