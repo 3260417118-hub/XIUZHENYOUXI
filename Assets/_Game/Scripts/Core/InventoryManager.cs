@@ -27,6 +27,16 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
+    private void LateUpdate()
+    {
+        // 其他系统突破、读档或刷新时会调用 PlayerStatCalculator。
+        // 这里用轻量同步保证装备加成不会被后续重算覆盖，也不会重复叠加。
+        PlayerState state = GetState();
+        if (state == null || string.IsNullOrEmpty(state.equippedWeaponId)) return;
+        int expectedAttack = CalculateExpectedAttackWithEquipment(state);
+        if (state.attack != expectedAttack) RecalculateStats(false);
+    }
+
     private void BindReferences()
     {
         if (gameManager == null) gameManager = GetComponent<GameManager>();
@@ -244,7 +254,37 @@ public class InventoryManager : MonoBehaviour
         if (state == null) return;
         if (realmManager == null) realmManager = GetComponent<RealmManager>();
         if (bodyRealmManager == null) bodyRealmManager = GetComponent<BodyRealmManager>();
+
+        int oldMaxHp = state.maxHp > 0 ? state.maxHp : state.baseMaxHp;
+        int oldHp = state.hp > 0 ? state.hp : oldMaxHp;
+
         PlayerStatCalculator.RecalculateStats(state, realmManager, bodyRealmManager, healToFull);
+
+        int maxHpBonus = GetWeaponMaxHpBonus(state);
+        int defenseBonus = GetWeaponDefenseBonus(state);
+        int attackBonus = GetWeaponAttackBonus(state);
+
+        if (maxHpBonus != 0)
+        {
+            state.maxHp = Mathf.Max(1, state.maxHp + maxHpBonus);
+            state.hp = healToFull ? state.maxHp : Mathf.Clamp(oldHp, 1, state.maxHp);
+        }
+        if (defenseBonus != 0) state.defense = Mathf.Max(0, state.defense + defenseBonus);
+        if (attackBonus != 0) state.attack = Mathf.Max(1, state.attack + attackBonus);
+    }
+
+    private int CalculateExpectedAttackWithEquipment(PlayerState state)
+    {
+        if (state == null) return 0;
+        int attack = state.baseAttack;
+        if (realmManager == null) realmManager = GetComponent<RealmManager>();
+        if (bodyRealmManager == null) bodyRealmManager = GetComponent<BodyRealmManager>();
+        RealmData currentRealm = realmManager != null ? realmManager.GetCurrentRealm() : null;
+        if (currentRealm != null) attack += currentRealm.attackBonus;
+        BodyRealmData currentBodyRealm = bodyRealmManager != null ? bodyRealmManager.GetCurrentBodyRealm() : null;
+        if (currentBodyRealm != null) attack += currentBodyRealm.attackBonus;
+        attack += GetWeaponAttackBonus(state);
+        return Mathf.Max(1, attack);
     }
 
     public void RefreshUi()
