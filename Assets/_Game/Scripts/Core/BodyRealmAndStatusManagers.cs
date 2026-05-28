@@ -329,6 +329,7 @@ public class CharacterStatusUIManager : MonoBehaviour
         builder.AppendLine("生命：" + state.hp + " / " + state.maxHp);
         builder.AppendLine("攻击：" + state.attack);
         builder.AppendLine("防御：" + state.defense);
+        builder.AppendLine("武器：" + GetWeaponNameOrNone(state.equippedWeaponId));
         builder.AppendLine("灵石：" + state.spiritStones);
         builder.AppendLine();
 
@@ -386,6 +387,13 @@ public class CharacterStatusUIManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(skillId)) return "无";
         return skillManager != null ? skillManager.GetSkillName(skillId) : skillId;
+    }
+
+    private string GetWeaponNameOrNone(string weaponId)
+    {
+        if (string.IsNullOrEmpty(weaponId)) return "无";
+        InventoryItemData item = InventoryItemDatabase.GetItem(weaponId);
+        return item != null ? item.name : weaponId;
     }
 
     private void EnsureStatusButton()
