@@ -2,9 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// 背包界面：运行时自动创建，避免重建 DemoScene。
-/// </summary>
 public class InventoryUIManager : MonoBehaviour
 {
     private GameManager gameManager;
@@ -12,7 +9,6 @@ public class InventoryUIManager : MonoBehaviour
     private LocationUIManager locationUIManager;
 
     private GameObject inventoryButtonObject;
-    private Button inventoryButton;
     private GameObject panelObject;
     private RectTransform contentRect;
     private ScrollRect scrollRect;
@@ -52,8 +48,12 @@ public class InventoryUIManager : MonoBehaviour
             ShowMessage("战斗中暂时不能打开背包。");
             return;
         }
+        if (IsOtherWindowOpen())
+        {
+            ShowMessage("请先关闭当前窗口。");
+            return;
+        }
 
-        BindReferences();
         EnsurePanel();
         if (panelObject == null) return;
         panelObject.SetActive(true);
@@ -79,52 +79,39 @@ public class InventoryUIManager : MonoBehaviour
         if (state == null || contentRect == null) return;
         state.EnsureLists();
 
-        ClearContentRows();
-
-        List<InventoryItemRecord> records = state.inventoryItems;
-        bool hasAny = false;
-        if (records != null)
+        ClearRows();
+        int index = 0;
+        if (state.inventoryItems != null)
         {
-            for (int i = 0; i < records.Count; i++)
+            for (int i = 0; i < state.inventoryItems.Count; i++)
             {
-                InventoryItemRecord record = records[i];
+                InventoryItemRecord record = state.inventoryItems[i];
                 if (record == null || string.IsNullOrEmpty(record.id) || record.count <= 0) continue;
-                CreateItemRow(record);
-                hasAny = true;
+                CreateRow(record, index);
+                index++;
             }
         }
 
-        if (emptyText != null) emptyText.gameObject.SetActive(!hasAny);
-
-        float height = hasAny ? Mathf.Max(360f, CountValidItems(state) * (RowHeight + RowGap) + 16f) : 360f;
-        contentRect.sizeDelta = new Vector2(0f, height);
+        if (emptyText != null) emptyText.gameObject.SetActive(index == 0);
+        contentRect.sizeDelta = new Vector2(0f, index > 0 ? Mathf.Max(360f, index * (RowHeight + RowGap) + 20f) : 360f);
+        contentRect.anchoredPosition = Vector2.zero;
         if (scrollRect != null) scrollRect.verticalNormalizedPosition = 1f;
     }
 
-    private int CountValidItems(PlayerState state)
-    {
-        if (state == null || state.inventoryItems == null) return 0;
-        int count = 0;
-        foreach (InventoryItemRecord record in state.inventoryItems)
-        {
-            if (record != null && !string.IsNullOrEmpty(record.id) && record.count > 0) count++;
-        }
-        return count;
-    }
-
-    private void ClearContentRows()
+    private void ClearRows()
     {
         if (contentRect == null) return;
-        for (int i = contentRect.childCount - 1; i >= 0; i--)
+        List<GameObject> rows = new List<GameObject>();
+        for (int i = 0; i < contentRect.childCount; i++)
         {
             Transform child = contentRect.GetChild(i);
-            if (child != null && child.name.StartsWith("InventoryItemRow")) Destroy(child.gameObject);
+            if (child != null && child.name.StartsWith("InventoryItemRow")) rows.Add(child.gameObject);
         }
+        for (int i = 0; i < rows.Count; i++) Destroy(rows[i]);
     }
 
-    private void CreateItemRow(InventoryItemRecord record)
+    private void CreateRow(InventoryItemRecord record, int index)
     {
-        int rowIndex = CountCurrentRows();
         InventoryItemData item = InventoryItemDatabase.GetItem(record.id);
         string itemName = item != null ? item.name : record.id;
         string typeName = item != null ? InventoryItemDatabase.GetTypeName(item.type) : "未知";
@@ -137,9 +124,8 @@ public class InventoryUIManager : MonoBehaviour
         rowRect.anchorMax = new Vector2(1f, 1f);
         rowRect.pivot = new Vector2(0.5f, 1f);
         rowRect.sizeDelta = new Vector2(0f, RowHeight);
-        rowRect.anchoredPosition = new Vector2(0f, -8f - rowIndex * (RowHeight + RowGap));
-        Image rowImage = rowObject.GetComponent<Image>();
-        rowImage.color = new Color(0.14f, 0.16f, 0.19f, 0.96f);
+        rowRect.anchoredPosition = new Vector2(0f, -10f - index * (RowHeight + RowGap));
+        rowObject.GetComponent<Image>().color = new Color(0.14f, 0.16f, 0.19f, 0.96f);
 
         Text title = CreateText(rowObject.transform, itemName + "  x" + record.count + "  【" + typeName + "】", 18, TextAnchor.UpperLeft, Color.white);
         RectTransform titleRect = title.rectTransform;
@@ -147,28 +133,16 @@ public class InventoryUIManager : MonoBehaviour
         titleRect.anchorMax = new Vector2(1f, 1f);
         titleRect.pivot = new Vector2(0.5f, 1f);
         titleRect.offsetMin = new Vector2(18f, -42f);
-        titleRect.offsetMax = new Vector2(-160f, -10f);
+        titleRect.offsetMax = new Vector2(-170f, -10f);
 
         Text desc = CreateText(rowObject.transform, description, 15, TextAnchor.UpperLeft, new Color(0.86f, 0.88f, 0.90f, 1f));
         RectTransform descRect = desc.rectTransform;
-        descRect.anchorMin = new Vector2(0f, 0f);
-        descRect.anchorMax = new Vector2(1f, 1f);
+        descRect.anchorMin = Vector2.zero;
+        descRect.anchorMax = Vector2.one;
         descRect.offsetMin = new Vector2(18f, 12f);
-        descRect.offsetMax = new Vector2(-170f, -46f);
+        descRect.offsetMax = new Vector2(-180f, -46f);
 
         CreateOperationButton(rowObject.transform, record.id, item);
-    }
-
-    private int CountCurrentRows()
-    {
-        if (contentRect == null) return 0;
-        int count = 0;
-        for (int i = 0; i < contentRect.childCount; i++)
-        {
-            Transform child = contentRect.GetChild(i);
-            if (child != null && child.name.StartsWith("InventoryItemRow")) count++;
-        }
-        return count;
     }
 
     private void CreateOperationButton(Transform row, string itemId, InventoryItemData item)
@@ -180,34 +154,16 @@ public class InventoryUIManager : MonoBehaviour
         if (item.type == "weapon")
         {
             bool equipped = state.equippedWeaponId == itemId;
-            Button button = CreateButton(row, equipped ? "卸下" : "装备", new Vector2(-64f, -58f), new Vector2(106f, 38f));
-            if (equipped)
-            {
-                button.onClick.AddListener(delegate
-                {
-                    if (inventoryManager != null) inventoryManager.UnequipWeapon();
-                    Refresh();
-                });
-            }
-            else
-            {
-                button.onClick.AddListener(delegate
-                {
-                    if (inventoryManager != null) inventoryManager.EquipWeapon(itemId);
-                    Refresh();
-                });
-            }
+            Button button = CreateButton(row, equipped ? "卸下" : "装备", new Vector2(-54f, -50f), new Vector2(106f, 38f), true);
+            if (equipped) button.onClick.AddListener(delegate { if (inventoryManager != null) inventoryManager.UnequipWeapon(); });
+            else button.onClick.AddListener(delegate { if (inventoryManager != null) inventoryManager.EquipWeapon(itemId); });
             return;
         }
 
         if (item.usable && item.consumable)
         {
-            Button button = CreateButton(row, "使用", new Vector2(-64f, -58f), new Vector2(106f, 38f));
-            button.onClick.AddListener(delegate
-            {
-                if (inventoryManager != null) inventoryManager.UseItem(itemId);
-                Refresh();
-            });
+            Button button = CreateButton(row, "使用", new Vector2(-54f, -50f), new Vector2(106f, 38f), true);
+            button.onClick.AddListener(delegate { if (inventoryManager != null) inventoryManager.UseItem(itemId); });
         }
     }
 
@@ -225,12 +181,9 @@ public class InventoryUIManager : MonoBehaviour
         rect.pivot = new Vector2(1f, 1f);
         rect.sizeDelta = new Vector2(90f, 38f);
         rect.anchoredPosition = new Vector2(-260f, -18f);
-
-        Image image = inventoryButtonObject.GetComponent<Image>();
-        image.color = new Color(0.20f, 0.26f, 0.32f, 1f);
-        inventoryButton = inventoryButtonObject.GetComponent<Button>();
-        inventoryButton.targetGraphic = image;
-        inventoryButton.onClick.AddListener(Open);
+        inventoryButtonObject.GetComponent<Image>().color = new Color(0.20f, 0.26f, 0.32f, 1f);
+        Button button = inventoryButtonObject.GetComponent<Button>();
+        button.onClick.AddListener(Open);
         Text label = CreateText(inventoryButtonObject.transform, "背包", 18, TextAnchor.MiddleCenter, Color.white);
         StretchToParent(label.rectTransform);
     }
@@ -241,36 +194,44 @@ public class InventoryUIManager : MonoBehaviour
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        panelObject = new GameObject("InventoryPanel", typeof(RectTransform), typeof(Image));
+        panelObject = new GameObject("InventoryModalOverlay", typeof(RectTransform), typeof(Image));
         panelObject.transform.SetParent(canvas.transform, false);
-        RectTransform panelRect = panelObject.GetComponent<RectTransform>();
-        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(PanelWidth, PanelHeight);
-        panelRect.anchoredPosition = Vector2.zero;
-        Image panelImage = panelObject.GetComponent<Image>();
-        panelImage.color = new Color(0.08f, 0.09f, 0.11f, 0.98f);
+        RectTransform overlayRect = panelObject.GetComponent<RectTransform>();
+        overlayRect.anchorMin = Vector2.zero;
+        overlayRect.anchorMax = Vector2.one;
+        overlayRect.offsetMin = Vector2.zero;
+        overlayRect.offsetMax = Vector2.zero;
+        Image overlayImage = panelObject.GetComponent<Image>();
+        overlayImage.color = new Color(0f, 0f, 0f, 0.34f);
+        overlayImage.raycastTarget = true;
 
-        Text titleText = CreateText(panelObject.transform, "背包", 30, TextAnchor.MiddleCenter, Color.white);
-        RectTransform titleRect = titleText.rectTransform;
+        GameObject boxObject = new GameObject("InventoryPanel", typeof(RectTransform), typeof(Image));
+        boxObject.transform.SetParent(panelObject.transform, false);
+        RectTransform boxRect = boxObject.GetComponent<RectTransform>();
+        boxRect.anchorMin = new Vector2(0.5f, 0.5f);
+        boxRect.anchorMax = new Vector2(0.5f, 0.5f);
+        boxRect.pivot = new Vector2(0.5f, 0.5f);
+        boxRect.sizeDelta = new Vector2(PanelWidth, PanelHeight);
+        boxRect.anchoredPosition = Vector2.zero;
+        boxObject.GetComponent<Image>().color = new Color(0.08f, 0.09f, 0.11f, 0.98f);
+
+        Text title = CreateText(boxObject.transform, "背包", 30, TextAnchor.MiddleCenter, Color.white);
+        RectTransform titleRect = title.rectTransform;
         titleRect.anchorMin = new Vector2(0f, 1f);
         titleRect.anchorMax = new Vector2(1f, 1f);
         titleRect.pivot = new Vector2(0.5f, 1f);
         titleRect.sizeDelta = new Vector2(0f, 54f);
         titleRect.anchoredPosition = new Vector2(0f, -16f);
 
-        GameObject viewportObject = new GameObject("InventoryViewport", typeof(RectTransform), typeof(Image), typeof(Mask));
-        viewportObject.transform.SetParent(panelObject.transform, false);
+        GameObject viewportObject = new GameObject("InventoryViewport", typeof(RectTransform), typeof(Image), typeof(Mask), typeof(ScrollRect));
+        viewportObject.transform.SetParent(boxObject.transform, false);
         RectTransform viewportRect = viewportObject.GetComponent<RectTransform>();
         viewportRect.anchorMin = Vector2.zero;
         viewportRect.anchorMax = Vector2.one;
         viewportRect.offsetMin = new Vector2(34f, 86f);
         viewportRect.offsetMax = new Vector2(-34f, -82f);
-        Image viewportImage = viewportObject.GetComponent<Image>();
-        viewportImage.color = new Color(0f, 0f, 0f, 0.08f);
-        Mask mask = viewportObject.GetComponent<Mask>();
-        mask.showMaskGraphic = false;
+        viewportObject.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.08f);
+        viewportObject.GetComponent<Mask>().showMaskGraphic = false;
 
         GameObject contentObject = new GameObject("InventoryContent", typeof(RectTransform));
         contentObject.transform.SetParent(viewportObject.transform, false);
@@ -287,9 +248,9 @@ public class InventoryUIManager : MonoBehaviour
         emptyRect.anchorMax = new Vector2(1f, 1f);
         emptyRect.pivot = new Vector2(0.5f, 1f);
         emptyRect.sizeDelta = new Vector2(0f, 120f);
-        emptyRect.anchoredPosition = new Vector2(0f, -80f);
+        emptyRect.anchoredPosition = new Vector2(0f, -120f);
 
-        scrollRect = panelObject.AddComponent<ScrollRect>();
+        scrollRect = viewportObject.GetComponent<ScrollRect>();
         scrollRect.viewport = viewportRect;
         scrollRect.content = contentRect;
         scrollRect.horizontal = false;
@@ -297,24 +258,31 @@ public class InventoryUIManager : MonoBehaviour
         scrollRect.movementType = ScrollRect.MovementType.Clamped;
         scrollRect.scrollSensitivity = 28f;
 
-        Button closeButton = CreateButton(panelObject.transform, "关闭", new Vector2(-345f, -612f), new Vector2(130f, 42f));
+        Button closeButton = CreateButton(boxObject.transform, "关闭", new Vector2(0f, 26f), new Vector2(130f, 42f), false);
         closeButton.onClick.AddListener(Hide);
     }
 
-    private Button CreateButton(Transform parent, string text, Vector2 anchoredPosition, Vector2 size)
+    private Button CreateButton(Transform parent, string text, Vector2 position, Vector2 size, bool topRight)
     {
         GameObject buttonObject = new GameObject(text + "Button", typeof(RectTransform), typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(parent, false);
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(1f, 1f);
-        rect.anchorMax = new Vector2(1f, 1f);
-        rect.pivot = new Vector2(1f, 1f);
+        if (topRight)
+        {
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+        }
+        else
+        {
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+        }
         rect.sizeDelta = size;
-        rect.anchoredPosition = anchoredPosition;
-        Image image = buttonObject.GetComponent<Image>();
-        image.color = new Color(0.18f, 0.24f, 0.30f, 1f);
+        rect.anchoredPosition = position;
+        buttonObject.GetComponent<Image>().color = new Color(0.18f, 0.24f, 0.30f, 1f);
         Button button = buttonObject.GetComponent<Button>();
-        button.targetGraphic = image;
         Text label = CreateText(buttonObject.transform, text, 17, TextAnchor.MiddleCenter, Color.white);
         StretchToParent(label.rectTransform);
         return button;
@@ -360,7 +328,14 @@ public class InventoryUIManager : MonoBehaviour
         if (ChapterTitleManager.IsChapterTitleActive) return true;
         if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return true;
         if (ChapterOneLateStoryFixManager.IsEndingPlaying) return true;
+        if (IsOtherWindowOpen()) return true;
         return false;
+    }
+
+    private bool IsOtherWindowOpen()
+    {
+        GameObject statusPanel = GameObject.Find("CharacterStatusPanel");
+        return statusPanel != null && statusPanel.activeInHierarchy;
     }
 
     private void ShowMessage(string message)
