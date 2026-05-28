@@ -26,6 +26,9 @@ public class RealmDataList
 /// </summary>
 public class CultivationManager : MonoBehaviour
 {
+    private const string BasicQiSkillId = "skill_qi_training_basic";
+    private const int BasicQiTrainingBonus = 15;
+
     private GameManager gameManager;
     private LocationUIManager locationUIManager;
 
@@ -41,11 +44,29 @@ public class CultivationManager : MonoBehaviour
         if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null) return;
-        playerState.cultivation += Mathf.Max(0, amount);
+        playerState.EnsureLists();
+
+        int baseGain = Mathf.Max(0, amount);
+        int bonusGain = playerState.HasSkill(BasicQiSkillId) ? BasicQiTrainingBonus : 0;
+        int finalGain = baseGain + bonusGain;
+        playerState.cultivation += finalGain;
+
+        if (string.IsNullOrEmpty(playerState.equippedCultivationSkillId) && playerState.HasSkill(BasicQiSkillId))
+        {
+            playerState.equippedCultivationSkillId = BasicQiSkillId;
+        }
+
         if (locationUIManager != null)
         {
             locationUIManager.RefreshPlayerStatus(playerState);
-            locationUIManager.ShowMessage("你闭关修炼片刻，体内灵气流转，修为提升了 " + amount + " 点。");
+            if (bonusGain > 0)
+            {
+                locationUIManager.ShowMessage("你依照《练气入门》吐纳修炼，基础修为 +" + baseGain + "，功法加成 +" + bonusGain + "，总修为 +" + finalGain + "。");
+            }
+            else
+            {
+                locationUIManager.ShowMessage("你闭关修炼片刻，体内灵气流转，修为提升了 " + finalGain + " 点。");
+            }
         }
         CharacterStatusUIManager characterStatus = GetComponent<CharacterStatusUIManager>();
         if (characterStatus != null) characterStatus.RefreshIfOpen();
