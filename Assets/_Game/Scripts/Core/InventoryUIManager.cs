@@ -89,7 +89,7 @@ public class InventoryUIManager : MonoBehaviour
             {
                 InventoryItemRecord record = records[i];
                 if (record == null || string.IsNullOrEmpty(record.id) || record.count <= 0) continue;
-                CreateItemRow(record, hasAny ? 1 : 0);
+                CreateItemRow(record);
                 hasAny = true;
             }
         }
@@ -122,12 +122,12 @@ public class InventoryUIManager : MonoBehaviour
         }
     }
 
-    private void CreateItemRow(InventoryItemRecord record, int unused)
+    private void CreateItemRow(InventoryItemRecord record)
     {
         int rowIndex = CountCurrentRows();
-        ItemData item = ItemDatabase.GetItem(record.id);
+        InventoryItemData item = InventoryItemDatabase.GetItem(record.id);
         string itemName = item != null ? item.name : record.id;
-        string typeName = item != null ? ItemDatabase.GetTypeName(item.type) : "未知";
+        string typeName = item != null ? InventoryItemDatabase.GetTypeName(item.type) : "未知";
         string description = item != null ? item.description : "找不到物品数据。";
 
         GameObject rowObject = new GameObject("InventoryItemRow_" + record.id, typeof(RectTransform), typeof(Image));
@@ -171,7 +171,7 @@ public class InventoryUIManager : MonoBehaviour
         return count;
     }
 
-    private void CreateOperationButton(Transform row, string itemId, ItemData item)
+    private void CreateOperationButton(Transform row, string itemId, InventoryItemData item)
     {
         if (item == null) return;
         PlayerState state = gameManager != null ? gameManager.GetPlayerState() : null;
@@ -297,7 +297,7 @@ public class InventoryUIManager : MonoBehaviour
         scrollRect.movementType = ScrollRect.MovementType.Clamped;
         scrollRect.scrollSensitivity = 28f;
 
-        Button closeButton = CreateButton(panelObject.transform, "关闭", new Vector2(0f, 26f), new Vector2(130f, 42f));
+        Button closeButton = CreateButton(panelObject.transform, "关闭", new Vector2(-345f, -612f), new Vector2(130f, 42f));
         closeButton.onClick.AddListener(Hide);
     }
 
