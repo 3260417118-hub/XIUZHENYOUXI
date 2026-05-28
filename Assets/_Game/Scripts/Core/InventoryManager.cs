@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
 /// 背包、道具使用、单武器槽装备管理。
@@ -11,7 +10,6 @@ public class InventoryManager : MonoBehaviour
     private LocationUIManager locationUIManager;
     private RealmManager realmManager;
     private BodyRealmManager bodyRealmManager;
-    private Text statusWeaponOverlayText;
 
     private void Start()
     {
@@ -37,7 +35,6 @@ public class InventoryManager : MonoBehaviour
             int expectedAttack = CalculateExpectedAttackWithEquipment(state);
             if (state.attack != expectedAttack) RecalculateStats(false);
         }
-        UpdateCharacterStatusWeaponLine();
     }
 
     private void BindReferences()
@@ -298,54 +295,6 @@ public class InventoryManager : MonoBehaviour
         if (statusUI != null) statusUI.RefreshIfOpen();
         InventoryUIManager inventoryUI = GetComponent<InventoryUIManager>();
         if (inventoryUI != null) inventoryUI.RefreshIfOpen();
-        UpdateCharacterStatusWeaponLine();
-    }
-
-    private void UpdateCharacterStatusWeaponLine()
-    {
-        GameObject panel = GameObject.Find("CharacterStatusPanel");
-        if (panel == null || !panel.activeInHierarchy)
-        {
-            statusWeaponOverlayText = null;
-            return;
-        }
-
-        if (statusWeaponOverlayText == null)
-        {
-            Transform existing = panel.transform.Find("EquippedWeaponLine");
-            if (existing != null) statusWeaponOverlayText = existing.GetComponent<Text>();
-        }
-
-        if (statusWeaponOverlayText == null)
-        {
-            GameObject textObject = new GameObject("EquippedWeaponLine", typeof(RectTransform), typeof(Text));
-            textObject.transform.SetParent(panel.transform, false);
-            RectTransform rect = textObject.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.offsetMin = new Vector2(44f, -146f);
-            rect.offsetMax = new Vector2(-44f, -116f);
-            statusWeaponOverlayText = textObject.GetComponent<Text>();
-            statusWeaponOverlayText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            Font font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 16);
-            if (font != null) statusWeaponOverlayText.font = font;
-            statusWeaponOverlayText.fontSize = 18;
-            statusWeaponOverlayText.alignment = TextAnchor.UpperLeft;
-            statusWeaponOverlayText.color = new Color(1f, 0.92f, 0.65f, 1f);
-            statusWeaponOverlayText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            statusWeaponOverlayText.verticalOverflow = VerticalWrapMode.Overflow;
-            textObject.transform.SetAsLastSibling();
-        }
-
-        PlayerState state = GetState();
-        string weaponName = "无";
-        if (state != null && !string.IsNullOrEmpty(state.equippedWeaponId))
-        {
-            InventoryItemData item = InventoryItemDatabase.GetItem(state.equippedWeaponId);
-            if (item != null) weaponName = item.name;
-        }
-        statusWeaponOverlayText.text = "武器：" + weaponName;
     }
 
     private PlayerState GetState()
