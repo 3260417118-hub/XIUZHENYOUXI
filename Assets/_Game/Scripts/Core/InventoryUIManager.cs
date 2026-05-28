@@ -1,0 +1,372 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+/// <summary>
+/// 背包界面：运行时自动创建，避免重建 DemoScene。
+/// </summary>
+public class InventoryUIManager : MonoBehaviour
+{
+    private GameManager gameManager;
+    private InventoryManager inventoryManager;
+    private LocationUIManager locationUIManager;
+
+    private GameObject inventoryButtonObject;
+    private Button inventoryButton;
+    private GameObject panelObject;
+    private RectTransform contentRect;
+    private ScrollRect scrollRect;
+    private Text emptyText;
+    private Font cachedFont;
+
+    private const float PanelWidth = 820f;
+    private const float PanelHeight = 680f;
+    private const float RowHeight = 118f;
+    private const float RowGap = 10f;
+
+    private void Start()
+    {
+        BindReferences();
+        EnsureInventoryButton();
+        EnsurePanel();
+        Hide();
+    }
+
+    private void Update()
+    {
+        if (panelObject != null && panelObject.activeSelf && Input.GetKeyDown(KeyCode.Escape)) Hide();
+        if (inventoryButtonObject != null) inventoryButtonObject.SetActive(!IsUiBlocked());
+    }
+
+    private void BindReferences()
+    {
+        if (gameManager == null) gameManager = GetComponent<GameManager>();
+        if (inventoryManager == null) inventoryManager = GetComponent<InventoryManager>();
+        if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
+    }
+
+    public void Open()
+    {
+        if (BattleManager.IsBattleOpen)
+        {
+            ShowMessage("战斗中暂时不能打开背包。");
+            return;
+        }
+
+        BindReferences();
+        EnsurePanel();
+        if (panelObject == null) return;
+        panelObject.SetActive(true);
+        panelObject.transform.SetAsLastSibling();
+        Refresh();
+    }
+
+    public void Hide()
+    {
+        if (panelObject != null) panelObject.SetActive(false);
+    }
+
+    public void RefreshIfOpen()
+    {
+        if (panelObject != null && panelObject.activeSelf) Refresh();
+    }
+
+    public void Refresh()
+    {
+        BindReferences();
+        EnsurePanel();
+        PlayerState state = gameManager != null ? gameManager.GetPlayerState() : null;
+        if (state == null || contentRect == null) return;
+        state.EnsureLists();
+
+        ClearContentRows();
+
+        List<InventoryItemRecord> records = state.inventoryItems;
+        bool hasAny = false;
+        if (records != null)
+        {
+            for (int i = 0; i < records.Count; i++)
+            {
+                InventoryItemRecord record = records[i];
+                if (record == null || string.IsNullOrEmpty(record.id) || record.count <= 0) continue;
+                CreateItemRow(record, hasAny ? 1 : 0);
+                hasAny = true;
+            }
+        }
+
+        if (emptyText != null) emptyText.gameObject.SetActive(!hasAny);
+
+        float height = hasAny ? Mathf.Max(360f, CountValidItems(state) * (RowHeight + RowGap) + 16f) : 360f;
+        contentRect.sizeDelta = new Vector2(0f, height);
+        if (scrollRect != null) scrollRect.verticalNormalizedPosition = 1f;
+    }
+
+    private int CountValidItems(PlayerState state)
+    {
+        if (state == null || state.inventoryItems == null) return 0;
+        int count = 0;
+        foreach (InventoryItemRecord record in state.inventoryItems)
+        {
+            if (record != null && !string.IsNullOrEmpty(record.id) && record.count > 0) count++;
+        }
+        return count;
+    }
+
+    private void ClearContentRows()
+    {
+        if (contentRect == null) return;
+        for (int i = contentRect.childCount - 1; i >= 0; i--)
+        {
+            Transform child = contentRect.GetChild(i);
+            if (child != null && child.name.StartsWith("InventoryItemRow")) Destroy(child.gameObject);
+        }
+    }
+
+    private void CreateItemRow(InventoryItemRecord record, int unused)
+    {
+        int rowIndex = CountCurrentRows();
+        ItemData item = ItemDatabase.GetItem(record.id);
+        string itemName = item != null ? item.name : record.id;
+        string typeName = item != null ? ItemDatabase.GetTypeName(item.type) : "未知";
+        string description = item != null ? item.description : "找不到物品数据。";
+
+        GameObject rowObject = new GameObject("InventoryItemRow_" + record.id, typeof(RectTransform), typeof(Image));
+        rowObject.transform.SetParent(contentRect, false);
+        RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+        rowRect.anchorMin = new Vector2(0f, 1f);
+        rowRect.anchorMax = new Vector2(1f, 1f);
+        rowRect.pivot = new Vector2(0.5f, 1f);
+        rowRect.sizeDelta = new Vector2(0f, RowHeight);
+        rowRect.anchoredPosition = new Vector2(0f, -8f - rowIndex * (RowHeight + RowGap));
+        Image rowImage = rowObject.GetComponent<Image>();
+        rowImage.color = new Color(0.14f, 0.16f, 0.19f, 0.96f);
+
+        Text title = CreateText(rowObject.transform, itemName + "  x" + record.count + "  【" + typeName + "】", 18, TextAnchor.UpperLeft, Color.white);
+        RectTransform titleRect = title.rectTransform;
+        titleRect.anchorMin = new Vector2(0f, 1f);
+        titleRect.anchorMax = new Vector2(1f, 1f);
+        titleRect.pivot = new Vector2(0.5f, 1f);
+        titleRect.offsetMin = new Vector2(18f, -42f);
+        titleRect.offsetMax = new Vector2(-160f, -10f);
+
+        Text desc = CreateText(rowObject.transform, description, 15, TextAnchor.UpperLeft, new Color(0.86f, 0.88f, 0.90f, 1f));
+        RectTransform descRect = desc.rectTransform;
+        descRect.anchorMin = new Vector2(0f, 0f);
+        descRect.anchorMax = new Vector2(1f, 1f);
+        descRect.offsetMin = new Vector2(18f, 12f);
+        descRect.offsetMax = new Vector2(-170f, -46f);
+
+        CreateOperationButton(rowObject.transform, record.id, item);
+    }
+
+    private int CountCurrentRows()
+    {
+        if (contentRect == null) return 0;
+        int count = 0;
+        for (int i = 0; i < contentRect.childCount; i++)
+        {
+            Transform child = contentRect.GetChild(i);
+            if (child != null && child.name.StartsWith("InventoryItemRow")) count++;
+        }
+        return count;
+    }
+
+    private void CreateOperationButton(Transform row, string itemId, ItemData item)
+    {
+        if (item == null) return;
+        PlayerState state = gameManager != null ? gameManager.GetPlayerState() : null;
+        if (state == null) return;
+
+        if (item.type == "weapon")
+        {
+            bool equipped = state.equippedWeaponId == itemId;
+            Button button = CreateButton(row, equipped ? "卸下" : "装备", new Vector2(-64f, -58f), new Vector2(106f, 38f));
+            if (equipped)
+            {
+                button.onClick.AddListener(delegate
+                {
+                    if (inventoryManager != null) inventoryManager.UnequipWeapon();
+                    Refresh();
+                });
+            }
+            else
+            {
+                button.onClick.AddListener(delegate
+                {
+                    if (inventoryManager != null) inventoryManager.EquipWeapon(itemId);
+                    Refresh();
+                });
+            }
+            return;
+        }
+
+        if (item.usable && item.consumable)
+        {
+            Button button = CreateButton(row, "使用", new Vector2(-64f, -58f), new Vector2(106f, 38f));
+            button.onClick.AddListener(delegate
+            {
+                if (inventoryManager != null) inventoryManager.UseItem(itemId);
+                Refresh();
+            });
+        }
+    }
+
+    private void EnsureInventoryButton()
+    {
+        if (inventoryButtonObject != null) return;
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        inventoryButtonObject = new GameObject("InventoryButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        inventoryButtonObject.transform.SetParent(canvas.transform, false);
+        RectTransform rect = inventoryButtonObject.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(1f, 1f);
+        rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(1f, 1f);
+        rect.sizeDelta = new Vector2(90f, 38f);
+        rect.anchoredPosition = new Vector2(-260f, -18f);
+
+        Image image = inventoryButtonObject.GetComponent<Image>();
+        image.color = new Color(0.20f, 0.26f, 0.32f, 1f);
+        inventoryButton = inventoryButtonObject.GetComponent<Button>();
+        inventoryButton.targetGraphic = image;
+        inventoryButton.onClick.AddListener(Open);
+        Text label = CreateText(inventoryButtonObject.transform, "背包", 18, TextAnchor.MiddleCenter, Color.white);
+        StretchToParent(label.rectTransform);
+    }
+
+    private void EnsurePanel()
+    {
+        if (panelObject != null) return;
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        panelObject = new GameObject("InventoryPanel", typeof(RectTransform), typeof(Image));
+        panelObject.transform.SetParent(canvas.transform, false);
+        RectTransform panelRect = panelObject.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.sizeDelta = new Vector2(PanelWidth, PanelHeight);
+        panelRect.anchoredPosition = Vector2.zero;
+        Image panelImage = panelObject.GetComponent<Image>();
+        panelImage.color = new Color(0.08f, 0.09f, 0.11f, 0.98f);
+
+        Text titleText = CreateText(panelObject.transform, "背包", 30, TextAnchor.MiddleCenter, Color.white);
+        RectTransform titleRect = titleText.rectTransform;
+        titleRect.anchorMin = new Vector2(0f, 1f);
+        titleRect.anchorMax = new Vector2(1f, 1f);
+        titleRect.pivot = new Vector2(0.5f, 1f);
+        titleRect.sizeDelta = new Vector2(0f, 54f);
+        titleRect.anchoredPosition = new Vector2(0f, -16f);
+
+        GameObject viewportObject = new GameObject("InventoryViewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        viewportObject.transform.SetParent(panelObject.transform, false);
+        RectTransform viewportRect = viewportObject.GetComponent<RectTransform>();
+        viewportRect.anchorMin = Vector2.zero;
+        viewportRect.anchorMax = Vector2.one;
+        viewportRect.offsetMin = new Vector2(34f, 86f);
+        viewportRect.offsetMax = new Vector2(-34f, -82f);
+        Image viewportImage = viewportObject.GetComponent<Image>();
+        viewportImage.color = new Color(0f, 0f, 0f, 0.08f);
+        Mask mask = viewportObject.GetComponent<Mask>();
+        mask.showMaskGraphic = false;
+
+        GameObject contentObject = new GameObject("InventoryContent", typeof(RectTransform));
+        contentObject.transform.SetParent(viewportObject.transform, false);
+        contentRect = contentObject.GetComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0f, 1f);
+        contentRect.anchorMax = new Vector2(1f, 1f);
+        contentRect.pivot = new Vector2(0.5f, 1f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = new Vector2(0f, 360f);
+
+        emptyText = CreateText(contentObject.transform, "背包空空如也。", 22, TextAnchor.MiddleCenter, new Color(0.86f, 0.88f, 0.90f, 1f));
+        RectTransform emptyRect = emptyText.rectTransform;
+        emptyRect.anchorMin = new Vector2(0f, 1f);
+        emptyRect.anchorMax = new Vector2(1f, 1f);
+        emptyRect.pivot = new Vector2(0.5f, 1f);
+        emptyRect.sizeDelta = new Vector2(0f, 120f);
+        emptyRect.anchoredPosition = new Vector2(0f, -80f);
+
+        scrollRect = panelObject.AddComponent<ScrollRect>();
+        scrollRect.viewport = viewportRect;
+        scrollRect.content = contentRect;
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        scrollRect.scrollSensitivity = 28f;
+
+        Button closeButton = CreateButton(panelObject.transform, "关闭", new Vector2(0f, 26f), new Vector2(130f, 42f));
+        closeButton.onClick.AddListener(Hide);
+    }
+
+    private Button CreateButton(Transform parent, string text, Vector2 anchoredPosition, Vector2 size)
+    {
+        GameObject buttonObject = new GameObject(text + "Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        buttonObject.transform.SetParent(parent, false);
+        RectTransform rect = buttonObject.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(1f, 1f);
+        rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(1f, 1f);
+        rect.sizeDelta = size;
+        rect.anchoredPosition = anchoredPosition;
+        Image image = buttonObject.GetComponent<Image>();
+        image.color = new Color(0.18f, 0.24f, 0.30f, 1f);
+        Button button = buttonObject.GetComponent<Button>();
+        button.targetGraphic = image;
+        Text label = CreateText(buttonObject.transform, text, 17, TextAnchor.MiddleCenter, Color.white);
+        StretchToParent(label.rectTransform);
+        return button;
+    }
+
+    private Text CreateText(Transform parent, string text, int fontSize, TextAnchor alignment, Color color)
+    {
+        GameObject textObject = new GameObject("Text", typeof(RectTransform), typeof(Text));
+        textObject.transform.SetParent(parent, false);
+        Text label = textObject.GetComponent<Text>();
+        label.text = text;
+        label.font = GetDefaultFont();
+        label.fontSize = fontSize;
+        label.alignment = alignment;
+        label.color = color;
+        label.horizontalOverflow = HorizontalWrapMode.Wrap;
+        label.verticalOverflow = VerticalWrapMode.Overflow;
+        return label;
+    }
+
+    private Font GetDefaultFont()
+    {
+        if (cachedFont != null) return cachedFont;
+        cachedFont = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei", "SimHei", "Arial" }, 16);
+        if (cachedFont != null) return cachedFont;
+        cachedFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        return cachedFont;
+    }
+
+    private void StretchToParent(RectTransform rect)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+    }
+
+    private bool IsUiBlocked()
+    {
+        if (RestManager.IsRestingTransition) return true;
+        if (BattleManager.IsBattleOpen) return true;
+        if (OpeningStoryManager.IsOpeningActive) return true;
+        if (ChapterTitleManager.IsChapterTitleActive) return true;
+        if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return true;
+        if (ChapterOneLateStoryFixManager.IsEndingPlaying) return true;
+        return false;
+    }
+
+    private void ShowMessage(string message)
+    {
+        if (locationUIManager == null) locationUIManager = GetComponent<LocationUIManager>();
+        if (locationUIManager != null) locationUIManager.ShowMessage(message);
+        else Debug.Log(message);
+    }
+}
