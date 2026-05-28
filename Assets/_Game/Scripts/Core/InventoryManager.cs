@@ -25,10 +25,12 @@ public class InventoryManager : MonoBehaviour
             }
             RecalculateStats(false);
         }
+        RemoveLegacyStatusWeaponOverlay();
     }
 
     private void LateUpdate()
     {
+        RemoveLegacyStatusWeaponOverlay();
         PlayerState state = GetState();
         if (state != null && !string.IsNullOrEmpty(state.equippedWeaponId))
         {
@@ -295,6 +297,15 @@ public class InventoryManager : MonoBehaviour
         if (statusUI != null) statusUI.RefreshIfOpen();
         InventoryUIManager inventoryUI = GetComponent<InventoryUIManager>();
         if (inventoryUI != null) inventoryUI.RefreshIfOpen();
+        RemoveLegacyStatusWeaponOverlay();
+    }
+
+    private void RemoveLegacyStatusWeaponOverlay()
+    {
+        GameObject panel = GameObject.Find("CharacterStatusPanel");
+        if (panel == null) return;
+        Transform legacy = panel.transform.Find("EquippedWeaponLine");
+        if (legacy != null) Destroy(legacy.gameObject);
     }
 
     private PlayerState GetState()
