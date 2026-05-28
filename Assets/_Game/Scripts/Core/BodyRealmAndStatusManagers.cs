@@ -246,6 +246,7 @@ public class BodyCultivationManager : MonoBehaviour
 
 /// <summary>
 /// 人物状态界面：运行时自动创建，避免手动重建 DemoScene。
+/// 这版把文字放进滚动区域，按钮固定在底部，避免内容和按钮互相遮挡。
 /// </summary>
 public class CharacterStatusUIManager : MonoBehaviour
 {
@@ -258,9 +259,18 @@ public class CharacterStatusUIManager : MonoBehaviour
     private GameObject statusButtonObject;
     private Button statusButton;
     private GameObject panelObject;
+    private ScrollRect scrollRect;
+    private RectTransform viewportRect;
+    private RectTransform contentRect;
     private Text contentText;
     private Button closeButton;
     private Font cachedFont;
+
+    private const float PanelWidth = 760f;
+    private const float PanelHeight = 720f;
+    private const float TopPadding = 78f;
+    private const float BottomButtonArea = 116f;
+    private const float SidePadding = 42f;
 
     private void Start()
     {
@@ -358,6 +368,18 @@ public class CharacterStatusUIManager : MonoBehaviour
         }
 
         contentText.text = builder.ToString();
+        UpdateScrollContentSize();
+    }
+
+    private void UpdateScrollContentSize()
+    {
+        if (contentText == null || contentRect == null || viewportRect == null) return;
+        Canvas.ForceUpdateCanvases();
+        float viewportHeight = Mathf.Max(120f, viewportRect.rect.height);
+        float preferredHeight = Mathf.Max(viewportHeight, contentText.preferredHeight + 28f);
+        contentRect.sizeDelta = new Vector2(0f, preferredHeight);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+        if (scrollRect != null) scrollRect.verticalNormalizedPosition = 1f;
     }
 
     private string GetSkillNameOrNone(string skillId)
@@ -402,35 +424,67 @@ public class CharacterStatusUIManager : MonoBehaviour
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(640f, 680f);
+        panelRect.sizeDelta = new Vector2(PanelWidth, PanelHeight);
         panelRect.anchoredPosition = Vector2.zero;
         Image panelImage = panelObject.GetComponent<Image>();
         panelImage.color = new Color(0.08f, 0.09f, 0.11f, 0.98f);
 
-        Text titleText = CreateText(panelObject.transform, "人物状态", 28, TextAnchor.MiddleCenter, Color.white);
+        Text titleText = CreateText(panelObject.transform, "人物状态", 30, TextAnchor.MiddleCenter, Color.white);
         RectTransform titleRect = titleText.rectTransform;
         titleRect.anchorMin = new Vector2(0f, 1f);
         titleRect.anchorMax = new Vector2(1f, 1f);
         titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.sizeDelta = new Vector2(0f, 48f);
+        titleRect.sizeDelta = new Vector2(0f, 54f);
         titleRect.anchoredPosition = new Vector2(0f, -16f);
 
-        GameObject contentObject = new GameObject("Content", typeof(RectTransform), typeof(Text));
-        contentObject.transform.SetParent(panelObject.transform, false);
+        GameObject viewportObject = new GameObject("StatusScrollViewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        viewportObject.transform.SetParent(panelObject.transform, false);
+        viewportRect = viewportObject.GetComponent<RectTransform>();
+        viewportRect.anchorMin = Vector2.zero;
+        viewportRect.anchorMax = Vector2.one;
+        viewportRect.offsetMin = new Vector2(SidePadding, BottomButtonArea);
+        viewportRect.offsetMax = new Vector2(-SidePadding, -TopPadding);
+        Image viewportImage = viewportObject.GetComponent<Image>();
+        viewportImage.color = new Color(0f, 0f, 0f, 0.08f);
+        Mask mask = viewportObject.GetComponent<Mask>();
+        mask.showMaskGraphic = false;
+
+        GameObject contentObject = new GameObject("StatusScrollContent", typeof(RectTransform), typeof(Text));
+        contentObject.transform.SetParent(viewportObject.transform, false);
+        contentRect = contentObject.GetComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0f, 1f);
+        contentRect.anchorMax = new Vector2(1f, 1f);
+        contentRect.pivot = new Vector2(0.5f, 1f);
+        contentRect.anchoredPosition = Vector2.zero;
+        contentRect.sizeDelta = new Vector2(0f, 500f);
+
         contentText = contentObject.GetComponent<Text>();
         contentText.font = GetDefaultFont();
-        contentText.fontSize = 19;
+        contentText.fontSize = 18;
+        contentText.lineSpacing = 1.05f;
         contentText.alignment = TextAnchor.UpperLeft;
         contentText.color = Color.white;
         contentText.horizontalOverflow = HorizontalWrapMode.Wrap;
         contentText.verticalOverflow = VerticalWrapMode.Overflow;
-        RectTransform contentRect = contentText.rectTransform;
-        contentRect.anchorMin = new Vector2(0f, 0f);
-        contentRect.anchorMax = new Vector2(1f, 1f);
-        contentRect.offsetMin = new Vector2(36f, 116f);
-        contentRect.offsetMax = new Vector2(-36f, -78f);
 
-        Button qiButton = CreateButton(panelObject.transform, "突破修炼境界", new Vector2(-112f, 48f), new Vector2(180f, 38f));
+        scrollRect = panelObject.AddComponent<ScrollRect>();
+        scrollRect.viewport = viewportRect;
+        scrollRect.content = contentRect;
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        scrollRect.scrollSensitivity = 28f;
+
+        GameObject buttonBar = new GameObject("StatusButtonBar", typeof(RectTransform));
+        buttonBar.transform.SetParent(panelObject.transform, false);
+        RectTransform buttonBarRect = buttonBar.GetComponent<RectTransform>();
+        buttonBarRect.anchorMin = new Vector2(0f, 0f);
+        buttonBarRect.anchorMax = new Vector2(1f, 0f);
+        buttonBarRect.pivot = new Vector2(0.5f, 0f);
+        buttonBarRect.sizeDelta = new Vector2(0f, 96f);
+        buttonBarRect.anchoredPosition = new Vector2(0f, 12f);
+
+        Button qiButton = CreateButton(buttonBar.transform, "突破修炼境界", new Vector2(-220f, 40f), new Vector2(190f, 42f));
         qiButton.onClick.AddListener(delegate
         {
             RealmManager manager = GetComponent<RealmManager>();
@@ -438,7 +492,7 @@ public class CharacterStatusUIManager : MonoBehaviour
             Refresh();
         });
 
-        Button bodyButton = CreateButton(panelObject.transform, "突破锻体境界", new Vector2(112f, 48f), new Vector2(180f, 38f));
+        Button bodyButton = CreateButton(buttonBar.transform, "突破锻体境界", new Vector2(0f, 40f), new Vector2(190f, 42f));
         bodyButton.onClick.AddListener(delegate
         {
             BodyRealmManager manager = GetComponent<BodyRealmManager>();
@@ -446,7 +500,7 @@ public class CharacterStatusUIManager : MonoBehaviour
             Refresh();
         });
 
-        closeButton = CreateButton(panelObject.transform, "关闭", new Vector2(0f, 24f), new Vector2(120f, 38f));
+        closeButton = CreateButton(buttonBar.transform, "关闭", new Vector2(220f, 40f), new Vector2(120f, 42f));
         closeButton.onClick.AddListener(Hide);
     }
 
@@ -479,6 +533,8 @@ public class CharacterStatusUIManager : MonoBehaviour
         label.fontSize = fontSize;
         label.alignment = alignment;
         label.color = color;
+        label.horizontalOverflow = HorizontalWrapMode.Wrap;
+        label.verticalOverflow = VerticalWrapMode.Overflow;
         return label;
     }
 
