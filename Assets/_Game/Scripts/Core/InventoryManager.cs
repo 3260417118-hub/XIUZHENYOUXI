@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 背包、道具使用、单武器槽装备管理。
@@ -26,11 +27,13 @@ public class InventoryManager : MonoBehaviour
             RecalculateStats(false);
         }
         RemoveLegacyStatusWeaponOverlay();
+        NormalizeStatusWeaponLineOrder();
     }
 
     private void LateUpdate()
     {
         RemoveLegacyStatusWeaponOverlay();
+        NormalizeStatusWeaponLineOrder();
         PlayerState state = GetState();
         if (state != null && !string.IsNullOrEmpty(state.equippedWeaponId))
         {
@@ -298,6 +301,7 @@ public class InventoryManager : MonoBehaviour
         InventoryUIManager inventoryUI = GetComponent<InventoryUIManager>();
         if (inventoryUI != null) inventoryUI.RefreshIfOpen();
         RemoveLegacyStatusWeaponOverlay();
+        NormalizeStatusWeaponLineOrder();
     }
 
     private void RemoveLegacyStatusWeaponOverlay()
@@ -306,6 +310,31 @@ public class InventoryManager : MonoBehaviour
         if (panel == null) return;
         Transform legacy = panel.transform.Find("EquippedWeaponLine");
         if (legacy != null) Destroy(legacy.gameObject);
+    }
+
+    private void NormalizeStatusWeaponLineOrder()
+    {
+        GameObject content = GameObject.Find("StatusScrollContent");
+        if (content == null) return;
+        Text text = content.GetComponent<Text>();
+        if (text == null || string.IsNullOrEmpty(text.text)) return;
+
+        string[] lines = text.text.Split('\n');
+        int weaponIndex = -1;
+        int stoneIndex = -1;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].StartsWith("武器：")) weaponIndex = i;
+            if (lines[i].StartsWith("灵石：")) stoneIndex = i;
+        }
+        if (weaponIndex < 0 || stoneIndex < 0 || weaponIndex == stoneIndex + 1) return;
+
+        string weaponLine = lines[weaponIndex];
+        System.Collections.Generic.List<string> list = new System.Collections.Generic.List<string>(lines);
+        list.RemoveAt(weaponIndex);
+        if (weaponIndex < stoneIndex) stoneIndex--;
+        list.Insert(stoneIndex + 1, weaponLine);
+        text.text = string.Join("\n", list.ToArray());
     }
 
     private PlayerState GetState()
