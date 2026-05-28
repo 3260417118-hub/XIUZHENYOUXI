@@ -16,7 +16,7 @@ public class InventoryManager : MonoBehaviour
     private void Start()
     {
         BindReferences();
-        ItemDatabase.EnsureLoaded();
+        InventoryItemDatabase.EnsureLoaded();
         PlayerState state = GetState();
         if (state != null)
         {
@@ -31,8 +31,6 @@ public class InventoryManager : MonoBehaviour
 
     private void LateUpdate()
     {
-        // 其他系统突破、读档或刷新时会调用 PlayerStatCalculator。
-        // 这里用轻量同步保证装备加成不会被后续重算覆盖，也不会重复叠加。
         PlayerState state = GetState();
         if (state != null && !string.IsNullOrEmpty(state.equippedWeaponId))
         {
@@ -114,7 +112,7 @@ public class InventoryManager : MonoBehaviour
             return false;
         }
 
-        ItemData item = ItemDatabase.GetItem(itemId);
+        InventoryItemData item = InventoryItemDatabase.GetItem(itemId);
         if (item == null)
         {
             ShowMessage("找不到物品数据：" + itemId);
@@ -177,7 +175,7 @@ public class InventoryManager : MonoBehaviour
             return false;
         }
 
-        ItemData item = ItemDatabase.GetItem(itemId);
+        InventoryItemData item = InventoryItemDatabase.GetItem(itemId);
         if (item == null)
         {
             ShowMessage("找不到物品数据：" + itemId);
@@ -213,11 +211,11 @@ public class InventoryManager : MonoBehaviour
         ShowMessage("已卸下武器。");
     }
 
-    public ItemData GetEquippedWeapon()
+    public InventoryItemData GetEquippedWeapon()
     {
         PlayerState state = GetState();
         if (state == null || string.IsNullOrEmpty(state.equippedWeaponId)) return null;
-        return ItemDatabase.GetItem(state.equippedWeaponId);
+        return InventoryItemDatabase.GetItem(state.equippedWeaponId);
     }
 
     public int GetWeaponAttackBonus()
@@ -230,7 +228,7 @@ public class InventoryManager : MonoBehaviour
     {
         if (state == null || string.IsNullOrEmpty(state.equippedWeaponId)) return 0;
         if (!state.HasItem(state.equippedWeaponId)) return 0;
-        ItemData item = ItemDatabase.GetItem(state.equippedWeaponId);
+        InventoryItemData item = InventoryItemDatabase.GetItem(state.equippedWeaponId);
         if (item == null || item.type != "weapon") return 0;
         return item.attackBonus;
     }
@@ -239,7 +237,7 @@ public class InventoryManager : MonoBehaviour
     {
         if (state == null || string.IsNullOrEmpty(state.equippedWeaponId)) return 0;
         if (!state.HasItem(state.equippedWeaponId)) return 0;
-        ItemData item = ItemDatabase.GetItem(state.equippedWeaponId);
+        InventoryItemData item = InventoryItemDatabase.GetItem(state.equippedWeaponId);
         if (item == null || item.type != "weapon") return 0;
         return item.defenseBonus;
     }
@@ -248,7 +246,7 @@ public class InventoryManager : MonoBehaviour
     {
         if (state == null || string.IsNullOrEmpty(state.equippedWeaponId)) return 0;
         if (!state.HasItem(state.equippedWeaponId)) return 0;
-        ItemData item = ItemDatabase.GetItem(state.equippedWeaponId);
+        InventoryItemData item = InventoryItemDatabase.GetItem(state.equippedWeaponId);
         if (item == null || item.type != "weapon") return 0;
         return item.maxHpBonus;
     }
@@ -344,7 +342,7 @@ public class InventoryManager : MonoBehaviour
         string weaponName = "无";
         if (state != null && !string.IsNullOrEmpty(state.equippedWeaponId))
         {
-            ItemData item = ItemDatabase.GetItem(state.equippedWeaponId);
+            InventoryItemData item = InventoryItemDatabase.GetItem(state.equippedWeaponId);
             if (item != null) weaponName = item.name;
         }
         statusWeaponOverlayText.text = "武器：" + weaponName;
