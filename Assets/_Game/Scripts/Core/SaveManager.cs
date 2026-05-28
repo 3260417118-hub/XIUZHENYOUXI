@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 第一版本地存档管理器。
-/// 只保存 PlayerState，不保存背包、任务等复杂数据。
+/// 保存 PlayerState；背包数量和装备武器也随 PlayerState 一起保存。
 /// 存档文件放在 Application.persistentDataPath 下。
 /// </summary>
 public class SaveManager : MonoBehaviour
@@ -206,6 +206,7 @@ public class SaveManager : MonoBehaviour
         target.equippedCultivationSkillId = source.equippedCultivationSkillId == null ? "" : source.equippedCultivationSkillId;
         target.equippedBodyMethodId = source.equippedBodyMethodId == null ? "" : source.equippedBodyMethodId;
         target.equippedSpellSkillId = source.equippedSpellSkillId == null ? "" : source.equippedSpellSkillId;
+        target.equippedWeaponId = source.equippedWeaponId == null ? "" : source.equippedWeaponId;
 
         target.spiritStones = source.spiritStones;
         target.hasSeenOpening = source.hasSeenOpening;
@@ -224,6 +225,17 @@ public class SaveManager : MonoBehaviour
         target.visitedCellIds = new List<string>(source.visitedCellIds);
         target.dayEventsTriggered = new List<string>(source.dayEventsTriggered);
         target.items = new List<string>(source.items);
+        target.inventoryItems = new List<InventoryItemRecord>();
+        if (source.inventoryItems != null)
+        {
+            foreach (InventoryItemRecord record in source.inventoryItems)
+            {
+                if (record != null && !string.IsNullOrEmpty(record.id) && record.count > 0)
+                {
+                    target.inventoryItems.Add(new InventoryItemRecord { id = record.id, count = record.count });
+                }
+            }
+        }
         target.learnedSkills = new List<string>(source.learnedSkills);
         target.unlockedCellIds = new List<string>(source.unlockedCellIds);
         target.dailyActionRecords = new List<string>(source.dailyActionRecords);
@@ -242,6 +254,8 @@ public class SaveManager : MonoBehaviour
         if (realmManager != null) realmManager.NormalizePlayerRealm();
         BodyRealmManager bodyRealmManager = GetComponent<BodyRealmManager>();
         if (bodyRealmManager != null) bodyRealmManager.NormalizeBodyRealm();
+        InventoryManager inventoryManager = GetComponent<InventoryManager>();
+        if (inventoryManager != null) inventoryManager.RecalculateStats(false);
     }
 
     private void RefreshAfterStateChanged(string message)
@@ -273,6 +287,8 @@ public class SaveManager : MonoBehaviour
         if (locationActionManager != null) locationActionManager.RefreshCurrentLocation();
         CharacterStatusUIManager statusUI = GetComponent<CharacterStatusUIManager>();
         if (statusUI != null) statusUI.RefreshIfOpen();
+        InventoryUIManager inventoryUI = GetComponent<InventoryUIManager>();
+        if (inventoryUI != null) inventoryUI.RefreshIfOpen();
     }
 
     private void ShowMessage(string message)
