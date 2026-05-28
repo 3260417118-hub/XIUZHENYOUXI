@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public class ItemData
+public class InventoryItemData
 {
     public string id;
     public string name;
@@ -19,18 +19,19 @@ public class ItemData
 }
 
 [Serializable]
-public class ItemDataList
+public class InventoryItemDataList
 {
-    public List<ItemData> items = new List<ItemData>();
+    public List<InventoryItemData> items = new List<InventoryItemData>();
 }
 
 /// <summary>
-/// 运行时物品数据库，读取 Resources/Data/items.json。
+/// 新背包系统专用物品数据库。
+/// 避免和旧 LightweightDataManagers.cs 里的 ItemData / ItemDataList 重名。
 /// </summary>
-public static class ItemDatabase
+public static class InventoryItemDatabase
 {
     private const string ItemDataResourcePath = "Data/items";
-    private static readonly Dictionary<string, ItemData> itemById = new Dictionary<string, ItemData>();
+    private static readonly Dictionary<string, InventoryItemData> itemById = new Dictionary<string, InventoryItemData>();
     private static bool loaded;
 
     public static void Reload()
@@ -53,14 +54,14 @@ public static class ItemDatabase
             return;
         }
 
-        ItemDataList dataList = JsonUtility.FromJson<ItemDataList>(jsonAsset.text);
+        InventoryItemDataList dataList = JsonUtility.FromJson<InventoryItemDataList>(jsonAsset.text);
         if (dataList == null || dataList.items == null)
         {
             Debug.LogError("物品数据格式不正确：" + ItemDataResourcePath);
             return;
         }
 
-        foreach (ItemData item in dataList.items)
+        foreach (InventoryItemData item in dataList.items)
         {
             if (item == null || string.IsNullOrEmpty(item.id)) continue;
             if (string.IsNullOrEmpty(item.name)) item.name = item.id;
@@ -70,17 +71,17 @@ public static class ItemDatabase
         }
     }
 
-    public static ItemData GetItem(string itemId)
+    public static InventoryItemData GetItem(string itemId)
     {
         if (string.IsNullOrEmpty(itemId)) return null;
         EnsureLoaded();
-        ItemData item;
+        InventoryItemData item;
         return itemById.TryGetValue(itemId, out item) ? item : null;
     }
 
     public static string GetItemName(string itemId)
     {
-        ItemData item = GetItem(itemId);
+        InventoryItemData item = GetItem(itemId);
         return item != null ? item.name : itemId;
     }
 
