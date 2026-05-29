@@ -21,6 +21,14 @@
       }
     },
     {
+      "id": "dig_muddy_soil",
+      "name": "挖掘泥土",
+      "description": "用铲子挖开泥泞土壤，看看下面埋着什么。",
+      "costActionPoint": 1,
+      "cultivationGain": 0,
+      "message": "你用铲子挖开泥泞土壤。"
+    },
+    {
       "id": "gather_herbs",
       "name": "采集灵草",
       "description": "在药田中寻找可用的灵草。",
