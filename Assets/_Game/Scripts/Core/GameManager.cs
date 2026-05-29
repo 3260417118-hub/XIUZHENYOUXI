@@ -42,6 +42,8 @@ public class GameManager : MonoBehaviour
         EnsureComponent<BlockingEncounterManager>();
         EnsureComponent<DayEventManager>();
         EnsureComponent<BattleManager>();
+        EnsureComponent<AdvancedBattleSystemManager>();
+        EnsureComponent<BattleSaveGuardManager>();
         EnsureComponent<InventoryLiteManager>();
         EnsureComponent<InventoryManager>();
         EnsureComponent<InventoryUIManager>();
