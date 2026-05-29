@@ -1383,6 +1383,8 @@ GameObject:
   - component: {fileID: 1530455416}
   - component: {fileID: 1530455421}
   - component: {fileID: 1530455420}
+  - component: {fileID: 1530455423}
+  - component: {fileID: 1530455422}
   m_Layer: 0
   m_HasEditorInfo: 1
   m_Name: GameRoot
@@ -1422,6 +1424,8 @@ MonoBehaviour:
   mapGridManager: {fileID: 1530455418}
   locationUIManager: {fileID: 1530455417}
   locationActionManager: {fileID: 1530455420}
+  eventManager: {fileID: 1530455422}
+  dialogueManager: {fileID: 1530455423}
 --- !u!114 &1530455417
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1462,8 +1466,8 @@ MonoBehaviour:
   visibleRange: 2
   cellSize: {x: 86, y: 58}
   cellStep: {x: 100, y: 80}
-  mapPadding: {x: 20, y: 20}
   connectionLineThickness: 4
+  edgePadding: {x: 20, y: 20}
 --- !u!114 &1530455419
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1477,15 +1481,48 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerState:
+    playerName: "\u6797\u660A"
     currentCellId: village_gate
     currentX: 0
     currentY: 0
+    currentMapId: main
+    returnMainCellId: 
     day: 1
     actionPoints: 3
     maxActionPoints: 3
     cultivation: 0
     realm: "\u51E1\u4EBA"
+    realmLevel: 0
+    maxCultivation: 150
+    bodyCultivation: 0
+    bodyRealm: "\u51E1\u4F53"
+    bodyRealmLevel: 0
+    maxBodyCultivation: 150
+    equippedCultivationSkillId: 
+    equippedBodyMethodId: 
+    equippedSpellSkillId: 
     spiritStones: 0
+    hasSeenOpening: 0
+    activeBlockingEncounterId: 
+    baseMaxHp: 50
+    baseAttack: 10
+    baseDefense: 0
+    hp: 50
+    maxHp: 50
+    attack: 10
+    defense: 0
+    flags: []
+    visitedCellIds: []
+    dayEventsTriggered: []
+    items: []
+    learnedSkills: []
+    unlockedCellIds: []
+    dailyActionRecords: []
+    counters:
+    - id: labor_level
+      value: 1
+    pendingNightEvents: []
+    currentRestLocationId: ruined_hut
 --- !u!114 &1530455420
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1502,6 +1539,7 @@ MonoBehaviour:
   mapGridManager: {fileID: 1530455418}
   actionPointManager: {fileID: 1530455421}
   locationUIManager: {fileID: 1530455417}
+  dialogueManager: {fileID: 1530455423}
   actionButtonContainer: {fileID: 829383200}
   npcButtonContainer: {fileID: 1030269542}
   actionDataResourcePath: Data/location_actions
@@ -1521,6 +1559,42 @@ MonoBehaviour:
   locationUIManager: {fileID: 1530455417}
   locationActionManager: {fileID: 1530455420}
   endDayButton: {fileID: 1469909860}
+--- !u!114 &1530455422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530455414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1415f50b491de1146933d0020f12a4de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameManager: {fileID: 0}
+  locationUIManager: {fileID: 0}
+  locationActionManager: {fileID: 0}
+  dialogueManager: {fileID: 0}
+  optionButtonContainer: {fileID: 0}
+  eventDataResourcePath: Data/events
+--- !u!114 &1530455423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530455414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85591503ffb86d34da2d02c4a7fa8e64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  locationUIManager: {fileID: 1530455417}
+  locationActionManager: {fileID: 1530455420}
+  optionButtonContainer: {fileID: 829383200}
+  npcButtonContainer: {fileID: 1030269542}
+  npcDataResourcePath: Data/npcs
+  dialogueDataResourcePath: Data/dialogues
 --- !u!1 &1530912911
 GameObject:
   m_ObjectHideFlags: 0
@@ -1698,7 +1772,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u7ED3\u675F\u4ECA\u65E5"
+  m_Text: "\u4F11\u606F\u8FC7\u591C"
 --- !u!222 &1552101126
 CanvasRenderer:
   m_ObjectHideFlags: 0
