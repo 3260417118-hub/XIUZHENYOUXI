@@ -7,10 +7,15 @@
       "enemyHp": 60,
       "enemyAttack": 12,
       "enemyDefense": 3,
+      "enemySkillName": "腥风利爪",
+      "enemySkillChance": 0.25,
+      "enemySkillDamage": 8,
       "winMessage": "你拼尽全力击退妖怪，将妹妹护在身后。山洞中腥风渐散，只剩妹妹低低的啜泣声。",
       "loseMessage": "妖怪利爪扫来，你重重撞在石壁上，眼前一黑。",
       "winFlags": ["rescued_sister"],
-      "loseFlags": ["failed_rescue_sister"]
+      "loseFlags": ["failed_rescue_sister"],
+      "winRewards": { "spiritStones": 0, "items": ["sister_ribbon"], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "你勉强保住性命，拖着伤体退了出去。"
     },
     {
       "id": "battle_cave_skeleton",
@@ -19,10 +24,15 @@
       "enemyHp": 45,
       "enemyAttack": 9,
       "enemyDefense": 4,
+      "enemySkillName": "骸骨撞击",
+      "enemySkillChance": 0.2,
+      "enemySkillDamage": 6,
       "winMessage": "骸骨轰然散落，洞府重新归于寂静。",
       "loseMessage": "你被骸骨击退，狼狈逃出洞府。",
       "winFlags": ["obtained_qiankun_fragment"],
-      "loseFlags": ["lost_to_cave_skeleton"]
+      "loseFlags": ["lost_to_cave_skeleton"],
+      "winRewards": { "spiritStones": 0, "items": ["qiankun_body_scroll_fragment"], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "洞府深处的寒意让你心有余悸。"
     },
     {
       "id": "battle_day4_thug",
@@ -31,10 +41,15 @@
       "enemyHp": 40,
       "enemyAttack": 8,
       "enemyDefense": 2,
+      "enemySkillName": "挥棍乱打",
+      "enemySkillChance": 0.15,
+      "enemySkillDamage": 5,
       "winMessage": "你一拳将小混混打翻在地。他捂着脸狼狈逃走，嘴里却喊着：“你等着，赵爷不会放过你的！”",
       "loseMessage": "你被小混混打倒在地。小混混冷笑几声，转身跑向村中。",
       "winFlags": ["defeated_day4_thug", "thug_reported_sister"],
-      "loseFlags": ["lost_to_day4_thug", "thug_reported_sister"]
+      "loseFlags": ["lost_to_day4_thug", "thug_reported_sister"],
+      "winRewards": { "spiritStones": 5, "items": ["healing_pill"], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "你咬牙爬起，心中记下这笔账。"
     },
     {
       "id": "battle_day7_bully_helpers",
@@ -43,10 +58,15 @@
       "enemyHp": 70,
       "enemyAttack": 13,
       "enemyDefense": 4,
+      "enemySkillName": "合力围攻",
+      "enemySkillChance": 0.25,
+      "enemySkillDamage": 10,
       "winMessage": "你拼尽全力击退两名帮手。他们狼狈离去，却丢下一句狠话：“赵爷第二十一日亲自来，到时候你跪下也没用！”",
       "loseMessage": "你被打倒在地，喉头一甜。帮手们冷笑离去，扬言第二十一日赵霸天会亲自上门。",
       "winFlags": ["defeated_bully_helpers_day7", "zhao_batian_day21_threat"],
-      "loseFlags": ["lost_to_bully_helpers_day7", "zhao_batian_day21_threat"]
+      "loseFlags": ["lost_to_bully_helpers_day7", "zhao_batian_day21_threat"],
+      "winRewards": { "spiritStones": 10, "items": [], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "你只剩一口气，但至少知道赵霸天会亲自来。"
     },
     {
       "id": "battle_day13_help_righteous",
@@ -55,10 +75,15 @@
       "enemyHp": 80,
       "enemyAttack": 14,
       "enemyDefense": 5,
+      "enemySkillName": "阴狠偷袭",
+      "enemySkillChance": 0.2,
+      "enemySkillDamage": 8,
       "winMessage": "你出手后，局势短暂平息。有人看向你的目光中多了几分拉拢之意。",
       "loseMessage": "你被混乱中的打手击退，村口争斗仍在继续。",
       "winFlags": ["day13_faction_attention"],
-      "loseFlags": ["lost_day13_faction_fight"]
+      "loseFlags": ["lost_day13_faction_fight"],
+      "winRewards": { "spiritStones": 8, "items": [], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "你从人群边缘退开，意识到青石村暗流汹涌。"
     },
     {
       "id": "battle_day13_help_evil",
@@ -67,10 +92,15 @@
       "enemyHp": 80,
       "enemyAttack": 14,
       "enemyDefense": 5,
+      "enemySkillName": "正面重击",
+      "enemySkillChance": 0.2,
+      "enemySkillDamage": 8,
       "winMessage": "你出手后，局势短暂平息。有人看向你的目光中多了几分拉拢之意。",
       "loseMessage": "你被混乱中的武人击退，村口争斗仍在继续。",
       "winFlags": ["day13_faction_attention"],
-      "loseFlags": ["lost_day13_faction_fight"]
+      "loseFlags": ["lost_day13_faction_fight"],
+      "winRewards": { "spiritStones": 8, "items": [], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "你从人群边缘退开，意识到青石村暗流汹涌。"
     },
     {
       "id": "battle_day21_zhao_batian",
@@ -79,10 +109,15 @@
       "enemyHp": 160,
       "enemyAttack": 22,
       "enemyDefense": 8,
+      "enemySkillName": "霸拳横压",
+      "enemySkillChance": 0.3,
+      "enemySkillDamage": 14,
       "winMessage": "赵霸天轰然倒地，眼中满是不甘。妹妹扑到你身旁，紧紧抓住你的衣袖。你知道，自己终于护住了她。",
       "loseMessage": "你倒在血泊中，赵霸天的笑声越来越远。妹妹的哭喊声像刀一样扎进耳中。",
       "winFlags": ["defeated_zhao_batian", "protected_sister_chapter_one", "chapter_one_good_end"],
-      "loseFlags": ["lost_to_zhao_batian", "failed_to_protect_sister_chapter_one", "chapter_one_bad_end"]
+      "loseFlags": ["lost_to_zhao_batian", "failed_to_protect_sister_chapter_one", "chapter_one_bad_end"],
+      "winRewards": { "spiritStones": 30, "items": [], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "第一章内容暂到此处。"
     },
     {
       "id": "battle_day21_zhao_batian_weakened",
@@ -91,10 +126,15 @@
       "enemyHp": 120,
       "enemyAttack": 19,
       "enemyDefense": 6,
+      "enemySkillName": "霸拳横压",
+      "enemySkillChance": 0.25,
+      "enemySkillDamage": 12,
       "winMessage": "星辰剑光划破夜色，赵霸天终于支撑不住，跪倒在地。",
       "loseMessage": "即便有星辰剑在手，你仍旧被赵霸天压制。你意识到，力量还远远不够。",
       "winFlags": ["defeated_zhao_batian", "protected_sister_chapter_one", "chapter_one_good_end"],
-      "loseFlags": ["lost_to_zhao_batian", "failed_to_protect_sister_chapter_one", "chapter_one_bad_end"]
+      "loseFlags": ["lost_to_zhao_batian", "failed_to_protect_sister_chapter_one", "chapter_one_bad_end"],
+      "winRewards": { "spiritStones": 30, "items": [], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "第一章内容暂到此处。"
     },
     {
       "id": "battle_day21_zhao_batian_no_sister",
@@ -103,10 +143,15 @@
       "enemyHp": 160,
       "enemyAttack": 22,
       "enemyDefense": 8,
+      "enemySkillName": "霸拳横压",
+      "enemySkillChance": 0.3,
+      "enemySkillDamage": 14,
       "winMessage": "赵霸天轰然倒地，眼中满是不甘。青石村众人看向你的目光中多了几分敬畏。",
       "loseMessage": "你倒在尘土中，赵霸天冷笑着从你身旁走过。青石村重新归于压抑的沉默。",
       "winFlags": ["defeated_zhao_batian", "chapter_one_good_end"],
-      "loseFlags": ["lost_to_zhao_batian", "chapter_one_bad_end"]
+      "loseFlags": ["lost_to_zhao_batian", "chapter_one_bad_end"],
+      "winRewards": { "spiritStones": 30, "items": [], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "第一章内容暂到此处。"
     },
     {
       "id": "battle_day21_zhao_batian_weakened_no_sister",
@@ -115,10 +160,15 @@
       "enemyHp": 120,
       "enemyAttack": 19,
       "enemyDefense": 6,
+      "enemySkillName": "霸拳横压",
+      "enemySkillChance": 0.25,
+      "enemySkillDamage": 12,
       "winMessage": "星辰剑光划破夜色，赵霸天终于支撑不住，跪倒在地。",
       "loseMessage": "即便有星辰剑在手，你仍旧被赵霸天压制。你意识到，力量还远远不够。",
       "winFlags": ["defeated_zhao_batian", "chapter_one_good_end"],
-      "loseFlags": ["lost_to_zhao_batian", "chapter_one_bad_end"]
+      "loseFlags": ["lost_to_zhao_batian", "chapter_one_bad_end"],
+      "winRewards": { "spiritStones": 30, "items": [], "cultivation": 0, "bodyCultivation": 0 },
+      "losePenaltyMessage": "第一章内容暂到此处。"
     }
   ]
 }
