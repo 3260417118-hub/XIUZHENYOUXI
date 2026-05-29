@@ -120,6 +120,7 @@ public class PlayerState
 
     /// <summary>
     /// 兼容旧存档：旧存档里没有列表或战斗/境界属性时，读取后要补默认值。
+    /// 注意：战斗中 hp 会短暂降到 0，用于判断失败；这里不能把 hp=0 自动回满。
     /// </summary>
     public void EnsureLists()
     {
@@ -183,7 +184,8 @@ public class PlayerState
         if (baseDefense < 0) baseDefense = 0;
 
         if (maxHp <= 0) maxHp = baseMaxHp;
-        if (hp <= 0) hp = maxHp;
+        if (hp < 0) hp = 0;
+        if (hp > maxHp) hp = maxHp;
         if (attack <= 0) attack = baseAttack;
         if (defense < 0) defense = baseDefense;
         if (maxActionPoints <= 0) maxActionPoints = 3;
