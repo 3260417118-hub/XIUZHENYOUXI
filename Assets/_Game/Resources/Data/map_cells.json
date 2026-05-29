@@ -58,7 +58,8 @@
     { "id": "road_village_forest_05", "name": "荒草路", "x": 0, "y": -5, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "black_wind_forest_entrance", "name": "黑风林入口", "x": 0, "y": -6, "description": "林中黑雾缭绕，树影像是张牙舞爪的怪物。再往前走，便少有人烟。", "walkable": true, "npcIds": [], "actionIds": ["observe", "enter_black_forest", "search_forest"], "firstEnterEventId": "" },
     { "id": "forest_woods", "mapId": "black_forest", "name": "树林", "x": 0, "y": 0, "description": "林中树影重重，雾气在枝叶间缓缓流动。", "walkable": true, "npcIds": [], "actionIds": ["return_from_black_forest"], "firstEnterEventId": "" },
-    { "id": "forest_bushes", "mapId": "black_forest", "name": "灌木丛", "x": 1, "y": 0, "description": "灌木枝条杂乱，有些枝叶上沾着暗红色痕迹。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
-    { "id": "forest_cave", "mapId": "black_forest", "name": "山洞", "x": 2, "y": 0, "description": "一处隐蔽山洞藏在藤蔓之后，洞口隐约传来腥气。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" }
+    { "id": "forest_muddy_soil", "mapId": "black_forest", "name": "泥泞的土壤", "x": 1, "y": 0, "description": "黑风林深处有一片潮湿泥地，泥土颜色比四周更深，像是埋着什么东西。若有合适的工具，也许可以挖开看看。", "walkable": true, "npcIds": [], "actionIds": ["dig_muddy_soil"], "firstEnterEventId": "" },
+    { "id": "forest_bushes", "mapId": "black_forest", "name": "灌木丛", "x": 2, "y": 0, "description": "灌木枝条杂乱，有些枝叶上沾着暗红色痕迹。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
+    { "id": "forest_cave", "mapId": "black_forest", "name": "山洞", "x": 3, "y": 0, "description": "一处隐蔽山洞藏在藤蔓之后，洞口隐约传来腥气。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" }
   ]
 }

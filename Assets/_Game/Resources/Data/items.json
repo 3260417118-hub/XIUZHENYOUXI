@@ -40,6 +40,19 @@
       "maxHpBonus": 0
     },
     {
+      "id": "wushen_body_scroll_fragment",
+      "name": "武神锻体诀（残）",
+      "description": "残破的古老锻体卷页，纸面泛黄，却隐约透出惊人的气血之意。上面的文字残缺不全，暂时无法直接修炼。",
+      "type": "scroll",
+      "usable": false,
+      "consumable": false,
+      "cultivationGain": 0,
+      "hpGain": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0,
+      "maxHpBonus": 0
+    },
+    {
       "id": "cultivation_pill",
       "name": "修为丹",
       "description": "服下后可提升大量修为。",
