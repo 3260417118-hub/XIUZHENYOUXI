@@ -66,12 +66,24 @@ public class AdvancedBattleSystemManager : MonoBehaviour
     private BattleData legacyBattle;
     private AdvancedBattleData currentBattle;
     private int enemyHp;
+    private int displayPlayerHp;
     private bool defending;
     private bool spellUsed;
     private bool battleEnded;
     private bool enhancedBattleActive;
+    private bool playerWon;
     private Action finishCallback;
     private string finalMessage;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void AutoAttach()
+    {
+        GameManager manager = UnityEngine.Object.FindObjectOfType<GameManager>();
+        if (manager != null && manager.GetComponent<AdvancedBattleSystemManager>() == null)
+        {
+            manager.gameObject.AddComponent<AdvancedBattleSystemManager>();
+        }
+    }
 
     private GameObject panelObject;
     private Text titleText;
@@ -83,16 +95,6 @@ public class AdvancedBattleSystemManager : MonoBehaviour
     private Button healButton;
     private Button finishButton;
     private Font cachedFont;
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void AutoAttach()
-    {
-        GameManager manager = UnityEngine.Object.FindObjectOfType<GameManager>();
-        if (manager != null && manager.GetComponent<AdvancedBattleSystemManager>() == null)
-        {
-            manager.gameObject.AddComponent<AdvancedBattleSystemManager>();
-        }
-    }
 
     private void Start()
     {
@@ -187,15 +189,19 @@ public class AdvancedBattleSystemManager : MonoBehaviour
             };
         }
 
+        PlayerState state = GetState();
         enemyHp = currentBattle.enemyHp > 0 ? currentBattle.enemyHp : detectedBattle.enemyHp;
+        displayPlayerHp = state != null ? state.hp : 0;
         defending = false;
         spellUsed = false;
         battleEnded = false;
+        playerWon = false;
         enhancedBattleActive = true;
         finalMessage = "";
         finishCallback = callbackField != null ? callbackField.GetValue(oldBattleManager) as Action : null;
         battleLogs.Clear();
         AddLog("战斗开始：" + currentBattle.enemyName + "出现了。");
+        AddLog("伤害规则：玩家伤害=攻击-敌方防御，敌人伤害=敌方攻击-玩家防御，最低为1。当前你攻击" + (state != null ? state.attack : 0) + "，防御" + (state != null ? state.defense : 0) + "；敌防" + currentBattle.enemyDefense + "，敌攻" + currentBattle.enemyAttack + "。");
         EnsurePanel();
         if (panelObject != null)
         {
@@ -221,8 +227,8 @@ public class AdvancedBattleSystemManager : MonoBehaviour
         enemyHp -= damage;
 
         string weaponName = GetEquippedWeaponName(state);
-        if (!string.IsNullOrEmpty(weaponName)) AddLog("林昊挥动【" + weaponName + "】，击中【" + currentBattle.enemyName + "】，造成 " + damage + " 点伤害。");
-        else AddLog("林昊挥拳攻向【" + currentBattle.enemyName + "】，造成 " + damage + " 点伤害。");
+        if (!string.IsNullOrEmpty(weaponName)) AddLog("林昊挥动【" + weaponName + "】，击中【" + currentBattle.enemyName + "】，造成 " + damage + " 点伤害。（" + state.attack + "攻击 - " + currentBattle.enemyDefense + "敌防）");
+        else AddLog("林昊挥拳攻向【" + currentBattle.enemyName + "】，造成 " + damage + " 点伤害。（" + state.attack + "攻击 - " + currentBattle.enemyDefense + "敌防）");
 
         if (!CheckBattleEnd()) EnemyTurn();
         RefreshBattleUi();
@@ -283,6 +289,7 @@ public class AdvancedBattleSystemManager : MonoBehaviour
 
         int oldHp = state.hp;
         state.hp = Mathf.Clamp(state.hp + 30, 1, state.maxHp);
+        displayPlayerHp = state.hp;
         state.RemoveItem(itemId, 1);
         int recovered = Mathf.Max(0, state.hp - oldHp);
         AddLog("林昊服下一枚疗伤丹，生命恢复 " + recovered + " 点。");
@@ -307,8 +314,9 @@ public class AdvancedBattleSystemManager : MonoBehaviour
 
         state.hp -= damage;
         if (state.hp < 0) state.hp = 0;
-        if (useSkill) AddLog("【" + currentBattle.enemyName + "】施展【" + currentBattle.enemySkillName + "】，造成 " + damage + " 点伤害。");
-        else AddLog("【" + currentBattle.enemyName + "】向你袭来，造成 " + damage + " 点伤害。");
+        displayPlayerHp = state.hp;
+        if (useSkill) AddLog("【" + currentBattle.enemyName + "】施展【" + currentBattle.enemySkillName + "】，造成 " + damage + " 点伤害。（" + currentBattle.enemyAttack + "敌攻 + " + currentBattle.enemySkillDamage + "技能 - " + state.defense + "防御）");
+        else AddLog("【" + currentBattle.enemyName + "】向你袭来，造成 " + damage + " 点伤害。（" + currentBattle.enemyAttack + "敌攻 - " + state.defense + "防御）");
         if (defending)
         {
             AddLog("你提前稳住身形，挡下了部分伤害。");
@@ -339,6 +347,7 @@ public class AdvancedBattleSystemManager : MonoBehaviour
     private void EndBattleWin()
     {
         battleEnded = true;
+        playerWon = true;
         enemyHp = 0;
         ApplyFlags(currentBattle.winFlags);
         ApplyWinRewards();
@@ -347,19 +356,24 @@ public class AdvancedBattleSystemManager : MonoBehaviour
         AddLog(finalMessage);
         ShowFinishOnly();
         RefreshOtherUi();
+        RefreshBattleUi();
     }
 
     private void EndBattleLose()
     {
         battleEnded = true;
+        playerWon = false;
         PlayerState state = GetState();
+        displayPlayerHp = 0;
         if (state != null) state.hp = 1;
         ApplyFlags(currentBattle.loseFlags);
         string penalty = string.IsNullOrEmpty(currentBattle.losePenaltyMessage) ? "" : "\n" + currentBattle.losePenaltyMessage;
         finalMessage = (string.IsNullOrEmpty(currentBattle.loseMessage) ? "你败下阵来。" : currentBattle.loseMessage) + penalty;
         AddLog(finalMessage);
+        AddLog("你暂时失去战斗能力，战斗结束后生命会保留为 1。 ");
         ShowFinishOnly();
         RefreshOtherUi();
+        RefreshBattleUi();
     }
 
     private void ApplyWinRewards()
@@ -452,7 +466,8 @@ public class AdvancedBattleSystemManager : MonoBehaviour
         if (enemyHpField != null && oldBattleManager != null) enemyHpField.SetValue(oldBattleManager, enemyHp);
 
         titleText.text = currentBattle.title;
-        statusText.text = "敌人：" + currentBattle.enemyName + "\n敌人生命：" + Mathf.Max(0, enemyHp) + " / " + currentBattle.enemyHp + "\n玩家生命：" + state.hp + " / " + state.maxHp;
+        int shownPlayerHp = battleEnded && !playerWon ? 0 : displayPlayerHp;
+        statusText.text = "敌人：" + currentBattle.enemyName + "\n敌人生命：" + Mathf.Max(0, enemyHp) + " / " + currentBattle.enemyHp + "\n玩家生命：" + Mathf.Max(0, shownPlayerHp) + " / " + state.maxHp;
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < battleLogs.Count; i++) builder.AppendLine(battleLogs[i]);
         logText.text = builder.ToString();
@@ -460,7 +475,7 @@ public class AdvancedBattleSystemManager : MonoBehaviour
         bool hasSpell = !string.IsNullOrEmpty(state.equippedSpellSkillId);
         if (spellButton != null)
         {
-            spellButton.gameObject.SetActive(hasSpell);
+            spellButton.gameObject.SetActive(hasSpell && !battleEnded);
             spellButton.interactable = hasSpell && !spellUsed && !battleEnded;
             Text label = spellButton.GetComponentInChildren<Text>();
             if (label != null)
