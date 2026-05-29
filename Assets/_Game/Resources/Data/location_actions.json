@@ -29,6 +29,25 @@
       "message": "你用铲子挖开泥泞土壤。"
     },
     {
+      "id": "return_to_back_mountain_from_cliff_bottom",
+      "name": "沿藤蔓爬回后山",
+      "description": "抓住崖壁藤蔓，小心爬回后山。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你抓住藤蔓，费了些力气，终于重新爬回后山。"
+    },
+    {
+      "id": "investigate_cliff_stone_platform",
+      "name": "调查石台",
+      "description": "靠近石台中央的金光，看看其中藏着什么。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你靠近崖底石台。",
+      "condition": {
+        "excludeFlags": ["obtained_jinluan_blood_stone"]
+      }
+    },
+    {
       "id": "gather_herbs",
       "name": "采集灵草",
       "description": "在药田中寻找可用的灵草。",
