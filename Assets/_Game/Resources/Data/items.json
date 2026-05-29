@@ -42,12 +42,25 @@
     {
       "id": "cultivation_pill",
       "name": "修为丹",
-      "description": "服下后可提升少量修为。",
+      "description": "服下后可提升大量修为。",
       "type": "consumable",
       "usable": true,
       "consumable": true,
       "cultivationGain": 150,
       "hpGain": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0,
+      "maxHpBonus": 0
+    },
+    {
+      "id": "healing_pill",
+      "name": "疗伤丹",
+      "description": "服下后恢复 30 点生命。",
+      "type": "consumable",
+      "usable": true,
+      "consumable": true,
+      "cultivationGain": 0,
+      "hpGain": 30,
       "attackBonus": 0,
       "defenseBonus": 0,
       "maxHpBonus": 0
