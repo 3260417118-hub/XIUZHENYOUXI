@@ -49,6 +49,7 @@ public class GameManager : MonoBehaviour
         EnsureComponent<InventoryUIManager>();
         EnsureComponent<MuddySoilDigManager>();
         EnsureComponent<WushenBodyTrainingBonusManager>();
+        EnsureComponent<CliffStoryManager>();
         EnsureComponent<SkillManager>();
         EnsureComponent<DailyLimitManager>();
         EnsureComponent<CounterManager>();
