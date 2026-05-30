@@ -64,6 +64,7 @@ public class LocationActionManager : MonoBehaviour
         if (ChapterTitleManager.IsChapterTitleActive) return true;
         if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return true;
         if (ChapterOneLateStoryFixManager.IsEndingPlaying) return true;
+        if (CliffStoryManager.IsCliffStoryOpen) return true;
         if (dialogueManager != null && dialogueManager.IsDialogueOpen) return true;
         return false;
     }
@@ -271,8 +272,9 @@ public class LocationActionManager : MonoBehaviour
 
         MapCellData currentCell = mapGridManager != null ? mapGridManager.GetCurrentCell() : null;
 
-        // 泥泞土壤是特殊行为，必须在普通行动点扣除前处理。
-        // 这里会自行检查铲子、每日次数、行动点，并发放随机奖励。
+        CliffStoryManager cliffStoryManager = GetComponent<CliffStoryManager>();
+        if (cliffStoryManager != null && cliffStoryManager.TryHandleCliffAction(actionData, currentCell)) return;
+
         MuddySoilDigManager muddySoilDigManager = GetComponent<MuddySoilDigManager>();
         if (muddySoilDigManager != null && muddySoilDigManager.TryHandleDig(actionData, currentCell)) return;
 

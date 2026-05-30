@@ -16,9 +16,7 @@
       "cultivationGain": 0,
       "bodyCultivationGain": 10,
       "message": "你打熬筋骨，气血逐渐凝实。",
-      "condition": {
-        "requireSkills": ["skill_body_tempering_basic"]
-      }
+      "condition": { "requireSkills": ["skill_body_tempering_basic"] }
     },
     {
       "id": "dig_muddy_soil",
@@ -27,6 +25,51 @@
       "costActionPoint": 1,
       "cultivationGain": 0,
       "message": "你用铲子挖开泥泞土壤。"
+    },
+    {
+      "id": "listen_cliff_call",
+      "name": "凝神倾听",
+      "description": "屏息凝神，听清崖底传来的呼唤。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你凝神倾听崖下呼唤。",
+      "condition": { "requireFlags": ["cliff_call_story_ready"] }
+    },
+    {
+      "id": "ignore_cliff_call",
+      "name": "假装没听到",
+      "description": "移开视线，装作没有听见崖底呼唤。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你假装没听见。",
+      "condition": { "requireFlags": ["cliff_call_story_ready"] }
+    },
+    {
+      "id": "jump_down_cliff",
+      "name": "跳下去",
+      "description": "纵身跃入崖下云雾。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你纵身跃下悬崖。",
+      "condition": { "requireFlags": ["cliff_trial_story_ready"] }
+    },
+    {
+      "id": "delay_cliff_trial",
+      "name": "暂时离开",
+      "description": "压下冲动，今日暂时离开悬崖。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你暂时离开悬崖。",
+      "condition": { "requireFlags": ["cliff_trial_story_ready"] }
+    },
+    {
+      "id": "refuse_cliff_trial",
+      "name": "不信这鬼话",
+      "description": "拒绝崖底声音的诱导。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你拒绝了崖底呼唤。",
+      "condition": { "requireFlags": ["cliff_trial_story_ready"] }
     },
     {
       "id": "return_to_back_mountain_from_cliff_bottom",
@@ -43,9 +86,7 @@
       "costActionPoint": 0,
       "cultivationGain": 0,
       "message": "你靠近崖底石台。",
-      "condition": {
-        "excludeFlags": ["obtained_jinluan_blood_stone"]
-      }
+      "condition": { "excludeFlags": ["obtained_jinluan_blood_stone"] }
     },
     {
       "id": "gather_herbs",
@@ -142,10 +183,7 @@
       "costActionPoint": 0,
       "cultivationGain": 0,
       "message": "你修缮了破庙。",
-      "condition": {
-        "requireFlags": ["temple_incense_5"],
-        "excludeFlags": ["temple_repaired"]
-      }
+      "condition": { "requireFlags": ["temple_incense_5"], "excludeFlags": ["temple_repaired"] }
     },
     {
       "id": "rest_at_ruined_hut",
