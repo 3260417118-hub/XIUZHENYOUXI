@@ -21,7 +21,7 @@
     { "id": "ruined_temple", "name": "破庙", "x": -4, "y": 4, "description": "破庙年久失修，神像半塌，案前积着厚厚灰尘。夜里似乎常有风声从庙后传来。", "walkable": true, "npcIds": [], "actionIds": ["burn_incense", "repair_temple", "observe"], "firstEnterEventId": "event_ruined_temple_old_man" },
     { "id": "road_ruined_back_01", "name": "荒草路", "x": -4, "y": 3, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_ruined_back_02", "name": "荒草路", "x": -4, "y": 2, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
-    { "id": "back_mountain", "name": "后山", "x": -4, "y": 1, "description": "后山林木幽深，野兽足迹隐约可见。村中老人常说，夜里不要靠近此地。", "walkable": true, "npcIds": [], "actionIds": ["observe", "search_mountain"], "firstEnterEventId": "" },
+    { "id": "back_mountain", "name": "后山", "x": -4, "y": 1, "description": "后山林木幽深，野兽足迹隐约可见。村中老人常说，夜里不要靠近此地。", "walkable": true, "npcIds": [], "actionIds": ["listen_cliff_call", "ignore_cliff_call", "jump_down_cliff", "delay_cliff_trial", "refuse_cliff_trial", "observe", "search_mountain"], "firstEnterEventId": "" },
     { "id": "road_back_village_01", "name": "荒草路", "x": -3, "y": 1, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_back_village_02", "name": "荒草路", "x": -2, "y": 1, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_back_village_03", "name": "荒草路", "x": -1, "y": 1, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
@@ -60,6 +60,9 @@
     { "id": "forest_woods", "mapId": "black_forest", "name": "树林", "x": 0, "y": 0, "description": "林中树影重重，雾气在枝叶间缓缓流动。", "walkable": true, "npcIds": [], "actionIds": ["return_from_black_forest"], "firstEnterEventId": "" },
     { "id": "forest_muddy_soil", "mapId": "black_forest", "name": "泥泞的土壤", "x": 1, "y": 0, "description": "黑风林深处有一片潮湿泥地，泥土颜色比四周更深，像是埋着什么东西。若有合适的工具，也许可以挖开看看。", "walkable": true, "npcIds": [], "actionIds": ["dig_muddy_soil"], "firstEnterEventId": "" },
     { "id": "forest_bushes", "mapId": "black_forest", "name": "灌木丛", "x": 2, "y": 0, "description": "灌木枝条杂乱，有些枝叶上沾着暗红色痕迹。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
-    { "id": "forest_cave", "mapId": "black_forest", "name": "山洞", "x": 3, "y": 0, "description": "一处隐蔽山洞藏在藤蔓之后，洞口隐约传来腥气。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" }
+    { "id": "forest_cave", "mapId": "black_forest", "name": "山洞", "x": 3, "y": 0, "description": "一处隐蔽山洞藏在藤蔓之后，洞口隐约传来腥气。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
+    { "id": "cliff_bottom", "mapId": "cliff_bottom", "name": "崖底", "x": 0, "y": 0, "description": "你落在一片狭窄的崖底空地上。四周山壁陡峭，云雾在头顶翻涌，几根粗壮藤蔓垂在岩壁之间。", "walkable": true, "npcIds": [], "actionIds": ["return_to_back_mountain_from_cliff_bottom"], "firstEnterEventId": "", "hiddenUntilUnlocked": true },
+    { "id": "cliff_stone_road", "mapId": "cliff_bottom", "name": "石头路", "x": 1, "y": 0, "description": "崖底铺着一段残破石路，石缝间长满青苔。路面湿滑，却隐约通向更深处的石台。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "", "hiddenUntilUnlocked": true },
+    { "id": "cliff_stone_platform", "mapId": "cliff_bottom", "name": "崖底石台", "x": 2, "y": 0, "description": "崖底深处有一座残破石台。石台中央裂开一道细缝，金光正从缝隙中透出。石台边缘刻着古老纹路，像是某种试炼遗迹的残余。", "walkable": true, "npcIds": [], "actionIds": ["investigate_cliff_stone_platform"], "firstEnterEventId": "", "hiddenUntilUnlocked": true }
   ]
 }
