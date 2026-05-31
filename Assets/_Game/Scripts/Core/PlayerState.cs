@@ -283,6 +283,10 @@ public class PlayerState
     public void AddItem(string itemId, int count)
     {
         AddInventoryItemInternal(itemId, count, true);
+        if (!string.IsNullOrEmpty(itemId) && count > 0)
+        {
+            ToastManager.TryShowItemToast(InventoryItemDatabase.GetItemName(itemId), count);
+        }
     }
 
     private void AddInventoryItemInternal(string itemId, int count, bool syncOldItems)

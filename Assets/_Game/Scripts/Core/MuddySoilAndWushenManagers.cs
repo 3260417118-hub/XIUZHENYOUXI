@@ -41,6 +41,7 @@ public class MuddySoilDigManager : MonoBehaviour
 
         if (!playerState.HasItem("shovel"))
         {
+            ToastManager.TryShowWarning("你没有合适的工具。");
             ShowMessage("你没有合适的工具，无法挖开这片泥土。 ");
             RefreshAll(playerState);
             return true;
@@ -49,6 +50,7 @@ public class MuddySoilDigManager : MonoBehaviour
         int digCount = playerState.GetCounter(DigCountKey);
         if (digCount >= MaxDigCountPerDay)
         {
+            ToastManager.TryShowWarning("今日挖掘次数已满");
             ShowMessage("这片泥地今日已经被你翻得差不多了，继续挖也难有收获。 ");
             RefreshAll(playerState);
             return true;
@@ -56,6 +58,7 @@ public class MuddySoilDigManager : MonoBehaviour
 
         if (actionPointManager == null || !actionPointManager.HasEnoughActionPoints(1))
         {
+            ToastManager.TryShowWarning("行动点不足");
             ShowMessage("你已经没有力气继续挖掘了。 ");
             RefreshAll(playerState);
             return true;
@@ -80,14 +83,14 @@ public class MuddySoilDigManager : MonoBehaviour
 
         if (roll < 0.60f)
         {
-            playerState.spiritStones += 10;
+            CurrencyManager.AddSpiritStones(playerState, 10);
             ShowMessage("你挖开泥土，发现几枚散落的灵石。获得 10 灵石。 ");
             return;
         }
 
         if (roll < 0.70f)
         {
-            playerState.spiritStones += 50;
+            CurrencyManager.AddSpiritStones(playerState, 50);
             ShowMessage("铲尖碰到一块硬物。你扒开泥土，竟发现一小袋灵石。获得 50 灵石。 ");
             return;
         }
@@ -108,7 +111,7 @@ public class MuddySoilDigManager : MonoBehaviour
 
         if (playerState.HasItem("wushen_body_scroll_fragment") || playerState.HasFlag("found_wushen_body_scroll_fragment"))
         {
-            playerState.spiritStones += 50;
+            CurrencyManager.AddSpiritStones(playerState, 50);
             ShowMessage("你挖到一些深埋的灵石。获得 50 灵石。 ");
             return;
         }
@@ -179,6 +182,7 @@ public class WushenBodyTrainingBonusManager : MonoBehaviour
         if (delta > 0 && ShouldApplyBonus(playerState, delta))
         {
             playerState.bodyCultivation += 25;
+            ToastManager.TryShowSuccess("锻体值 +25");
             lastBodyCultivation = playerState.bodyCultivation;
             if (locationUIManager != null)
             {

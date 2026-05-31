@@ -263,7 +263,7 @@ public class ShopManager : MonoBehaviour
             return;
         }
 
-        state.spiritStones -= goods.buyPrice;
+        CurrencyManager.SpendSpiritStones(state, goods.buyPrice);
         if (inventoryManager != null) inventoryManager.AddItem(goods.itemId, 1);
         else state.AddItem(goods.itemId, 1);
 
@@ -273,6 +273,7 @@ public class ShopManager : MonoBehaviour
         }
 
         Refresh();
+        ToastManager.TryShowSuccess("购买成功：" + item.name);
         ShowShopTip("你花费 " + goods.buyPrice + " 灵石，买下" + item.name + "。");
     }
 
@@ -343,9 +344,10 @@ public class ShopManager : MonoBehaviour
 
         if (inventoryManager != null) inventoryManager.RemoveItem(itemId, 1);
         else state.RemoveItem(itemId, 1);
-        state.spiritStones += Mathf.Max(0, item.sellPrice);
+        CurrencyManager.AddSpiritStones(state, Mathf.Max(0, item.sellPrice));
 
         Refresh();
+        ToastManager.TryShowSuccess("出售成功：" + item.name);
         ShowShopTip("你出售了" + item.name + "，获得 " + item.sellPrice + " 灵石。");
     }
 

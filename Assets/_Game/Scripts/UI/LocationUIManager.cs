@@ -34,6 +34,12 @@ public class LocationUIManager : MonoBehaviour
         locationNameText = locationName;
         locationDescriptionText = locationDescription;
         messageText = message;
+        ApplyReadableTextStyle();
+    }
+
+    private void Start()
+    {
+        ApplyReadableTextStyle();
     }
 
     /// <summary>
@@ -102,6 +108,7 @@ public class LocationUIManager : MonoBehaviour
         {
             messageText.text = "提示：" + NormalizeInlineText(message);
         }
+        ToastMessageUtility.TryShowCommonWarning(message);
     }
 
     public void ShowDialogue(string speaker, string text)
@@ -131,5 +138,30 @@ public class LocationUIManager : MonoBehaviour
             result = result.Replace("  ", " ");
         }
         return result;
+    }
+
+    private void ApplyReadableTextStyle()
+    {
+        ApplyTextStyle(locationNameText, 24, 1.05f);
+        ApplyTextStyle(locationDescriptionText, 17, 1.08f);
+        ApplyTextStyle(messageText, 17, 1.10f);
+        ApplyTextBackground(messageText);
+    }
+
+    private void ApplyTextStyle(Text text, int fontSize, float lineSpacing)
+    {
+        if (text == null) return;
+        text.fontSize = fontSize;
+        text.lineSpacing = lineSpacing;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Overflow;
+    }
+
+    private void ApplyTextBackground(Text text)
+    {
+        if (text == null || text.transform.parent == null) return;
+        Image image = text.transform.parent.GetComponent<Image>();
+        if (image == null) return;
+        image.color = new Color(0.08f, 0.09f, 0.12f, 0.82f);
     }
 }

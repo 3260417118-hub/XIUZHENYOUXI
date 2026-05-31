@@ -224,6 +224,9 @@ public class SkillManager : MonoBehaviour
         PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         if (playerState == null || string.IsNullOrEmpty(skillId)) return;
         bool alreadyKnown = playerState.HasSkill(skillId);
+        string oldCultivationSkill = playerState.equippedCultivationSkillId;
+        string oldBodyMethod = playerState.equippedBodyMethodId;
+        string oldSpellSkill = playerState.equippedSpellSkillId;
         playerState.LearnSkill(skillId);
         SkillData data = GetSkillData(skillId);
         string extra = "";
@@ -232,9 +235,27 @@ public class SkillManager : MonoBehaviour
             if (string.IsNullOrEmpty(playerState.equippedBodyMethodId)) playerState.equippedBodyMethodId = skillId;
             extra = "\n已开始修行锻体法门。";
         }
-        if (locationUIManager != null && !alreadyKnown) locationUIManager.ShowMessage("学会功法：" + GetSkillName(skillId) + extra);
+        string skillName = GetSkillName(skillId);
+        if (!alreadyKnown)
+        {
+            ToastManager.TryShowSuccess("学会功法：" + skillName);
+            if (locationUIManager != null) locationUIManager.ShowMessage("学会功法：" + skillName + extra);
+        }
+        if (!alreadyKnown && BecameEquipped(skillId, playerState, oldCultivationSkill, oldBodyMethod, oldSpellSkill))
+        {
+            ToastManager.TryShowSuccess("已装备：" + skillName);
+        }
         CharacterStatusUIManager characterStatus = GetComponent<CharacterStatusUIManager>();
         if (characterStatus != null) characterStatus.RefreshIfOpen();
+    }
+
+    private bool BecameEquipped(string skillId, PlayerState playerState, string oldCultivationSkill, string oldBodyMethod, string oldSpellSkill)
+    {
+        if (playerState == null) return false;
+        if (playerState.equippedCultivationSkillId == skillId && oldCultivationSkill != skillId) return true;
+        if (playerState.equippedBodyMethodId == skillId && oldBodyMethod != skillId) return true;
+        if (playerState.equippedSpellSkillId == skillId && oldSpellSkill != skillId) return true;
+        return false;
     }
 
     public bool HasSkill(string skillId)
@@ -403,13 +424,18 @@ public class NightEventManager : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(data.reward.addItem)) playerState.AddItem(data.reward.addItem);
             if (!string.IsNullOrEmpty(data.reward.setFlag)) playerState.AddFlag(data.reward.setFlag);
-            if (!string.IsNullOrEmpty(data.reward.learnSkill)) playerState.LearnSkill(data.reward.learnSkill);
-            if (data.reward.cultivationGain != 0) playerState.cultivation += data.reward.cultivationGain;
-            if (data.reward.spiritStoneGain != 0)
+            if (!string.IsNullOrEmpty(data.reward.learnSkill))
             {
-                playerState.spiritStones += data.reward.spiritStoneGain;
-                if (playerState.spiritStones < 0) playerState.spiritStones = 0;
+                if (skillManager != null) skillManager.LearnSkill(data.reward.learnSkill);
+                else playerState.LearnSkill(data.reward.learnSkill);
             }
+            if (data.reward.cultivationGain != 0)
+            {
+                playerState.cultivation += data.reward.cultivationGain;
+                if (data.reward.cultivationGain > 0) ToastManager.TryShowSuccess("修为 +" + data.reward.cultivationGain);
+            }
+            if (data.reward.spiritStoneGain > 0) CurrencyManager.AddSpiritStones(playerState, data.reward.spiritStoneGain);
+            else if (data.reward.spiritStoneGain < 0) CurrencyManager.SpendSpiritStones(playerState, -data.reward.spiritStoneGain);
         }
 
         return string.IsNullOrEmpty(data.message) ? data.text : data.message;

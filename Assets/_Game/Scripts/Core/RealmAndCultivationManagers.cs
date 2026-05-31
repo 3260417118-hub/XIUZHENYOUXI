@@ -61,6 +61,7 @@ public class CultivationManager : MonoBehaviour
 
         int finalGain = baseGain + bonusGain + pillGain;
         playerState.cultivation += finalGain;
+        if (finalGain > 0) ToastManager.TryShowSuccess("修为 +" + finalGain);
 
         if (string.IsNullOrEmpty(playerState.equippedCultivationSkillId) && playerState.HasSkill(BasicQiSkillId))
         {
@@ -185,6 +186,7 @@ public class RealmManager : MonoBehaviour
         PlayerStatCalculator.RecalculateStats(state, this, bodyRealmManager, true);
         RefreshUi(state);
         string message = string.IsNullOrEmpty(nextRealm.breakthroughMessage) ? ("你突破到了" + nextRealm.name + "。") : nextRealm.breakthroughMessage;
+        ToastManager.TryShowSuccess("突破成功：" + nextRealm.name);
         ShowMessage(message);
         return true;
     }

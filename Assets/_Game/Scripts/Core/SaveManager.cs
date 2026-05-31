@@ -28,6 +28,7 @@ public class SaveManager : MonoBehaviour
     private const float SaveButtonGap = 12f;
     private const float SaveButtonsRightMargin = 24f;
     private const float SaveButtonsBottomMargin = 210f;
+    private const float SaveButtonTopMargin = 18f;
 
     private Font cachedFont;
 
@@ -332,9 +333,21 @@ public class SaveManager : MonoBehaviour
 
     private void LayoutSaveButtonsBottomRight()
     {
-        MoveButtonToBottomRight(saveGameButton, 0);
+        MoveSaveButtonToTopRight(saveGameButton);
         MoveButtonToBottomRight(loadGameButton, 1);
         MoveButtonToBottomRight(newGameButton, 2);
+    }
+
+    private void MoveSaveButtonToTopRight(Button button)
+    {
+        if (button == null) return;
+        RectTransform rect = button.GetComponent<RectTransform>();
+        if (rect == null) return;
+        rect.anchorMin = new Vector2(1f, 1f);
+        rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(1f, 1f);
+        rect.sizeDelta = new Vector2(SaveButtonWidth, 38f);
+        rect.anchoredPosition = new Vector2(-SaveButtonsRightMargin, -SaveButtonTopMargin);
     }
 
     private void MoveButtonToBottomRight(Button button, int indexFromRight)

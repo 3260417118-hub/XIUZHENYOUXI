@@ -235,10 +235,20 @@ public class DialogueManager : MonoBehaviour
         }
         if (option.learnSkills != null)
         {
-            foreach (string skill in option.learnSkills) playerState.LearnSkill(skill);
+            SkillManager skillManager = GetComponent<SkillManager>();
+            foreach (string skill in option.learnSkills)
+            {
+                if (skillManager != null) skillManager.LearnSkill(skill);
+                else playerState.LearnSkill(skill);
+            }
         }
-        if (option.cultivationGain != 0) playerState.cultivation += option.cultivationGain;
-        if (option.spiritStoneGain != 0) playerState.spiritStones += option.spiritStoneGain;
+        if (option.cultivationGain != 0)
+        {
+            playerState.cultivation += option.cultivationGain;
+            if (option.cultivationGain > 0) ToastManager.TryShowSuccess("修为 +" + option.cultivationGain);
+        }
+        if (option.spiritStoneGain > 0) CurrencyManager.AddSpiritStones(playerState, option.spiritStoneGain);
+        else if (option.spiritStoneGain < 0) CurrencyManager.SpendSpiritStones(playerState, -option.spiritStoneGain);
         if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(playerState);
     }
 

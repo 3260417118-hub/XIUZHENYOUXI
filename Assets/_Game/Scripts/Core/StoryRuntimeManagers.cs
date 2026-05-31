@@ -776,6 +776,7 @@ public class BattleManager : MonoBehaviour
         if (enemyHp <= 0)
         {
             ApplyFlags(currentBattle.winFlags);
+            ToastManager.TryShowSuccess("战斗胜利");
             lastBattleResultMessage = currentBattle.winMessage;
             log += "\n" + currentBattle.winMessage;
             RefreshBattleText(log);
@@ -789,6 +790,7 @@ public class BattleManager : MonoBehaviour
         if (playerState.hp <= 0)
         {
             ApplyFlags(currentBattle.loseFlags);
+            ToastManager.TryShowWarning("战斗失败");
             lastBattleResultMessage = currentBattle.loseMessage;
             log += "\n" + currentBattle.loseMessage;
             playerState.hp = Mathf.Max(1, playerState.maxHp / 2);

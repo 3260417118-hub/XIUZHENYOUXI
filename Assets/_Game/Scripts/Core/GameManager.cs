@@ -38,6 +38,7 @@ public class GameManager : MonoBehaviour
     private void EnsureRuntimeManagers()
     {
         EnsureComponent<SaveManager>();
+        EnsureComponent<ToastManager>();
         EnsureComponent<OpeningStoryManager>();
         EnsureComponent<BlockingEncounterManager>();
         EnsureComponent<DayEventManager>();

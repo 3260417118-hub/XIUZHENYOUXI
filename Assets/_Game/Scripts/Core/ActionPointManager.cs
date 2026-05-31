@@ -49,6 +49,7 @@ public class ActionPointManager : MonoBehaviour
 
         if (RestManager.IsRestingTransition)
         {
+            ToastManager.TryShowWarning("正在休息过夜");
             if (locationUIManager != null) locationUIManager.ShowMessage("正在休息过夜。");
             return false;
         }
@@ -58,6 +59,7 @@ public class ActionPointManager : MonoBehaviour
             : GetComponent<BlockingEncounterManager>();
         if (blockingEncounterManager != null && blockingEncounterManager.HasActiveBlockingEncounter())
         {
+            ToastManager.TryShowWarning("请先处理当前事件");
             if (locationUIManager != null) locationUIManager.ShowMessage(blockingEncounterManager.GetBlockMoveMessageOrDefault());
             return false;
         }
@@ -65,6 +67,7 @@ public class ActionPointManager : MonoBehaviour
         EventManager eventManager = GetComponent<EventManager>();
         if (eventManager != null && eventManager.IsEventOpen)
         {
+            ToastManager.TryShowWarning("请先处理当前事件");
             if (locationUIManager != null) locationUIManager.ShowMessage("请先处理当前事件。");
             return false;
         }
@@ -72,7 +75,8 @@ public class ActionPointManager : MonoBehaviour
         PlayerState playerState = gameManager.GetPlayerState();
         if (!ActionPointRules.TrySpend(playerState, cost))
         {
-            if (locationUIManager != null) locationUIManager.ShowMessage("今日行动点不足");
+            ToastManager.TryShowWarning("行动点不足");
+            if (locationUIManager != null) locationUIManager.ShowMessage("你已经没有力气继续行动了。");
             return false;
         }
 

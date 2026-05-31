@@ -351,6 +351,7 @@ public class AdvancedBattleSystemManager : MonoBehaviour
         enemyHp = 0;
         ApplyFlags(currentBattle.winFlags);
         ApplyWinRewards();
+        ToastManager.TryShowSuccess("战斗胜利");
         finalMessage = string.IsNullOrEmpty(currentBattle.winMessage) ? "你获得了胜利。" : currentBattle.winMessage;
         AddLog(currentBattle.enemyName + "倒下了。");
         AddLog(finalMessage);
@@ -367,6 +368,7 @@ public class AdvancedBattleSystemManager : MonoBehaviour
         displayPlayerHp = 0;
         if (state != null) state.hp = 1;
         ApplyFlags(currentBattle.loseFlags);
+        ToastManager.TryShowWarning("战斗失败");
         string penalty = string.IsNullOrEmpty(currentBattle.losePenaltyMessage) ? "" : "\n" + currentBattle.losePenaltyMessage;
         finalMessage = (string.IsNullOrEmpty(currentBattle.loseMessage) ? "你败下阵来。" : currentBattle.loseMessage) + penalty;
         AddLog(finalMessage);
@@ -384,7 +386,8 @@ public class AdvancedBattleSystemManager : MonoBehaviour
 
         if (currentBattle.winRewards.spiritStones != 0)
         {
-            state.spiritStones += currentBattle.winRewards.spiritStones;
+            if (currentBattle.winRewards.spiritStones > 0) CurrencyManager.AddSpiritStones(state, currentBattle.winRewards.spiritStones);
+            else CurrencyManager.SpendSpiritStones(state, -currentBattle.winRewards.spiritStones);
             AddLog("获得灵石：" + currentBattle.winRewards.spiritStones);
         }
         if (currentBattle.winRewards.items != null)
@@ -400,11 +403,13 @@ public class AdvancedBattleSystemManager : MonoBehaviour
         if (currentBattle.winRewards.cultivation != 0)
         {
             state.cultivation += currentBattle.winRewards.cultivation;
+            ToastManager.TryShowSuccess("修为 +" + currentBattle.winRewards.cultivation);
             AddLog("修为 +" + currentBattle.winRewards.cultivation);
         }
         if (currentBattle.winRewards.bodyCultivation != 0)
         {
             state.bodyCultivation += currentBattle.winRewards.bodyCultivation;
+            ToastManager.TryShowSuccess("锻体值 +" + currentBattle.winRewards.bodyCultivation);
             AddLog("锻体值 +" + currentBattle.winRewards.bodyCultivation);
         }
     }

@@ -369,7 +369,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
                 if (option.text == "交出乾坤锻体诀（残卷）")
                 {
                     playerState.RemoveItem("qiankun_body_scroll_fragment");
-                    playerState.LearnSkill("skill_body_tempering_basic");
+                    LearnSkill(playerState, "skill_body_tempering_basic");
                     playerState.AddFlag("traded_fragment_with_jianghe");
                     CloseEvent("江鹤收起残卷，随手丢给你一册薄书。《锻体入门》四字映入眼中。");
                 }
@@ -527,7 +527,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         if (playerState.HasFlag("obtained_qiankun_fragment") && !playerState.HasFlag("cave_skeleton_reward_claimed"))
         {
             playerState.AddFlag("cave_skeleton_reward_claimed");
-            playerState.spiritStones += 30;
+            CurrencyManager.AddSpiritStones(playerState, 30);
             playerState.AddItem("qiankun_body_scroll_fragment");
             ShowMessage("你在洞府石匣中找到一些灵石，以及一页残破的锻体功法。");
             RefreshAll();
@@ -543,13 +543,14 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         int roll = UnityEngine.Random.Range(1, 101);
         int gain = roll <= 70 ? 1 : (roll <= 95 ? 3 : 5);
         playerState.cultivation += gain;
+        ToastManager.TryShowSuccess("修为 +" + gain);
         playerState.AddCounter("attic_read_count", 1);
         string message = "你翻看阁楼旧书，心有所悟，修为 +" + gain + "。";
         if (playerState.GetCounter("attic_read_count") >= 3 && !playerState.HasFlag("attic_books_reward_claimed"))
         {
             playerState.AddFlag("attic_books_reward_claimed");
-            playerState.LearnSkill("skill_qi_training_basic");
-            playerState.LearnSkill("spell_guiyuan_qigong");
+            LearnSkill(playerState, "skill_qi_training_basic");
+            LearnSkill(playerState, "spell_guiyuan_qigong");
             message += "你终于读懂几卷入门书册，学会了练气入门与归元气功。";
         }
         ShowMessage(message);
@@ -565,7 +566,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         playerState.AddCounter("temple_incense_count", 1);
         int roll = UnityEngine.Random.Range(0, 3);
         string message;
-        if (roll == 0) { playerState.cultivation += 2; message = "今日心神安宁，修为 +2。"; }
+        if (roll == 0) { playerState.cultivation += 2; ToastManager.TryShowSuccess("修为 +2"); message = "今日心神安宁，修为 +2。"; }
         else if (roll == 1) { playerState.hp = Mathf.Min(playerState.maxHp, playerState.hp + 5); message = "今日气血顺畅，hp +5。"; }
         else { playerState.AddFlag("temple_blessing_today"); message = "今日似有神意庇护。"; }
         if (playerState.GetCounter("temple_incense_count") >= 5) playerState.AddFlag("temple_incense_5");
@@ -584,7 +585,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         if (playerState.HasFlag("temple_repaired")) { ShowMessage("寺庙已经修缮过了。"); return; }
         if (playerState.GetCounter("temple_incense_count") < 5) { ShowMessage("你对这里还不够熟悉，暂时不知道该如何修缮。需上香满 5 次。 "); return; }
         if (playerState.spiritStones < 50) { ShowMessage("修缮破庙需要 50 灵石。你现在灵石不足。 "); return; }
-        playerState.spiritStones -= 50;
+        CurrencyManager.SpendSpiritStones(playerState, 50);
         playerState.AddFlag("temple_repaired");
         if (!playerState.HasFlag("received_star_sword")) playerState.AddPendingNightEvent("night_temple_god_reward");
         ShowMessage("你请人简单修缮了破庙。今夜若回小屋休息，也许会梦见什么。 ");
@@ -598,7 +599,7 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
         int level = Mathf.Clamp(playerState.GetCounter("labor_level"), 1, 3);
         if (level <= 0) level = 1;
         int reward = level == 1 ? 5 : (level == 2 ? 8 : 12);
-        playerState.spiritStones += reward;
+        CurrencyManager.AddSpiritStones(playerState, reward);
         playerState.AddCounter("labor_exp", 1);
         string message = "你完成杂役劳作，获得灵石 " + reward + "。";
         int exp = playerState.GetCounter("labor_exp");
@@ -692,6 +693,14 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
     private void ShowMessage(string message)
     {
         if (locationUIManager != null) locationUIManager.ShowMessage(message);
+    }
+
+    private void LearnSkill(PlayerState playerState, string skillId)
+    {
+        if (playerState == null || string.IsNullOrEmpty(skillId)) return;
+        SkillManager skillManager = GetComponent<SkillManager>();
+        if (skillManager != null) skillManager.LearnSkill(skillId);
+        else playerState.LearnSkill(skillId);
     }
 
     private void EnsureStoryPanel()

@@ -167,12 +167,13 @@ public class EventManager : MonoBehaviour
             {
                 foreach (string flag in option.setFlags) playerState.AddFlag(flag);
             }
-            if (option.cultivationGain != 0) playerState.cultivation += option.cultivationGain;
-            if (option.spiritStoneGain != 0)
+            if (option.cultivationGain != 0)
             {
-                playerState.spiritStones += option.spiritStoneGain;
-                if (playerState.spiritStones < 0) playerState.spiritStones = 0;
+                playerState.cultivation += option.cultivationGain;
+                if (option.cultivationGain > 0) ToastManager.TryShowSuccess("修为 +" + option.cultivationGain);
             }
+            if (option.spiritStoneGain > 0) CurrencyManager.AddSpiritStones(playerState, option.spiritStoneGain);
+            else if (option.spiritStoneGain < 0) CurrencyManager.SpendSpiritStones(playerState, -option.spiritStoneGain);
             if (locationUIManager != null) locationUIManager.RefreshPlayerStatus(playerState);
         }
 

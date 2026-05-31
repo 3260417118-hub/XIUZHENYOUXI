@@ -158,6 +158,7 @@ public class BodyRealmManager : MonoBehaviour
         RealmManager realmManager = GetComponent<RealmManager>();
         PlayerStatCalculator.RecalculateStats(state, realmManager, this, true);
         RefreshUi();
+        ToastManager.TryShowSuccess("锻体突破：" + next.name);
         ShowMessage(string.IsNullOrEmpty(next.breakthroughMessage) ? ("你突破到了" + next.name + "。") : next.breakthroughMessage);
         return true;
     }
@@ -234,6 +235,7 @@ public class BodyCultivationManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(state.equippedBodyMethodId)) state.equippedBodyMethodId = "skill_body_tempering_basic";
         state.bodyCultivation += Mathf.Max(0, amount);
+        if (amount > 0) ToastManager.TryShowSuccess("锻体值 +" + amount);
         if (locationUIManager != null)
         {
             locationUIManager.RefreshPlayerStatus(state);
