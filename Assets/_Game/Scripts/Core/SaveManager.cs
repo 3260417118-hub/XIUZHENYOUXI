@@ -236,6 +236,17 @@ public class SaveManager : MonoBehaviour
                 }
             }
         }
+        target.shopStocks = new List<ShopStockRecord>();
+        if (source.shopStocks != null)
+        {
+            foreach (ShopStockRecord record in source.shopStocks)
+            {
+                if (record != null && !string.IsNullOrEmpty(record.shopId) && !string.IsNullOrEmpty(record.itemId) && record.remainingStock >= 0)
+                {
+                    target.shopStocks.Add(new ShopStockRecord { shopId = record.shopId, itemId = record.itemId, remainingStock = record.remainingStock });
+                }
+            }
+        }
         target.learnedSkills = new List<string>(source.learnedSkills);
         target.unlockedCellIds = new List<string>(source.unlockedCellIds);
         target.dailyActionRecords = new List<string>(source.dailyActionRecords);
@@ -267,6 +278,8 @@ public class SaveManager : MonoBehaviour
         if (dayEventManager != null) dayEventManager.CloseDayEventSilently();
         BattleManager battleManager = GetComponent<BattleManager>();
         if (battleManager != null) battleManager.CloseBattleSilently();
+        ShopManager shopManager = GetComponent<ShopManager>();
+        if (shopManager != null) shopManager.HideImmediately();
         ChapterTitleManager chapterTitle = GetComponent<ChapterTitleManager>();
         if (chapterTitle != null) chapterTitle.HideImmediately();
         ChapterOneLocationMechanicsManager chapterOne = GetComponent<ChapterOneLocationMechanicsManager>();

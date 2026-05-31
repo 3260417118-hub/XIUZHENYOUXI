@@ -11,7 +11,9 @@
       "hpGain": 0,
       "attackBonus": 0,
       "defenseBonus": 0,
-      "maxHpBonus": 0
+      "maxHpBonus": 0,
+      "sellable": true,
+      "sellPrice": 10
     },
     {
       "id": "sister_ribbon",
@@ -24,7 +26,9 @@
       "hpGain": 0,
       "attackBonus": 0,
       "defenseBonus": 0,
-      "maxHpBonus": 0
+      "maxHpBonus": 0,
+      "sellable": false,
+      "sellPrice": 0
     },
     {
       "id": "qiankun_body_scroll_fragment",
@@ -37,7 +41,9 @@
       "hpGain": 0,
       "attackBonus": 0,
       "defenseBonus": 0,
-      "maxHpBonus": 0
+      "maxHpBonus": 0,
+      "sellable": false,
+      "sellPrice": 0
     },
     {
       "id": "wushen_body_scroll_fragment",
@@ -50,7 +56,9 @@
       "hpGain": 0,
       "attackBonus": 0,
       "defenseBonus": 0,
-      "maxHpBonus": 0
+      "maxHpBonus": 0,
+      "sellable": false,
+      "sellPrice": 0
     },
     {
       "id": "jinluan_blood_stone",
@@ -63,7 +71,9 @@
       "hpGain": 0,
       "attackBonus": 0,
       "defenseBonus": 0,
-      "maxHpBonus": 0
+      "maxHpBonus": 0,
+      "sellable": false,
+      "sellPrice": 0
     },
     {
       "id": "cultivation_pill",
@@ -76,7 +86,9 @@
       "hpGain": 0,
       "attackBonus": 0,
       "defenseBonus": 0,
-      "maxHpBonus": 0
+      "maxHpBonus": 0,
+      "sellable": false,
+      "sellPrice": 0
     },
     {
       "id": "healing_pill",
@@ -89,7 +101,24 @@
       "hpGain": 30,
       "attackBonus": 0,
       "defenseBonus": 0,
-      "maxHpBonus": 0
+      "maxHpBonus": 0,
+      "sellable": true,
+      "sellPrice": 7
+    },
+    {
+      "id": "qi_training_pill",
+      "name": "练气丹",
+      "description": "修炼时若已掌握《练气入门》，会自动消耗一枚，使本次修炼额外获得 10 点修为。",
+      "type": "consumable",
+      "usable": false,
+      "consumable": true,
+      "cultivationGain": 0,
+      "hpGain": 0,
+      "attackBonus": 0,
+      "defenseBonus": 0,
+      "maxHpBonus": 0,
+      "sellable": true,
+      "sellPrice": 25
     },
     {
       "id": "broom",
@@ -102,7 +131,9 @@
       "hpGain": 0,
       "attackBonus": 2,
       "defenseBonus": 0,
-      "maxHpBonus": 0
+      "maxHpBonus": 0,
+      "sellable": false,
+      "sellPrice": 0
     },
     {
       "id": "star_sword",
@@ -115,7 +146,9 @@
       "hpGain": 0,
       "attackBonus": 20,
       "defenseBonus": 0,
-      "maxHpBonus": 0
+      "maxHpBonus": 0,
+      "sellable": false,
+      "sellPrice": 0
     }
   ]
 }

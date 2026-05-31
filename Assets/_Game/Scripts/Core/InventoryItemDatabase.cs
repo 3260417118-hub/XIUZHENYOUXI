@@ -16,6 +16,8 @@ public class InventoryItemData
     public int attackBonus;
     public int defenseBonus;
     public int maxHpBonus;
+    public bool sellable;
+    public int sellPrice;
 }
 
 [Serializable]

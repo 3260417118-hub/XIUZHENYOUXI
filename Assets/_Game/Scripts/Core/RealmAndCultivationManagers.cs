@@ -27,7 +27,9 @@ public class RealmDataList
 public class CultivationManager : MonoBehaviour
 {
     private const string BasicQiSkillId = "skill_qi_training_basic";
+    private const string QiTrainingPillId = "qi_training_pill";
     private const int BasicQiTrainingBonus = 15;
+    private const int QiTrainingPillBonus = 10;
 
     private GameManager gameManager;
     private LocationUIManager locationUIManager;
@@ -48,7 +50,16 @@ public class CultivationManager : MonoBehaviour
 
         int baseGain = Mathf.Max(0, amount);
         int bonusGain = playerState.HasSkill(BasicQiSkillId) ? BasicQiTrainingBonus : 0;
-        int finalGain = baseGain + bonusGain;
+        int pillGain = 0;
+        bool consumedQiPill = false;
+        if (playerState.HasSkill(BasicQiSkillId) && playerState.HasItem(QiTrainingPillId))
+        {
+            pillGain = QiTrainingPillBonus;
+            playerState.RemoveItem(QiTrainingPillId, 1);
+            consumedQiPill = true;
+        }
+
+        int finalGain = baseGain + bonusGain + pillGain;
         playerState.cultivation += finalGain;
 
         if (string.IsNullOrEmpty(playerState.equippedCultivationSkillId) && playerState.HasSkill(BasicQiSkillId))
@@ -61,7 +72,8 @@ public class CultivationManager : MonoBehaviour
             locationUIManager.RefreshPlayerStatus(playerState);
             if (bonusGain > 0)
             {
-                locationUIManager.ShowMessage("你依照《练气入门》吐纳修炼，基础修为 +" + baseGain + "，功法加成 +" + bonusGain + "，总修为 +" + finalGain + "。");
+                string pillText = consumedQiPill ? "，练气丹加成 +" + pillGain : "";
+                locationUIManager.ShowMessage("你依照《练气入门》吐纳修炼，基础修为 +" + baseGain + "，功法加成 +" + bonusGain + pillText + "，总修为 +" + finalGain + "。");
             }
             else
             {
@@ -70,6 +82,10 @@ public class CultivationManager : MonoBehaviour
         }
         CharacterStatusUIManager characterStatus = GetComponent<CharacterStatusUIManager>();
         if (characterStatus != null) characterStatus.RefreshIfOpen();
+        InventoryUIManager inventoryUI = GetComponent<InventoryUIManager>();
+        if (inventoryUI != null) inventoryUI.RefreshIfOpen();
+        ShopManager shopManager = GetComponent<ShopManager>();
+        if (shopManager != null) shopManager.RefreshIfOpen();
     }
 }
 

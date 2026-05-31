@@ -48,6 +48,11 @@ public class InventoryUIManager : MonoBehaviour
             ShowMessage("战斗中暂时不能打开背包。");
             return;
         }
+        if (ShopManager.IsShopOpen)
+        {
+            ShowMessage("请先关闭商店。");
+            return;
+        }
         if (IsOtherWindowOpen())
         {
             ShowMessage("请先关闭当前窗口。");
@@ -324,6 +329,7 @@ public class InventoryUIManager : MonoBehaviour
     {
         if (RestManager.IsRestingTransition) return true;
         if (BattleManager.IsBattleOpen) return true;
+        if (ShopManager.IsShopOpen) return true;
         if (OpeningStoryManager.IsOpeningActive) return true;
         if (ChapterTitleManager.IsChapterTitleActive) return true;
         if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return true;
@@ -334,7 +340,8 @@ public class InventoryUIManager : MonoBehaviour
     private bool IsOtherWindowOpen()
     {
         GameObject statusPanel = GameObject.Find("CharacterStatusPanel");
-        return statusPanel != null && statusPanel.activeInHierarchy;
+        if (statusPanel != null && statusPanel.activeInHierarchy) return true;
+        return ShopManager.IsShopOpen;
     }
 
     private void ShowMessage(string message)

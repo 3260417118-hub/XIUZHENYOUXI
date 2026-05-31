@@ -15,6 +15,14 @@ public class InventoryItemRecord
     public int count;
 }
 
+[Serializable]
+public class ShopStockRecord
+{
+    public string shopId;
+    public string itemId;
+    public int remainingStock;
+}
+
 /// <summary>
 /// 玩家当前状态。
 /// 这个类只保存数据，不负责复杂玩法逻辑，方便存档。
@@ -100,6 +108,9 @@ public class PlayerState
     /// <summary>新版背包：记录物品 id 和数量。</summary>
     public List<InventoryItemRecord> inventoryItems = new List<InventoryItemRecord>();
 
+    /// <summary>有限库存商店商品的剩余数量。无限库存商品不需要记录。</summary>
+    public List<ShopStockRecord> shopStocks = new List<ShopStockRecord>();
+
     /// <summary>轻量功法记录：只记 id，不做功法 UI。</summary>
     public List<string> learnedSkills = new List<string>();
 
@@ -129,6 +140,7 @@ public class PlayerState
         if (dayEventsTriggered == null) dayEventsTriggered = new List<string>();
         if (items == null) items = new List<string>();
         if (inventoryItems == null) inventoryItems = new List<InventoryItemRecord>();
+        if (shopStocks == null) shopStocks = new List<ShopStockRecord>();
         if (learnedSkills == null) learnedSkills = new List<string>();
         if (unlockedCellIds == null) unlockedCellIds = new List<string>();
         if (dailyActionRecords == null) dailyActionRecords = new List<string>();
@@ -325,6 +337,36 @@ public class PlayerState
             }
             return;
         }
+    }
+
+    public int GetShopStock(string shopId, string itemId, int defaultStock)
+    {
+        if (defaultStock < 0) return -1;
+        if (string.IsNullOrEmpty(shopId) || string.IsNullOrEmpty(itemId)) return defaultStock;
+        EnsureLists();
+        foreach (ShopStockRecord record in shopStocks)
+        {
+            if (record != null && record.shopId == shopId && record.itemId == itemId)
+            {
+                return Math.Max(0, record.remainingStock);
+            }
+        }
+        return Math.Max(0, defaultStock);
+    }
+
+    public void SetShopStock(string shopId, string itemId, int remainingStock)
+    {
+        if (string.IsNullOrEmpty(shopId) || string.IsNullOrEmpty(itemId) || remainingStock < 0) return;
+        EnsureLists();
+        foreach (ShopStockRecord record in shopStocks)
+        {
+            if (record != null && record.shopId == shopId && record.itemId == itemId)
+            {
+                record.remainingStock = remainingStock;
+                return;
+            }
+        }
+        shopStocks.Add(new ShopStockRecord { shopId = shopId, itemId = itemId, remainingStock = remainingStock });
     }
 
     public bool HasSkill(string skillId)

@@ -5,7 +5,7 @@
       "speaker": "老板",
       "text": "客官，要买些丹药，还是打听消息？",
       "options": [
-        { "text": "购买丹药", "action": "message", "target": "", "message": "商店系统暂未开放。" },
+        { "text": "购买", "action": "shop", "target": "qingshi_shop", "message": "" },
         { "text": "打听修仙界", "action": "dialogue", "target": "shop_owner_qingyun_info", "message": "" },
         { "text": "离开", "action": "close", "target": "", "message": "" }
       ]

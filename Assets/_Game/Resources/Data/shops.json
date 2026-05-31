@@ -1,0 +1,26 @@
+{
+  "shops": [
+    {
+      "id": "qingshi_shop",
+      "name": "青石村商铺",
+      "goods": [
+        {
+          "itemId": "healing_pill",
+          "buyPrice": 15,
+          "stock": -1
+        },
+        {
+          "itemId": "shovel",
+          "buyPrice": 20,
+          "stock": 1
+        },
+        {
+          "itemId": "qi_training_pill",
+          "buyPrice": 50,
+          "stock": 20,
+          "minDay": 10
+        }
+      ]
+    }
+  ]
+}

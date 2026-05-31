@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 /// <summary>
 /// 单个对话选项数据。
-/// action 支持：close、message、dialogue。
+/// action 支持：close、message、dialogue、shop。
 /// 并支持轻量条件显示和轻量奖励效果。
 /// </summary>
 [Serializable]

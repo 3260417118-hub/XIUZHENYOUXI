@@ -70,6 +70,12 @@ public class PlayerMapController : MonoBehaviour
             return true;
         }
 
+        if (ShopManager.IsShopOpen)
+        {
+            message = "请先关闭商店。";
+            return true;
+        }
+
         if (eventManager != null && eventManager.IsEventOpen)
         {
             message = "请先处理当前事件。";

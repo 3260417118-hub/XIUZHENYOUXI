@@ -60,6 +60,7 @@ public class LocationActionManager : MonoBehaviour
         if (eventManager != null && eventManager.IsEventOpen) return true;
         if (RestManager.IsRestingTransition) return true;
         if (BattleManager.IsBattleOpen) return true;
+        if (ShopManager.IsShopOpen) return true;
         if (OpeningStoryManager.IsOpeningActive) return true;
         if (ChapterTitleManager.IsChapterTitleActive) return true;
         if (ChapterOneLocationMechanicsManager.IsChapterOneEventOpen) return true;

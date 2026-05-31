@@ -203,6 +203,16 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
+        if (option.action == "shop")
+        {
+            isDialogueOpen = false;
+            ClearDialogueOnly();
+            ShopManager shopManager = GetComponent<ShopManager>();
+            if (shopManager != null) shopManager.OpenShop(option.target);
+            else if (locationUIManager != null) locationUIManager.ShowMessage("商店系统未初始化。");
+            return;
+        }
+
         if (locationUIManager != null) locationUIManager.ShowMessage("未知对话选项动作：" + option.action);
     }
 
