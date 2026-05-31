@@ -192,11 +192,8 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             return;
         }
 
-        if (currentCell.id == "back_mountain")
-        {
-            HandleBackMountainEnter(playerState);
-            return;
-        }
+        // 后山悬崖剧情已统一交给 CliffStoryManager，避免旧事件抢占新黑屏剧情和崖底地图跳转。
+        if (currentCell.id == "back_mountain") return;
 
         if (currentCell.id == "sect_gate" && playerState.day >= 5 && !playerState.HasFlag("heard_sect_recruit_notice"))
         {
@@ -534,36 +531,6 @@ public class ChapterOneLocationMechanicsManager : MonoBehaviour
             playerState.AddItem("qiankun_body_scroll_fragment");
             ShowMessage("你在洞府石匣中找到一些灵石，以及一页残破的锻体功法。");
             RefreshAll();
-        }
-    }
-
-    private void HandleBackMountainEnter(PlayerState playerState)
-    {
-        if (!playerState.HasFlag("heard_cliff_call_day"))
-        {
-            playerState.AddFlag("heard_cliff_call_day");
-            playerState.SetCounter("cliff_call_first_day", playerState.day);
-            OpenEvent("悬崖下的呼唤", "你来到后山，忽然感觉悬崖下方有什么东西在呼唤自己。那种感觉一闪而逝，像是幻觉。", new List<BlockingEncounterOptionData> { new BlockingEncounterOptionData { text = "离开", closeOnly = true } }, delegate(BlockingEncounterOptionData option) { CloseEvent("你将那一瞬间的异样压在心底。"); });
-            return;
-        }
-
-        int firstDay = playerState.GetCounter("cliff_call_first_day");
-        if (firstDay > 0 && playerState.day > firstDay && !playerState.HasFlag("resolved_cliff_choice") && !playerState.HasFlag("jumped_down_cliff"))
-        {
-            OpenEvent("金光与低语", "悬崖下亮起隐隐金光。一个蛊惑般的声音在耳边响起：“想要守护自己最重要的人吗？那就跳下来吧。”", new List<BlockingEncounterOptionData> { new BlockingEncounterOptionData { text = "跳下去", closeOnly = true }, new BlockingEncounterOptionData { text = "不跳下去", closeOnly = true } }, delegate(BlockingEncounterOptionData option)
-            {
-                if (option.text == "跳下去")
-                {
-                    playerState.AddFlag("jumped_down_cliff");
-                    CloseEvent("你纵身跃下悬崖，新的地图内容暂未开放。");
-                }
-                else
-                {
-                    playerState.AddFlag("refused_cliff_call");
-                    playerState.AddFlag("resolved_cliff_choice");
-                    CloseEvent("你后退一步，将那道声音压在心底。");
-                }
-            });
         }
     }
 

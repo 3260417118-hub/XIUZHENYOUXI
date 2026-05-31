@@ -234,9 +234,8 @@ public class CliffStoryManager : MonoBehaviour
         };
         for (int i = 0; i < lines.Length; i++)
         {
-            if (!string.IsNullOrEmpty(bodyText.text)) bodyText.text += "\n\n";
-            bodyText.text += lines[i];
-            yield return new WaitForSeconds(0.75f);
+            yield return TypeLine(lines[i]);
+            yield return new WaitForSeconds(0.35f);
         }
         PlayerState state = GetState();
         if (state != null && !state.HasFlag("obtained_jinluan_blood_stone"))
@@ -269,13 +268,23 @@ public class CliffStoryManager : MonoBehaviour
         {
             for (int i = 0; i < lines.Length; i++)
             {
-                if (!string.IsNullOrEmpty(bodyText.text)) bodyText.text += "\n\n";
-                bodyText.text += lines[i];
-                yield return new WaitForSeconds(0.8f);
+                yield return TypeLine(lines[i]);
+                yield return new WaitForSeconds(0.35f);
             }
         }
         yield return new WaitForSeconds(0.8f);
         CloseStory(messageAfterClose);
+    }
+
+    private IEnumerator TypeLine(string line)
+    {
+        if (bodyText == null || string.IsNullOrEmpty(line)) yield break;
+        if (!string.IsNullOrEmpty(bodyText.text)) bodyText.text += "\n\n";
+        for (int i = 0; i < line.Length; i++)
+        {
+            bodyText.text += line[i];
+            yield return new WaitForSeconds(0.045f);
+        }
     }
 
     private void CloseStory(string message)
@@ -343,7 +352,7 @@ public class CliffStoryManager : MonoBehaviour
         image.color = Color.black;
         image.raycastTarget = true;
         titleText = CreateText(panelObject.transform, "Title", 30, TextAnchor.MiddleCenter, new Vector2(0.12f, 0.72f), new Vector2(0.88f, 0.86f));
-        bodyText = CreateText(panelObject.transform, "Body", 24, TextAnchor.UpperCenter, new Vector2(0.16f, 0.34f), new Vector2(0.84f, 0.70f));
+        bodyText = CreateText(panelObject.transform, "Body", 24, TextAnchor.MiddleCenter, new Vector2(0.16f, 0.28f), new Vector2(0.84f, 0.72f));
     }
 
     private Text CreateText(Transform parent, string name, int fontSize, TextAnchor alignment, Vector2 anchorMin, Vector2 anchorMax)

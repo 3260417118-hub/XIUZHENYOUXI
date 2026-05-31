@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.IO;
 using UnityEngine;
 
 public class MapAndActionPointRuleTests
@@ -60,6 +61,25 @@ public class MapAndActionPointRuleTests
         ActionPointRules.EndDay(playerState);
         Assert.AreEqual(2, playerState.day);
         Assert.AreEqual(3, playerState.actionPoints);
+    }
+
+    [Test]
+    public void MapCellData_GetMapId_AllowsCliffBottomMap()
+    {
+        MapCellData cell = NewCell("cliff_bottom", 0, 0, true);
+        cell.mapId = "cliff_bottom";
+
+        Assert.AreEqual("cliff_bottom", cell.GetMapId());
+    }
+
+    [Test]
+    public void ChapterOneManager_NoLongerContainsLegacyCliffPlaceholder()
+    {
+        string sourcePath = Path.Combine(Application.dataPath, "_Game/Scripts/Core/ChapterOneLocationMechanicsManager.cs");
+        string source = File.ReadAllText(sourcePath);
+
+        Assert.IsFalse(source.Contains("新的地图内容暂未开放"));
+        Assert.IsFalse(source.Contains("HandleBackMountainEnter(playerState)"));
     }
 
     private static MapCellData NewCell(string id, int x, int y, bool walkable)
