@@ -99,6 +99,18 @@ public class MapAndActionPointRuleTests
         Assert.GreaterOrEqual(LocationActionManager.GetActionButtonPreferredWidth("沿藤蔓爬回后山"), 160f);
     }
 
+    [Test]
+    public void CliffStoryIntroAndTrial_DoNotPassVisibleTitles()
+    {
+        string sourcePath = Path.Combine(Application.dataPath, "_Game/Scripts/Core/CliffStoryManager.cs");
+        string source = File.ReadAllText(sourcePath);
+
+        Assert.IsFalse(source.Contains("PlayStoryAndReturn(\r\n            \"悬崖下的呼唤\""));
+        Assert.IsFalse(source.Contains("PlayStoryAndReturn(\n            \"悬崖下的呼唤\""));
+        Assert.IsFalse(source.Contains("PlayStoryAndReturn(\r\n            \"悬崖下的试炼\""));
+        Assert.IsFalse(source.Contains("PlayStoryAndReturn(\n            \"悬崖下的试炼\""));
+    }
+
     private static MapCellData NewCell(string id, int x, int y, bool walkable)
     {
         MapCellData cell = new MapCellData();

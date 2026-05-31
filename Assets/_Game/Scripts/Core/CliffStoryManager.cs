@@ -195,7 +195,7 @@ public class CliffStoryManager : MonoBehaviour
         PlayerState state = GetState();
         if (state != null) state.AddFlag(FirstStoryReadyFlag);
         PlayStoryAndReturn(
-            "悬崖下的呼唤",
+            "",
             new[]
             {
                 "后山风声极冷，崖边雾气翻涌。",
@@ -211,7 +211,7 @@ public class CliffStoryManager : MonoBehaviour
         PlayerState state = GetState();
         if (state != null) state.AddFlag(TrialStoryReadyFlag);
         PlayStoryAndReturn(
-            "悬崖下的试炼",
+            "",
             new[]
             {
                 "你再次来到后山悬崖边。",
@@ -231,6 +231,7 @@ public class CliffStoryManager : MonoBehaviour
         if (locationActionManager != null) locationActionManager.ClearCurrentButtons();
         panelObject.SetActive(true);
         panelObject.transform.SetAsLastSibling();
+        if (titleText != null) titleText.gameObject.SetActive(true);
         titleText.text = "崖底石台";
         bodyText.text = "";
         if (playingCoroutine != null) StopCoroutine(playingCoroutine);
@@ -268,7 +269,11 @@ public class CliffStoryManager : MonoBehaviour
         if (locationActionManager != null) locationActionManager.ClearCurrentButtons();
         panelObject.SetActive(true);
         panelObject.transform.SetAsLastSibling();
-        titleText.text = title;
+        if (titleText != null)
+        {
+            titleText.gameObject.SetActive(!string.IsNullOrEmpty(title));
+            titleText.text = title;
+        }
         bodyText.text = "";
         if (playingCoroutine != null) StopCoroutine(playingCoroutine);
         playingCoroutine = StartCoroutine(PlayLinesThenClose(lines, messageAfterClose));
