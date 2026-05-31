@@ -93,6 +93,12 @@ public class MapAndActionPointRuleTests
         Assert.IsFalse(File.ReadAllText(actionPath).Contains("暂时离开"));
     }
 
+    [Test]
+    public void LocationActionButtonWidth_FitsLongChineseActionName()
+    {
+        Assert.GreaterOrEqual(LocationActionManager.GetActionButtonPreferredWidth("沿藤蔓爬回后山"), 160f);
+    }
+
     private static MapCellData NewCell(string id, int x, int y, bool walkable)
     {
         MapCellData cell = new MapCellData();

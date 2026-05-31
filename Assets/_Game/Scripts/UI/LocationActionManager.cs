@@ -172,7 +172,7 @@ public class LocationActionManager : MonoBehaviour
             LocationActionData actionData;
             if (!actionById.TryGetValue(actionId, out actionData)) continue;
             if (!ConditionUtility.IsMet(playerState, actionData.condition)) continue;
-            Button button = CreateButton(actionButtonContainer, actionData.name, 120f);
+            Button button = CreateButton(actionButtonContainer, actionData.name, GetActionButtonPreferredWidth(actionData.name));
             LocationActionData capturedAction = actionData;
             button.onClick.AddListener(delegate { ExecuteAction(capturedAction); });
             RefreshActionButtonInteractable(button, actionData);
@@ -387,6 +387,12 @@ public class LocationActionManager : MonoBehaviour
         Text label = CreateText(buttonObject.transform, "Text", text, 18, TextAnchor.MiddleCenter, Color.white);
         StretchToParent(label.rectTransform);
         return button;
+    }
+
+    public static float GetActionButtonPreferredWidth(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return 120f;
+        return Mathf.Clamp(36f + text.Length * 18f, 120f, 220f);
     }
 
     private void CreateLabel(RectTransform parent, string text)
