@@ -139,14 +139,6 @@ public class CliffStoryManager : MonoBehaviour
                 MoveToCell("cliff_bottom", "cliff_bottom", "你咬紧牙关，纵身跃入云雾。风声在耳边炸开，身体急速下坠。就在你以为自己要摔得粉身碎骨时，一缕金光托住了你。");
                 return true;
 
-            case "delay_cliff_trial":
-                state.AddFlag("delayed_cliff_trial");
-                state.MarkDoneToday(DailyRecordKey);
-                state.RemoveFlag(TrialStoryReadyFlag);
-                RefreshAll();
-                ShowMessage("你后退半步，压下心中的冲动。崖底金光仍在雾中闪烁，像是在等待你的下一次选择。");
-                return true;
-
             case "refuse_cliff_trial":
                 state.AddFlag("refused_cliff_trial");
                 state.AddFlag("resolved_cliff_choice");
@@ -172,6 +164,27 @@ public class CliffStoryManager : MonoBehaviour
                 }
                 StartStonePlatformStory();
                 return true;
+        }
+
+        return false;
+    }
+
+    public bool TryGetChoiceActionIds(MapCellData currentCell, PlayerState state, out string[] choiceActionIds)
+    {
+        choiceActionIds = null;
+        if (currentCell == null || state == null || currentCell.id != "back_mountain") return false;
+        state.EnsureLists();
+
+        if (state.HasFlag(FirstStoryReadyFlag))
+        {
+            choiceActionIds = new[] { "listen_cliff_call", "ignore_cliff_call" };
+            return true;
+        }
+
+        if (state.HasFlag(TrialStoryReadyFlag))
+        {
+            choiceActionIds = new[] { "jump_down_cliff", "refuse_cliff_trial" };
+            return true;
         }
 
         return false;

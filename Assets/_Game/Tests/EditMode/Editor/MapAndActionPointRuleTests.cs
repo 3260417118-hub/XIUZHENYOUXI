@@ -82,6 +82,17 @@ public class MapAndActionPointRuleTests
         Assert.IsFalse(source.Contains("HandleBackMountainEnter(playerState)"));
     }
 
+    [Test]
+    public void CliffTrialData_RemovesDelayChoice()
+    {
+        string mapPath = Path.Combine(Application.dataPath, "_Game/Resources/Data/map_cells.json");
+        string actionPath = Path.Combine(Application.dataPath, "_Game/Resources/Data/location_actions.json");
+
+        Assert.IsFalse(File.ReadAllText(mapPath).Contains("delay_cliff_trial"));
+        Assert.IsFalse(File.ReadAllText(actionPath).Contains("delay_cliff_trial"));
+        Assert.IsFalse(File.ReadAllText(actionPath).Contains("暂时离开"));
+    }
+
     private static MapCellData NewCell(string id, int x, int y, bool walkable)
     {
         MapCellData cell = new MapCellData();

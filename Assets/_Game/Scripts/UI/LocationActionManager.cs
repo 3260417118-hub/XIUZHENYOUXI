@@ -151,15 +151,23 @@ public class LocationActionManager : MonoBehaviour
         if (actionButtonContainer == null) return;
         CreateLabel(actionButtonContainer, "可执行：");
 
-        if (currentCell.actionIds == null || currentCell.actionIds.Length == 0)
+        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
+        string[] visibleActionIds = currentCell.actionIds;
+        CliffStoryManager cliffStoryManager = GetComponent<CliffStoryManager>();
+        string[] cliffChoiceActionIds;
+        if (cliffStoryManager != null && cliffStoryManager.TryGetChoiceActionIds(currentCell, playerState, out cliffChoiceActionIds))
+        {
+            visibleActionIds = cliffChoiceActionIds;
+        }
+
+        if (visibleActionIds == null || visibleActionIds.Length == 0)
         {
             CreateLabel(actionButtonContainer, "无");
             return;
         }
 
-        PlayerState playerState = gameManager != null ? gameManager.GetPlayerState() : null;
         bool createdAny = false;
-        foreach (string actionId in currentCell.actionIds)
+        foreach (string actionId in visibleActionIds)
         {
             LocationActionData actionData;
             if (!actionById.TryGetValue(actionId, out actionData)) continue;

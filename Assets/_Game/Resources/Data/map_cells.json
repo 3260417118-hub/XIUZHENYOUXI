@@ -21,7 +21,7 @@
     { "id": "ruined_temple", "name": "破庙", "x": -4, "y": 4, "description": "破庙年久失修，神像半塌，案前积着厚厚灰尘。夜里似乎常有风声从庙后传来。", "walkable": true, "npcIds": [], "actionIds": ["burn_incense", "repair_temple", "observe"], "firstEnterEventId": "event_ruined_temple_old_man" },
     { "id": "road_ruined_back_01", "name": "荒草路", "x": -4, "y": 3, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_ruined_back_02", "name": "荒草路", "x": -4, "y": 2, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
-    { "id": "back_mountain", "name": "后山", "x": -4, "y": 1, "description": "后山林木幽深，野兽足迹隐约可见。村中老人常说，夜里不要靠近此地。", "walkable": true, "npcIds": [], "actionIds": ["listen_cliff_call", "ignore_cliff_call", "jump_down_cliff", "delay_cliff_trial", "refuse_cliff_trial", "observe", "search_mountain"], "firstEnterEventId": "" },
+    { "id": "back_mountain", "name": "后山", "x": -4, "y": 1, "description": "后山林木幽深，野兽足迹隐约可见。村中老人常说，夜里不要靠近此地。", "walkable": true, "npcIds": [], "actionIds": ["listen_cliff_call", "ignore_cliff_call", "jump_down_cliff", "refuse_cliff_trial", "observe", "search_mountain"], "firstEnterEventId": "" },
     { "id": "road_back_village_01", "name": "荒草路", "x": -3, "y": 1, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_back_village_02", "name": "荒草路", "x": -2, "y": 1, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },
     { "id": "road_back_village_03", "name": "荒草路", "x": -1, "y": 1, "description": "脚下是一段普通山路，四周草木寂静。", "walkable": true, "npcIds": [], "actionIds": [], "firstEnterEventId": "" },

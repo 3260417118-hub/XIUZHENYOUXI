@@ -54,15 +54,6 @@
       "condition": { "requireFlags": ["cliff_trial_story_ready"] }
     },
     {
-      "id": "delay_cliff_trial",
-      "name": "暂时离开",
-      "description": "压下冲动，今日暂时离开悬崖。",
-      "costActionPoint": 0,
-      "cultivationGain": 0,
-      "message": "你暂时离开悬崖。",
-      "condition": { "requireFlags": ["cliff_trial_story_ready"] }
-    },
-    {
       "id": "refuse_cliff_trial",
       "name": "不信这鬼话",
       "description": "拒绝崖底声音的诱导。",
