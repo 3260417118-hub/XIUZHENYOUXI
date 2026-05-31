@@ -70,6 +70,13 @@ public class PlayerMapController : MonoBehaviour
             return true;
         }
 
+        CliffStoryManager cliffStoryManager = GetComponent<CliffStoryManager>();
+        if (cliffStoryManager != null && cliffStoryManager.IsWaitingForCliffChoice())
+        {
+            message = "请先完成悬崖边的选择。";
+            return true;
+        }
+
         if (ShopManager.IsShopOpen)
         {
             message = "请先关闭商店。";

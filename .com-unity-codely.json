@@ -1,10 +1,10 @@
 {
-  "unity_port": 10961,
-  "stream_port": 6120,
+  "unity_port": 1359,
+  "stream_port": 6753,
   "created_date": "2026-05-26T10:35:39.0465687Z",
   "project_path": "C:/Users/32604/Desktop/UnityProject/修真游戏/Assets",
   "reloading": false,
   "reason": "ready",
   "seq": 1,
-  "last_heartbeat": "2026-05-29T17:24:24.4027170Z"
+  "last_heartbeat": "2026-05-31T10:01:17.4179431Z"
 }

@@ -102,6 +102,14 @@ public class CliffStoryManager : MonoBehaviour
         return state.day > state.GetCounter(FirstDayCounterId);
     }
 
+    public bool IsWaitingForCliffChoice()
+    {
+        PlayerState state = GetState();
+        MapCellData cell = mapGridManager != null ? mapGridManager.GetCurrentCell() : null;
+        if (state == null || cell == null || cell.id != "back_mountain") return false;
+        return state.HasFlag(FirstStoryReadyFlag) || state.HasFlag(TrialStoryReadyFlag);
+    }
+
     public bool TryHandleCliffAction(LocationActionData actionData, MapCellData currentCell)
     {
         BindReferences();
@@ -149,6 +157,18 @@ public class CliffStoryManager : MonoBehaviour
 
             case "return_to_back_mountain_from_cliff_bottom":
                 MoveToCell("back_mountain", "main", "你抓住藤蔓，费了些力气，终于重新爬回后山。");
+                return true;
+
+            case "go_to_cliff_bottom_from_back_mountain":
+                if (!state.HasFlag("jumped_down_cliff"))
+                {
+                    ShowMessage("你还没有找到通往崖底的路径。");
+                    return true;
+                }
+                state.UnlockCell("cliff_bottom");
+                state.UnlockCell("cliff_stone_road");
+                state.UnlockCell("cliff_stone_platform");
+                MoveToCell("cliff_bottom", "cliff_bottom", "你沿着先前发现的藤蔓小心下行，重新回到崖底。");
                 return true;
 
             case "investigate_cliff_stone_platform":

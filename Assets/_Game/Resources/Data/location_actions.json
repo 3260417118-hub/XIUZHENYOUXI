@@ -71,6 +71,15 @@
       "message": "你抓住藤蔓，费了些力气，终于重新爬回后山。"
     },
     {
+      "id": "go_to_cliff_bottom_from_back_mountain",
+      "name": "前往崖底",
+      "description": "沿着先前发现的藤蔓重新前往崖底。",
+      "costActionPoint": 0,
+      "cultivationGain": 0,
+      "message": "你沿着藤蔓重新前往崖底。",
+      "condition": { "requireFlags": ["jumped_down_cliff"] }
+    },
+    {
       "id": "investigate_cliff_stone_platform",
       "name": "调查石台",
       "description": "靠近石台中央的金光，看看其中藏着什么。",
